@@ -2,6 +2,9 @@ package com.kltn.school_hrm.enums.status;
 
 import lombok.Getter;
 
+/**
+ * Trạng thái yêu cầu
+ */
 @Getter
 public enum RequestStatus {
     PENDING("Chờ duyệt"),
@@ -10,7 +13,7 @@ public enum RequestStatus {
 
     private final String label;
 
-    RequestStatus(String label){
+    RequestStatus(String label) {
         this.label = label;
     }
 }

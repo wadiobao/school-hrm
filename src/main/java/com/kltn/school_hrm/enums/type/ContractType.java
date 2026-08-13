@@ -2,6 +2,9 @@ package com.kltn.school_hrm.enums.type;
 
 import lombok.Getter;
 
+/**
+ * Loại hợp đồng
+ */
 @Getter
 public enum ContractType {
     DEFINITE("Hợp đồng xác định thời hạn"),

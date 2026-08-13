@@ -2,6 +2,9 @@ package com.kltn.school_hrm.enums.type;
 
 import lombok.Getter;
 
+/**
+ * Loại nhân viên
+ */
 @Getter
 public enum EmployeeType {
     FULL_TIME("Toàn thời gian"),

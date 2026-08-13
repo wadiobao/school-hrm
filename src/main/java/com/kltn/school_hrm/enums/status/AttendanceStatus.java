@@ -2,9 +2,11 @@ package com.kltn.school_hrm.enums.status;
 
 import lombok.Getter;
 
+/**
+ * Trạng thái điểm danh
+ */
 @Getter
 public enum AttendanceStatus {
-
     PRESENT("Có mặt"),
     LATE("Đi muộn"),
     EARLY_LEAVE("Về sớm"),
@@ -12,7 +14,7 @@ public enum AttendanceStatus {
 
     private final String label;
 
-    AttendanceStatus(String label){
+    AttendanceStatus(String label) {
         this.label = label;
     }
 }
