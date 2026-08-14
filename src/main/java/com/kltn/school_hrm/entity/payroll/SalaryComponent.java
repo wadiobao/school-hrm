@@ -1,6 +1,7 @@
 package com.kltn.school_hrm.entity.payroll;
 
-import org.hibernate.type.ComponentType;
+
+import com.kltn.school_hrm.enums.Enums.ComponentType;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

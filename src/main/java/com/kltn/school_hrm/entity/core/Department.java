@@ -38,5 +38,5 @@ public class Department {
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "manager_id")
-	private User manager;
+	private Users manager;
 }

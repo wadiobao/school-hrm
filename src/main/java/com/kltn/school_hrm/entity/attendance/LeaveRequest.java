@@ -2,7 +2,7 @@ package com.kltn.school_hrm.entity.attendance;
 
 import java.time.LocalDate;
 
-import com.kltn.school_hrm.entity.core.User;
+import com.kltn.school_hrm.entity.core.Users;
 import com.kltn.school_hrm.entity.employee.Employee;
 import com.kltn.school_hrm.enums.status.RequestStatus;
 import com.kltn.school_hrm.enums.type.LeaveType;
@@ -58,7 +58,7 @@ public class LeaveRequest {
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "approver_id")
-	private User approver;
+	private Users approver;
 
 	@Enumerated(EnumType.STRING)
 	@Column(length = 20)

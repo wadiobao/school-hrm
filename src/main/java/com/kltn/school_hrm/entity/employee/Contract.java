@@ -50,7 +50,6 @@ public class Contract {
 	@Column(name = "gross_salary", precision = 15, scale = 2)
 	private BigDecimal grossSalary;
 
-	@Enumerated(EnumType.STRING)
 	@Column(length = 10)
 	private Currency currency; // USD hoặc VND
 

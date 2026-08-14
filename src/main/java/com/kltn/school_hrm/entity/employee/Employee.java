@@ -5,7 +5,7 @@ import java.time.LocalDate;
 import com.kltn.school_hrm.entity.base.BaseEntity;
 import com.kltn.school_hrm.entity.core.Department;
 import com.kltn.school_hrm.entity.core.Position;
-import com.kltn.school_hrm.entity.core.User;
+import com.kltn.school_hrm.entity.core.Users;
 import com.kltn.school_hrm.enums.Enums.TeacherType;
 import com.kltn.school_hrm.enums.status.EmployeeStatus;
 
@@ -35,7 +35,7 @@ public class Employee extends BaseEntity {
 
 	@OneToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "user_id", unique = true)
-	private User user;
+	private Users user;
 
 	@Column(name = "employee_code", nullable = false, unique = true, length = 20)
 	private String employeeCode;
