@@ -1,0 +1,77 @@
+package com.kltn.school_hrm.controller;
+
+import java.util.List;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.kltn.school_hrm.dto.common.ApiResponse;
+import com.kltn.school_hrm.dto.request.EmployeeCreateRequest;
+import com.kltn.school_hrm.dto.request.WorkPermitRequest;
+import com.kltn.school_hrm.dto.response.EmployeeResponse;
+import com.kltn.school_hrm.dto.response.WorkPermitResponse;
+import com.kltn.school_hrm.service.EmployeeService;
+
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+
+@RestController
+@RequestMapping("/api/v1/employees")
+@RequiredArgsConstructor
+public class EmployeeController {
+
+	private final EmployeeService employeeService;
+
+	@PostMapping
+	public ResponseEntity<ApiResponse<EmployeeResponse>> createEmployee(
+			@Valid @RequestBody EmployeeCreateRequest request) {
+		EmployeeResponse response = employeeService.createEmployee(request);
+		return ResponseEntity.status(HttpStatus.CREATED)
+				.body(ApiResponse.success(response, "Thêm mới nhân viên thành công"));
+	}
+
+	@GetMapping("/{id}")
+	public ResponseEntity<ApiResponse<EmployeeResponse>> getEmployeeById(@PathVariable Long id) {
+		EmployeeResponse response = employeeService.getEmployeeById(id);
+		return ResponseEntity.ok(ApiResponse.success(response, "Lấy thông tin nhân viên thành công"));
+	}
+
+	@GetMapping
+	public ResponseEntity<ApiResponse<Page<EmployeeResponse>>> searchEmployees(
+			@RequestParam(required = false) Long departmentId,
+			@RequestParam(required = false) String keyword,
+			@PageableDefault(size = 10, sort = "createdAt") Pageable pageable) {
+
+		Page<EmployeeResponse> response = employeeService.searchEmployees(departmentId, keyword, pageable);
+		return ResponseEntity.ok(ApiResponse.success(response, "Truy vấn danh sách nhân viên thành công"));
+	}
+
+	@PutMapping("/{id}/work-permit")
+	public ResponseEntity<ApiResponse<WorkPermitResponse>> updateWorkPermit(
+			@PathVariable Long id,
+			@RequestBody WorkPermitRequest request) {
+
+		WorkPermitResponse response = employeeService.updateWorkPermit(id, request);
+		return ResponseEntity.ok(ApiResponse.success(response, "Cập nhật Work Permit/Visa thành công"));
+	}
+
+	@GetMapping("/work-permits/expiring")
+	public ResponseEntity<ApiResponse<List<WorkPermitResponse>>> getExpiringWorkPermits(
+			@RequestParam(defaultValue = "30") int withinDays) {
+
+		List<WorkPermitResponse> response = employeeService.getExpiringWorkPermitsAndVisas(withinDays);
+		return ResponseEntity
+				.ok(ApiResponse.success(response, "Lấy danh sách Visa/Work Permit sắp hết hạn thành công"));
+	}
+}

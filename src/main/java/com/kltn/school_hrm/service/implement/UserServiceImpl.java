@@ -3,7 +3,6 @@ package com.kltn.school_hrm.service.implement;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,7 +27,6 @@ public class UserServiceImpl implements UserService {
 	private final UserRepository userRepository;
 	private final RoleRepository roleRepository;
 	private final PasswordEncoder passwordEncoder;
-	UserDetails details;
 
 	@Override
 	@Transactional
