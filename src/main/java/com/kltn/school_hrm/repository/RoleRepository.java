@@ -11,4 +11,5 @@ import com.kltn.school_hrm.enums.Enums.RoleCode;
 @Repository
 public interface RoleRepository extends JpaRepository<Role, Long> {
     Optional<Role> findByRoleCode(RoleCode roleCode);
+    boolean existsByRoleCode(RoleCode roleCode);
 }

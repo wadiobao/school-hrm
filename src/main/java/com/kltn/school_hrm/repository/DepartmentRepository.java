@@ -9,5 +9,6 @@ import com.kltn.school_hrm.entity.core.Department;
 
 @Repository
 public interface DepartmentRepository extends JpaRepository<Department, Long> {
-	Optional<Department> findByDepartmentCode(String departmentCode);
+	Optional<Department> findByCode(String code);
+	boolean existsByCode(String code);
 }

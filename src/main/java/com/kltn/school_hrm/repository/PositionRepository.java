@@ -7,4 +7,6 @@ import com.kltn.school_hrm.entity.core.Position;
 
 @Repository
 public interface PositionRepository extends JpaRepository<Position, Long> {
+	java.util.Optional<Position> findByCode(String code);
+	boolean existsByCode(String code);
 }
