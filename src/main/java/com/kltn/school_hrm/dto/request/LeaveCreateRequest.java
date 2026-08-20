@@ -2,7 +2,7 @@ package com.kltn.school_hrm.dto.request;
 
 import java.time.LocalDate;
 
-import com.kltn.school_hrm.enums.type.LeaveType;
+import com.kltn.school_hrm.enums.Enums.LeaveType;
 
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -28,6 +28,6 @@ public class LeaveCreateRequest {
     private LocalDate endDate;
 
     private String reason;
-    
+
     private Long substituteTeacherId;
 }

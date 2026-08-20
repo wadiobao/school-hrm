@@ -4,7 +4,7 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 
 import com.kltn.school_hrm.entity.employee.Employee;
-import com.kltn.school_hrm.enums.status.AttendanceStatus;
+import com.kltn.school_hrm.enums.Enums.AttendanceStatus;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

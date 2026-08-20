@@ -3,7 +3,7 @@ package com.kltn.school_hrm.dto.response;
 import java.time.LocalDate;
 import java.time.LocalTime;
 
-import com.kltn.school_hrm.enums.status.AttendanceStatus;
+import com.kltn.school_hrm.enums.Enums.AttendanceStatus;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

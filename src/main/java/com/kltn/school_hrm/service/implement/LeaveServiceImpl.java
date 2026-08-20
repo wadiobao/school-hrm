@@ -11,7 +11,7 @@ import com.kltn.school_hrm.dto.response.LeaveResponse;
 import com.kltn.school_hrm.entity.attendance.LeaveRequest;
 import com.kltn.school_hrm.entity.core.User;
 import com.kltn.school_hrm.entity.employee.Employee;
-import com.kltn.school_hrm.enums.status.RequestStatus;
+import com.kltn.school_hrm.enums.Enums.RequestStatus;
 import com.kltn.school_hrm.repository.EmployeeRepository;
 import com.kltn.school_hrm.repository.LeaveRequestRepository;
 import com.kltn.school_hrm.repository.UserRepository;
@@ -115,7 +115,7 @@ public class LeaveServiceImpl implements LeaveService {
 
         leaveRequest.setStatus(RequestStatus.APPROVED);
         leaveRequest.setApprover(approver);
-        
+
         leaveRequest = leaveRequestRepository.save(leaveRequest);
         return mapToResponse(leaveRequest);
     }
@@ -131,7 +131,7 @@ public class LeaveServiceImpl implements LeaveService {
 
         leaveRequest.setStatus(RequestStatus.REJECTED);
         leaveRequest.setApprover(approver);
-        
+
         leaveRequest = leaveRequestRepository.save(leaveRequest);
         return mapToResponse(leaveRequest);
     }
@@ -153,7 +153,9 @@ public class LeaveServiceImpl implements LeaveService {
                 .startDate(leaveRequest.getStartDate())
                 .endDate(leaveRequest.getEndDate())
                 .reason(leaveRequest.getReason())
-                .substituteTeacherId(leaveRequest.getSubstituteTeacher() != null ? leaveRequest.getSubstituteTeacher().getId() : null)
+                .substituteTeacherId(
+                        leaveRequest.getSubstituteTeacher() != null ? leaveRequest.getSubstituteTeacher().getId()
+                                : null)
                 .approverId(leaveRequest.getApprover() != null ? leaveRequest.getApprover().getId() : null)
                 .status(leaveRequest.getStatus())
                 .build();

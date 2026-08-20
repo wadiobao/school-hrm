@@ -3,7 +3,7 @@ package com.kltn.school_hrm.dto.request;
 import java.time.LocalDate;
 import java.time.LocalTime;
 
-import com.kltn.school_hrm.enums.status.AttendanceStatus;
+import com.kltn.school_hrm.enums.Enums.AttendanceStatus;
 
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -23,9 +23,9 @@ public class AttendanceCreateRequest {
     private LocalDate workDate;
 
     private LocalTime checkIn;
-    
+
     private LocalTime checkOut;
-    
+
     private String deviceId;
 
     private AttendanceStatus status;
