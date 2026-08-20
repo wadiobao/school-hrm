@@ -9,4 +9,6 @@ public interface UserService {
 	UserResponse registerUser(UserRegisterRequest request);
     UserResponse getUserById(Long id);
     List<UserResponse> getAllUsers();
+    UserResponse updateUser(Long id, UserRegisterRequest request);
+    void deleteUser(Long id);
 }

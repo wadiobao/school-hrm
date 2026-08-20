@@ -85,6 +85,55 @@ public class EmployeeServiceImpl implements EmployeeService {
 	}
 
 	@Override
+	@Transactional
+	public EmployeeResponse updateEmployee(Long id, EmployeeCreateRequest request) {
+		Employee employee = employeeRepository.findById(id)
+				.orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy nhân viên với id: " + id));
+
+		// Kiểm tra trùng employeeCode với bản ghi khác
+		if (!employee.getEmployeeCode().equals(request.getEmployeeCode())
+				&& employeeRepository.existsByEmployeeCode(request.getEmployeeCode())) {
+			throw new IllegalArgumentException("Mã nhân viên đã tồn tại!");
+		}
+		// Kiểm tra trùng email với bản ghi khác
+		if (!employee.getEmail().equals(request.getEmail())
+				&& employeeRepository.existsByEmail(request.getEmail())) {
+			throw new IllegalArgumentException("Email đã tồn tại!");
+		}
+
+		Department department = departmentRepository.findById(request.getDepartmentId())
+				.orElseThrow(() -> new ResourceNotFoundException(
+						"Không tìm thấy phòng ban với id: " + request.getDepartmentId()));
+
+		Position position = positionRepository.findById(request.getPositionId())
+				.orElseThrow(() -> new ResourceNotFoundException(
+						"Không tìm thấy chức vụ với id: " + request.getPositionId()));
+
+		employee.setEmployeeCode(request.getEmployeeCode());
+		employee.setFullName(request.getFullName());
+		employee.setNativeName(request.getNativeName());
+		employee.setDateOfBirth(request.getDateOfBirth());
+		employee.setGender(request.getGender());
+		employee.setEmail(request.getEmail());
+		employee.setPhone(request.getPhone());
+		employee.setAddress(request.getAddress());
+		employee.setDepartment(department);
+		employee.setPosition(position);
+		employee.setJoinDate(request.getJoinDate());
+
+		return mapToResponse(employeeRepository.save(employee));
+	}
+
+	@Override
+	@Transactional
+	public void deleteEmployee(Long id) {
+		if (!employeeRepository.existsById(id)) {
+			throw new ResourceNotFoundException("Không tìm thấy nhân viên với id: " + id);
+		}
+		employeeRepository.deleteById(id);
+	}
+
+	@Override
 	@Transactional(readOnly = true)
 	public EmployeeResponse getEmployeeById(Long id) {
 		Employee employee = employeeRepository.findById(id)

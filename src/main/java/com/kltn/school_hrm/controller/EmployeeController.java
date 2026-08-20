@@ -7,6 +7,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -45,6 +46,20 @@ public class EmployeeController {
 	public ResponseEntity<ApiResponse<EmployeeResponse>> getEmployeeById(@PathVariable Long id) {
 		EmployeeResponse response = employeeService.getEmployeeById(id);
 		return ResponseEntity.ok(ApiResponse.success(response, "Lấy thông tin nhân viên thành công"));
+	}
+
+	@PutMapping("/{id}")
+	public ResponseEntity<ApiResponse<EmployeeResponse>> updateEmployee(
+			@PathVariable Long id,
+			@Valid @RequestBody EmployeeCreateRequest request) {
+		EmployeeResponse response = employeeService.updateEmployee(id, request);
+		return ResponseEntity.ok(ApiResponse.success(response, "Cập nhật nhân viên thành công"));
+	}
+
+	@DeleteMapping("/{id}")
+	public ResponseEntity<ApiResponse<Void>> deleteEmployee(@PathVariable Long id) {
+		employeeService.deleteEmployee(id);
+		return ResponseEntity.ok(ApiResponse.success(null, "Xóa nhân viên thành công"));
 	}
 
 	@GetMapping

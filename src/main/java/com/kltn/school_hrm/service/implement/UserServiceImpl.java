@@ -71,6 +71,40 @@ public class UserServiceImpl implements UserService {
 				.collect(Collectors.toList());
 	}
 
+	@Override
+	@Transactional
+	public UserResponse updateUser(Long id, UserRegisterRequest request) {
+		User user = userRepository.findById(id)
+				.orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
+
+		if (!user.getUsername().equals(request.getUsername())
+				&& userRepository.existsByUsername(request.getUsername())) {
+			throw new IllegalArgumentException("Username already exists!");
+		}
+		if (!user.getEmail().equals(request.getEmail())
+				&& userRepository.existsByEmail(request.getEmail())) {
+			throw new IllegalArgumentException("Email already exists!");
+		}
+
+		user.setUsername(request.getUsername());
+		user.setEmail(request.getEmail());
+		user.setPhone(request.getPhone());
+		if (request.getPassword() != null && !request.getPassword().isBlank()) {
+			user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
+		}
+
+		return mapToResponse(userRepository.save(user));
+	}
+
+	@Override
+	@Transactional
+	public void deleteUser(Long id) {
+		if (!userRepository.existsById(id)) {
+			throw new ResourceNotFoundException("User not found with id: " + id);
+		}
+		userRepository.deleteById(id);
+	}
+
 	private UserResponse mapToResponse(User user) {
 		return UserResponse.builder()
 				.id(user.getId())

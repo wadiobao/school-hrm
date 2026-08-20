@@ -13,6 +13,10 @@ import com.kltn.school_hrm.dto.response.WorkPermitResponse;
 public interface EmployeeService {
 	EmployeeResponse createEmployee(EmployeeCreateRequest request);
 
+	EmployeeResponse updateEmployee(Long id, EmployeeCreateRequest request);
+
+	void deleteEmployee(Long id);
+
 	EmployeeResponse getEmployeeById(Long id);
 
 	Page<EmployeeResponse> searchEmployees(Long departmentId, String keyword, Pageable pageable);
