@@ -26,6 +26,7 @@ import com.kltn.school_hrm.repository.PositionRepository;
 import com.kltn.school_hrm.repository.UserRepository;
 import com.kltn.school_hrm.repository.WorkPermitAndVisaRepository;
 import com.kltn.school_hrm.service.EmployeeService;
+import com.kltn.school_hrm.utils.AesEncryptor;
 
 import lombok.RequiredArgsConstructor;
 
@@ -38,6 +39,7 @@ public class EmployeeServiceImpl implements EmployeeService {
 	private final PositionRepository positionRepository;
 	private final UserRepository userRepository;
 	private final WorkPermitAndVisaRepository workPermitAndVisaRepository;
+	private final AesEncryptor aesEncryptor;
 
 	@Override
 	@Transactional
@@ -47,6 +49,10 @@ public class EmployeeServiceImpl implements EmployeeService {
 		}
 		if (employeeRepository.existsByEmail(request.getEmail())) {
 			throw new IllegalArgumentException("Email đã tồn tại!");
+		}
+
+		if (employeeRepository.existsByCitizenId(request.getCitizenId())) {
+			throw new IllegalArgumentException("Căn cước công dân đã tồn tại!");
 		}
 
 		Department department = departmentRepository.findById(request.getDepartmentId())
@@ -73,6 +79,7 @@ public class EmployeeServiceImpl implements EmployeeService {
 				.email(request.getEmail())
 				.phone(request.getPhone())
 				.address(request.getAddress())
+				.citizenId(request.getCitizenId())
 				.department(department)
 				.position(position)
 				.status(EmployeeStatus.WORKING)
@@ -101,6 +108,11 @@ public class EmployeeServiceImpl implements EmployeeService {
 			throw new IllegalArgumentException("Email đã tồn tại!");
 		}
 
+		if (!employee.getCitizenId().equals(request.getCitizenId())
+				&& employeeRepository.existsByCitizenId(request.getCitizenId())) {
+			throw new IllegalArgumentException("Căn cước công dân đã tồn tại!");
+		}
+
 		Department department = departmentRepository.findById(request.getDepartmentId())
 				.orElseThrow(() -> new ResourceNotFoundException(
 						"Không tìm thấy phòng ban với id: " + request.getDepartmentId()));
@@ -117,6 +129,7 @@ public class EmployeeServiceImpl implements EmployeeService {
 		employee.setEmail(request.getEmail());
 		employee.setPhone(request.getPhone());
 		employee.setAddress(request.getAddress());
+		employee.setCitizenId(request.getCitizenId());
 		employee.setDepartment(department);
 		employee.setPosition(position);
 		employee.setJoinDate(request.getJoinDate());
@@ -196,6 +209,7 @@ public class EmployeeServiceImpl implements EmployeeService {
 				.email(employee.getEmail())
 				.phone(employee.getPhone())
 				.address(employee.getAddress())
+				.citizenId(employee.getCitizenId())
 				.departmentName(employee.getDepartment() != null ? employee.getDepartment().getName() : null)
 				.positionName(employee.getPosition() != null ? employee.getPosition().getName() : null)
 				.status(employee.getStatus())

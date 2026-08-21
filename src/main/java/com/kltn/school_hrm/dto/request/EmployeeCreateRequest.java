@@ -30,6 +30,9 @@ public class EmployeeCreateRequest {
 
 	private String address;
 
+	@NotBlank(message = "Căn cước công dân không được để trống")
+	private String citizenId;
+
 	@NotNull(message = "Phòng ban/Khoa là bắt buộc")
 	private Long departmentId;
 

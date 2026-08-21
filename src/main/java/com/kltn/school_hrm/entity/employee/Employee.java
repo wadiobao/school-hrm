@@ -2,6 +2,7 @@ package com.kltn.school_hrm.entity.employee;
 
 import java.time.LocalDate;
 
+import com.kltn.school_hrm.configuration.CccdEncryptionConverter;
 import com.kltn.school_hrm.entity.base.BaseEntity;
 import com.kltn.school_hrm.entity.core.Department;
 import com.kltn.school_hrm.entity.core.Position;
@@ -10,6 +11,7 @@ import com.kltn.school_hrm.enums.Enums.EmployeeStatus;
 import com.kltn.school_hrm.enums.Enums.TeacherType;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -55,11 +57,15 @@ public class Employee extends BaseEntity {
 	@Column(nullable = false, unique = true, length = 100)
 	private String email;
 
-	@Column(length = 20)
+	@Column(length = 20, unique = true)
 	private String phone;
 
 	@Column(length = 255)
 	private String address;
+
+	@Column(unique = true, nullable = false)
+	@Convert(converter = CccdEncryptionConverter.class)
+	private String citizenId;
 
 	@Enumerated(EnumType.STRING)
 	@Column(name = "teacher_type", length = 20)

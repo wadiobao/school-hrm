@@ -26,4 +26,6 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
 	Page<Employee> searchEmployees(@Param("departmentId") Long departmentId,
 			@Param("keyword") String keyword,
 			Pageable pageable);
+
+	boolean existsByCitizenId(String citizenId);
 }
