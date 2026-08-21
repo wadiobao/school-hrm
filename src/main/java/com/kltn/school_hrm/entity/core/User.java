@@ -2,6 +2,7 @@ package com.kltn.school_hrm.entity.core;
 
 import java.time.LocalDateTime;
 
+import com.kltn.school_hrm.entity.base.BaseEntity;
 import com.kltn.school_hrm.enums.Enums.UserStatus;
 
 import jakarta.persistence.Column;
@@ -14,13 +15,12 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.experimental.SuperBuilder;
 
 @Entity
 @Table(name = "users")
@@ -28,12 +28,8 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
-public class User {
-
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Long id;
+@SuperBuilder
+public class User extends BaseEntity {
 
 	@Column(nullable = false, unique = true, length = 50)
 	private String username;
@@ -54,12 +50,4 @@ public class User {
 	@Enumerated(EnumType.STRING)
 	@Column(nullable = false, length = 20)
 	private UserStatus status;
-
-	@Column(name = "created_at", updatable = false)
-	private LocalDateTime createdAt;
-
-	@PrePersist
-	protected void onCreate() {
-		this.createdAt = LocalDateTime.now();
-	}
 }

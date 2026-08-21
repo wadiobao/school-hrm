@@ -1,5 +1,6 @@
 package com.kltn.school_hrm.entity.teaching;
 
+import com.kltn.school_hrm.entity.base.BaseEntity;
 import com.kltn.school_hrm.entity.employee.Employee;
 import com.kltn.school_hrm.enums.Enums.Curriculum;
 
@@ -14,22 +15,18 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.experimental.SuperBuilder;
 
 @Entity
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
-public class TeachingAssignment {
-
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Long id;
+@SuperBuilder
+public class TeachingAssignment extends BaseEntity {
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "employee_id", nullable = false)

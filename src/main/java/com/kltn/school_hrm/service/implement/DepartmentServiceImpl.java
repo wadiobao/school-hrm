@@ -10,7 +10,9 @@ import com.kltn.school_hrm.dto.request.DepartmentCreateRequest;
 import com.kltn.school_hrm.dto.response.DepartmentResponse;
 import com.kltn.school_hrm.entity.core.Department;
 import com.kltn.school_hrm.entity.core.User;
+import com.kltn.school_hrm.entity.employee.Employee;
 import com.kltn.school_hrm.repository.DepartmentRepository;
+import com.kltn.school_hrm.repository.EmployeeRepository;
 import com.kltn.school_hrm.repository.UserRepository;
 import com.kltn.school_hrm.service.DepartmentService;
 
@@ -21,7 +23,7 @@ import lombok.RequiredArgsConstructor;
 public class DepartmentServiceImpl implements DepartmentService {
 
     private final DepartmentRepository departmentRepository;
-    private final UserRepository userRepository;
+    private final EmployeeRepository employeeRepository;
 
     @Override
     @Transactional
@@ -42,8 +44,8 @@ public class DepartmentServiceImpl implements DepartmentService {
         }
 
         if (request.getManagerId() != null) {
-            User manager = userRepository.findById(request.getManagerId())
-                    .orElseThrow(() -> new RuntimeException("Manager user not found"));
+            Employee manager = employeeRepository.findById(request.getManagerId())
+                    .orElseThrow(() -> new RuntimeException("Manager employee not found"));
             department.setManager(manager);
         }
 
@@ -73,8 +75,8 @@ public class DepartmentServiceImpl implements DepartmentService {
         }
 
         if (request.getManagerId() != null) {
-            User manager = userRepository.findById(request.getManagerId())
-                    .orElseThrow(() -> new RuntimeException("Manager user not found"));
+            Employee manager = employeeRepository.findById(request.getManagerId())
+                    .orElseThrow(() -> new RuntimeException("Manager employee not found"));
             department.setManager(manager);
         } else {
             department.setManager(null);

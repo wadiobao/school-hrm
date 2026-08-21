@@ -1,9 +1,9 @@
 package com.kltn.school_hrm.entity.payroll;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.List;
 
+import com.kltn.school_hrm.entity.base.BaseEntity;
 import com.kltn.school_hrm.entity.employee.Employee;
 import com.kltn.school_hrm.enums.Enums.PayrollStatus;
 
@@ -20,13 +20,12 @@ import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
-import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.experimental.SuperBuilder;
 
 @Entity
 @Table(indexes = {
@@ -35,12 +34,8 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
-public class Payroll {
-
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Long id;
+@SuperBuilder
+public class Payroll extends BaseEntity {
 
 	@Column(nullable = false)
 	private Integer month;
@@ -74,14 +69,6 @@ public class Payroll {
 	@Column(length = 20)
 	private PayrollStatus status;
 
-	@Column(name = "created_at", updatable = false)
-	private LocalDateTime createdAt;
-
 	@OneToMany(mappedBy = "payroll", cascade = CascadeType.ALL, orphanRemoval = true)
 	private List<PayrollDetail> details;
-
-	@PrePersist
-	protected void onCreate() {
-		this.createdAt = LocalDateTime.now();
-	}
 }

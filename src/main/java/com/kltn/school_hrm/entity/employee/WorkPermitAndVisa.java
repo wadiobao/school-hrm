@@ -2,6 +2,7 @@ package com.kltn.school_hrm.entity.employee;
 
 import java.time.LocalDate;
 
+import com.kltn.school_hrm.entity.base.BaseEntity;
 import com.kltn.school_hrm.enums.Enums.WorkPermitStatus;
 
 import jakarta.persistence.Column;
@@ -15,22 +16,18 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToOne;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.experimental.SuperBuilder;
 
 @Entity
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
-public class WorkPermitAndVisa {
-
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Long id;
+@SuperBuilder
+public class WorkPermitAndVisa extends BaseEntity {
 
 	@OneToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "employee_id", nullable = false, unique = true)

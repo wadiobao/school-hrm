@@ -1,6 +1,7 @@
 package com.kltn.school_hrm.entity.payroll;
 
 
+import com.kltn.school_hrm.entity.base.BaseEntity;
 import com.kltn.school_hrm.enums.Enums.ComponentType;
 
 import jakarta.persistence.Column;
@@ -11,22 +12,18 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.experimental.SuperBuilder;
 
 @Entity
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
-public class SalaryComponent {
-
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Long id;
+@SuperBuilder
+public class SalaryComponent extends BaseEntity {
 
 	@Column(nullable = false, unique = true, length = 50)
 	private String code;

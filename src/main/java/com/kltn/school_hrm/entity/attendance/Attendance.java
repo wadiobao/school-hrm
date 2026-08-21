@@ -3,6 +3,7 @@ package com.kltn.school_hrm.entity.attendance;
 import java.time.LocalDate;
 import java.time.LocalTime;
 
+import com.kltn.school_hrm.entity.base.BaseEntity;
 import com.kltn.school_hrm.entity.employee.Employee;
 import com.kltn.school_hrm.enums.Enums.AttendanceStatus;
 
@@ -19,10 +20,10 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.experimental.SuperBuilder;
 
 @Entity
 @Table(indexes = { @Index(name = "idx_att_emp_date", columnList = "employee_id, work_date") })
@@ -30,12 +31,8 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
-public class Attendance {
-
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Long id;
+@SuperBuilder
+public class Attendance extends BaseEntity {
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "employee_id", nullable = false)
