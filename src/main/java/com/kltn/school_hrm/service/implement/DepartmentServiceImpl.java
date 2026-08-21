@@ -9,12 +9,11 @@ import org.springframework.transaction.annotation.Transactional;
 import com.kltn.school_hrm.dto.request.DepartmentCreateRequest;
 import com.kltn.school_hrm.dto.response.DepartmentResponse;
 import com.kltn.school_hrm.entity.core.Department;
-import com.kltn.school_hrm.entity.core.User;
 import com.kltn.school_hrm.entity.employee.Employee;
 import com.kltn.school_hrm.repository.DepartmentRepository;
 import com.kltn.school_hrm.repository.EmployeeRepository;
-import com.kltn.school_hrm.repository.UserRepository;
 import com.kltn.school_hrm.service.DepartmentService;
+import com.kltn.school_hrm.utils.DepartmentChartValidationService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -24,6 +23,7 @@ public class DepartmentServiceImpl implements DepartmentService {
 
     private final DepartmentRepository departmentRepository;
     private final EmployeeRepository employeeRepository;
+    private final DepartmentChartValidationService departmentChartValidationService;
 
     @Override
     @Transactional
@@ -77,6 +77,13 @@ public class DepartmentServiceImpl implements DepartmentService {
         if (request.getManagerId() != null) {
             Employee manager = employeeRepository.findById(request.getManagerId())
                     .orElseThrow(() -> new RuntimeException("Manager employee not found"));
+
+            // Nếu đã có sếp cũ, check cycle trước khi đổi
+            if (department.getManager() != null) {
+                departmentChartValidationService.validateParentChildAssignment(department.getManager().getId(),
+                        request.getManagerId());
+            }
+
             department.setManager(manager);
         } else {
             department.setManager(null);
