@@ -1,6 +1,5 @@
 package com.kltn.school_hrm.enums;
 
-
 import lombok.Getter;
 
 public class Enums {
@@ -15,7 +14,10 @@ public class Enums {
         STAFF("Nhân viên Hành chính");
 
         private final String label;
-        RoleCode(String label) { this.label = label; }
+
+        RoleCode(String label) {
+            this.label = label;
+        }
     }
 
     @Getter
@@ -25,7 +27,10 @@ public class Enums {
         SUSPENDED("Đình chỉ");
 
         private final String label;
-        UserStatus(String label) { this.label = label; }
+
+        UserStatus(String label) {
+            this.label = label;
+        }
     }
 
     @Getter
@@ -35,18 +40,25 @@ public class Enums {
         BILINGUAL("Giáo viên Song ngữ");
 
         private final String label;
-        TeacherType(String label) { this.label = label; }
+
+        TeacherType(String label) {
+            this.label = label;
+        }
     }
 
     @Getter
     public enum EmployeeStatus {
+        PROBATION("Đang thử việc"),
         WORKING("Đang làm việc"),
-        ON_LEAVE("Đang nghỉ phép"),
+        SUSPENDED("Tạm đình chỉ"),
         RETIRED("Đã nghỉ hưu"),
         RESIGNED("Đã nghỉ việc");
 
         private final String label;
-        EmployeeStatus(String label) { this.label = label; }
+
+        EmployeeStatus(String label) {
+            this.label = label;
+        }
     }
 
     @Getter
@@ -57,7 +69,10 @@ public class Enums {
         EXPIRED("Hết hạn");
 
         private final String label;
-        WorkPermitStatus(String label) { this.label = label; }
+
+        WorkPermitStatus(String label) {
+            this.label = label;
+        }
     }
 
     @Getter
@@ -66,7 +81,10 @@ public class Enums {
         CERTIFICATE("Chứng chỉ sư phạm / Ngoại ngữ");
 
         private final String label;
-        DegreeType(String label) { this.label = label; }
+
+        DegreeType(String label) {
+            this.label = label;
+        }
     }
 
     @Getter
@@ -75,7 +93,10 @@ public class Enums {
         USD("US Dollar");
 
         private final String label;
-        Currency(String label) { this.label = label; }
+
+        Currency(String label) {
+            this.label = label;
+        }
     }
 
     @Getter
@@ -85,7 +106,10 @@ public class Enums {
         TERMINATED("Đã chấm dứt");
 
         private final String label;
-        ContractStatus(String label) { this.label = label; }
+
+        ContractStatus(String label) {
+            this.label = label;
+        }
     }
 
     @Getter
@@ -96,7 +120,10 @@ public class Enums {
         MOET("Chương trình Bộ GD&ĐT");
 
         private final String label;
-        Curriculum(String label) { this.label = label; }
+
+        Curriculum(String label) {
+            this.label = label;
+        }
     }
 
     @Getter
@@ -107,7 +134,10 @@ public class Enums {
         OVERTIME("Dạy vượt giờ");
 
         private final String label;
-        TeachingLogType(String label) { this.label = label; }
+
+        TeachingLogType(String label) {
+            this.label = label;
+        }
     }
 
     @Getter
@@ -118,7 +148,10 @@ public class Enums {
         ABSENT("Vắng mặt");
 
         private final String label;
-        AttendanceStatus(String label) { this.label = label; }
+
+        AttendanceStatus(String label) {
+            this.label = label;
+        }
     }
 
     @Getter
@@ -129,7 +162,10 @@ public class Enums {
         UNPAID("Nghỉ không lương");
 
         private final String label;
-        LeaveType(String label) { this.label = label; }
+
+        LeaveType(String label) {
+            this.label = label;
+        }
     }
 
     @Getter
@@ -139,7 +175,10 @@ public class Enums {
         REJECTED("Từ chối");
 
         private final String label;
-        RequestStatus(String label) { this.label = label; }
+
+        RequestStatus(String label) {
+            this.label = label;
+        }
     }
 
     @Getter
@@ -148,7 +187,10 @@ public class Enums {
         DEDUCTION("Khoản khấu trừ");
 
         private final String label;
-        ComponentType(String label) { this.label = label; }
+
+        ComponentType(String label) {
+            this.label = label;
+        }
     }
 
     @Getter
@@ -158,6 +200,9 @@ public class Enums {
         PAID("Đã chi trả");
 
         private final String label;
-        PayrollStatus(String label) { this.label = label; }
+
+        PayrollStatus(String label) {
+            this.label = label;
+        }
     }
 }

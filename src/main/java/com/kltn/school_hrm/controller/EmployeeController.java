@@ -22,6 +22,7 @@ import com.kltn.school_hrm.dto.request.EmployeeCreateRequest;
 import com.kltn.school_hrm.dto.request.WorkPermitRequest;
 import com.kltn.school_hrm.dto.response.EmployeeResponse;
 import com.kltn.school_hrm.dto.response.WorkPermitResponse;
+import com.kltn.school_hrm.service.EmployeeLifecycleService;
 import com.kltn.school_hrm.service.EmployeeService;
 
 import jakarta.validation.Valid;
@@ -33,6 +34,7 @@ import lombok.RequiredArgsConstructor;
 public class EmployeeController {
 
 	private final EmployeeService employeeService;
+	private final EmployeeLifecycleService employeeLifecycleService;
 
 	@PostMapping
 	public ResponseEntity<ApiResponse<EmployeeResponse>> createEmployee(
@@ -88,5 +90,35 @@ public class EmployeeController {
 		List<WorkPermitResponse> response = employeeService.getExpiringWorkPermitsAndVisas(withinDays);
 		return ResponseEntity
 				.ok(ApiResponse.success(response, "Lấy danh sách Visa/Work Permit sắp hết hạn thành công"));
+	}
+
+	@PostMapping("/{id}/complete-probation")
+	public ResponseEntity<ApiResponse<Void>> completeProbation(@PathVariable Long id) {
+		employeeLifecycleService.completeProbation(id);
+		return ResponseEntity.ok(ApiResponse.success(null, "Cập nhật trạng thái nhân viên hoàn thành thử việc"));
+	}
+
+	@PostMapping("/{id}/resume")
+	public ResponseEntity<ApiResponse<Void>> resume(@PathVariable Long id) {
+		employeeLifecycleService.resume(id);
+		return ResponseEntity.ok(ApiResponse.success(null, "Nhân viên đã quay lại làm việc"));
+	}
+
+	@PostMapping("/{id}/suspend")
+	public ResponseEntity<ApiResponse<Void>> suspend(@PathVariable Long id) {
+		employeeLifecycleService.suspend(id);
+		return ResponseEntity.ok(ApiResponse.success(null, "Nhân viên đã tạm dừng làm việc"));
+	}
+
+	@PostMapping("/{id}/resign")
+	public ResponseEntity<ApiResponse<Void>> resign(@PathVariable Long id) {
+		employeeLifecycleService.resign(id);
+		return ResponseEntity.ok(ApiResponse.success(null, "Nhân viên đã nghỉ việc"));
+	}
+
+	@PostMapping("/{id}/retire")
+	public ResponseEntity<ApiResponse<Void>> retire(@PathVariable Long id) {
+		employeeLifecycleService.retire(id);
+		return ResponseEntity.ok(ApiResponse.success(null, "Nhân viên đã nghỉ hưu"));
 	}
 }

@@ -9,6 +9,7 @@ import com.kltn.school_hrm.entity.core.Position;
 import com.kltn.school_hrm.entity.core.User;
 import com.kltn.school_hrm.enums.Enums.EmployeeStatus;
 import com.kltn.school_hrm.enums.Enums.TeacherType;
+import com.kltn.school_hrm.exception.custom.BusinessException;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
@@ -91,4 +92,34 @@ public class Employee extends BaseEntity {
 
 	@OneToOne(mappedBy = "employee", fetch = FetchType.LAZY)
 	private WorkPermitAndVisa workPermitAndVisa;
+
+	public void changeStatus(EmployeeStatus target) {
+		if (!canTransitionTo(target)) {
+			throw new BusinessException(
+					"Invalid status transition: "
+							+ status + " -> " + target);
+		}
+
+		this.status = target;
+	}
+
+	private boolean canTransitionTo(EmployeeStatus target) {
+		return switch (status) {
+		case PROBATION ->
+			target == EmployeeStatus.WORKING ||
+					target == EmployeeStatus.RESIGNED;
+
+		case WORKING ->
+			target == EmployeeStatus.SUSPENDED ||
+					target == EmployeeStatus.RESIGNED ||
+					target == EmployeeStatus.RETIRED;
+
+		case SUSPENDED ->
+			target == EmployeeStatus.WORKING ||
+					target == EmployeeStatus.RESIGNED;
+
+		case RETIRED, RESIGNED ->
+			false;
+		};
+	}
 }
