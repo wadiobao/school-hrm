@@ -18,8 +18,8 @@ public interface WorkPermitAndVisaRepository extends JpaRepository<WorkPermitAnd
 	// Truy vấn các Work Permit / Visa sắp hết hạn trong X ngày (Phục vụ gửi cảnh
 	// báo cho HR)
 	@Query("SELECT w FROM WorkPermitAndVisa w" +
-			" WHERE (w.workPermitExpiryDate BETWEEN :today AND :warningDate)" +
-			" OR (w.visaExpiryDate BETWEEN :today AND :warningDate)")
+			" WHERE (w.wpExpiryDate BETWEEN :today AND :warningDate)" +
+			" OR (w.trcExpiryDate BETWEEN :today AND :warningDate)")
 	List<WorkPermitAndVisa> findExpiringPermitsAndVisas(@Param("today") LocalDate today,
 			@Param("warningDate") LocalDate warningDate);
 }
