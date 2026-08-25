@@ -9,6 +9,7 @@ import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.crypto.codec.Hex;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -21,11 +22,17 @@ public class AesEncryptor {
 
     // Inject secretKey từ application.properties
     public AesEncryptor(@Value("${app.security.aes.secret-key}") String secretKeyConfig) {
-        byte[] keyBytes = secretKeyConfig.getBytes(StandardCharsets.UTF_8);
-        if (keyBytes.length != 32) {
-            throw new IllegalArgumentException("Secret key mã hóa AES phải có độ dài đúng 32 ký tự!");
+        if (secretKeyConfig == null || secretKeyConfig.length() != 64) {
+            throw new IllegalArgumentException("Secret key mã hóa AES dạng Hex phải có độ dài đúng 64 ký tự!");
         }
-        this.secretKey = new SecretKeySpec(keyBytes, "AES");
+
+        try {
+            // Chuyển Hex sang byte[]
+            byte[] keyBytes = Hex.decode(secretKeyConfig);
+            this.secretKey = new SecretKeySpec(keyBytes, "AES");
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Chuỗi cấu hình không phải định dạng mã Hex hợp lệ!", e);
+        }
     }
 
     // Hàm Mã hóa
