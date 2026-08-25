@@ -2,11 +2,14 @@ package com.kltn.school_hrm.service.implement;
 
 import java.util.List;
 
+import org.springframework.stereotype.Service;
+
 import com.kltn.school_hrm.dto.request.TeachingAssignmentRequest;
 import com.kltn.school_hrm.dto.response.TeachingAssignmentResponse;
 import com.kltn.school_hrm.enums.Enums.Curriculum;
 import com.kltn.school_hrm.service.TeachingAssignmentService;
 
+@Service
 public class TeachingAssignmentServiceImpl implements TeachingAssignmentService {
 
     @Override
