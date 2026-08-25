@@ -93,32 +93,32 @@ public class EmployeeController {
 	}
 
 	@PostMapping("/{id}/complete-probation")
-	public ResponseEntity<ApiResponse<Void>> completeProbation(@PathVariable Long id) {
-		employeeLifecycleService.completeProbation(id);
+	public ResponseEntity<ApiResponse<Void>> completeProbation(@PathVariable Long id, @RequestBody String reason) {
+		employeeLifecycleService.completeProbation(id, reason);
 		return ResponseEntity.ok(ApiResponse.success(null, "Cập nhật trạng thái nhân viên hoàn thành thử việc"));
 	}
 
 	@PostMapping("/{id}/resume")
-	public ResponseEntity<ApiResponse<Void>> resume(@PathVariable Long id) {
-		employeeLifecycleService.resume(id);
+	public ResponseEntity<ApiResponse<Void>> resume(@PathVariable Long id, @RequestBody String reason) {
+		employeeLifecycleService.resume(id, reason);
 		return ResponseEntity.ok(ApiResponse.success(null, "Nhân viên đã quay lại làm việc"));
 	}
 
 	@PostMapping("/{id}/suspend")
-	public ResponseEntity<ApiResponse<Void>> suspend(@PathVariable Long id) {
-		employeeLifecycleService.suspend(id);
+	public ResponseEntity<ApiResponse<Void>> suspend(@PathVariable Long id, @RequestBody String reason) {
+		employeeLifecycleService.suspend(id, reason);
 		return ResponseEntity.ok(ApiResponse.success(null, "Nhân viên đã tạm dừng làm việc"));
 	}
 
 	@PostMapping("/{id}/resign")
-	public ResponseEntity<ApiResponse<Void>> resign(@PathVariable Long id) {
-		employeeLifecycleService.resign(id);
+	public ResponseEntity<ApiResponse<Void>> resign(@PathVariable Long id, @RequestBody String reason) {
+		employeeLifecycleService.resign(id, reason);
 		return ResponseEntity.ok(ApiResponse.success(null, "Nhân viên đã nghỉ việc"));
 	}
 
 	@PostMapping("/{id}/retire")
-	public ResponseEntity<ApiResponse<Void>> retire(@PathVariable Long id) {
-		employeeLifecycleService.retire(id);
+	public ResponseEntity<ApiResponse<Void>> retire(@PathVariable Long id, @RequestBody String reason) {
+		employeeLifecycleService.retire(id, reason);
 		return ResponseEntity.ok(ApiResponse.success(null, "Nhân viên đã nghỉ hưu"));
 	}
 }
