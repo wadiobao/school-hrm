@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>School HRM - Dashboard</title>
+</head>
+<body th:replace="~{layout/main-layout :: layout(~{::content}, ~{::scripts}, 'Dashboard')}">
+
+    <div th:fragment="content">
+        <div class="row">
+            <div class="col-md-4">
+                <div class="card text-white bg-primary mb-3">
+                    <div class="card-header">Tổng Nhân Viên</div>
+                    <div class="card-body">
+                        <h5 class="card-title" id="total-employees">Đang tải...</h5>
+                        <p class="card-text">Số lượng nhân viên hiện tại</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card text-white bg-success mb-3">
+                    <div class="card-header">Phòng ban</div>
+                    <div class="card-body">
+                        <h5 class="card-title">...</h5>
+                        <p class="card-text">Các phòng ban đang hoạt động</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div th:fragment="scripts">
+        <script>
+            document.addEventListener('DOMContentLoaded', async () => {
+                try {
+                    const response = await fetchApi('/api/v1/employees?size=1');
+                    if (response && response.data) {
+                        document.getElementById('total-employees').textContent = response.data.totalElements || '0';
+                    }
+                } catch (error) {
+                    console.error('Lỗi khi tải dữ liệu dashboard', error);
+                }
+            });
+        </script>
+    </div>
+</body>
+</html>
