@@ -2,6 +2,7 @@ package com.kltn.school_hrm.service.implement;
 
 import java.util.Currency;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
@@ -146,6 +147,18 @@ public class ContractServiceImpl implements ContractService {
         request.setEmployeeId(existingContract.getEmployee().getId());
 
         return createContract(request);
+    }
+
+    @Override
+    public List<ContractResponse> getContractHistory(Long employeeId) {
+        // Ensure employee exists before querying
+        employeeRepository.findById(employeeId)
+                .orElseThrow(() -> new NotFoundException("Nhân viên không tồn tại"));
+
+        return contractRepository.findByEmployeeIdOrderByStartDateDesc(employeeId)
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
     }
 
     private Contract getContract(Long id) {

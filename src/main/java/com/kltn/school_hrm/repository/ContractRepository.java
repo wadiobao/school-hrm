@@ -17,6 +17,8 @@ public interface ContractRepository extends JpaRepository<Contract, Long> {
 
     List<Contract> findByEmployeeIdAndStatus(Long employeeId, ContractStatus status);
 
+    List<Contract> findByEmployeeIdOrderByStartDateDesc(Long employeeId);
+
     List<Contract> findByStatusAndEndDateBefore(ContractStatus status, LocalDate date);
 
     @Query("SELECT c FROM Contract c WHERE c.employee.id = :employeeId " +

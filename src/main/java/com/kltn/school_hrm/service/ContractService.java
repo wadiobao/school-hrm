@@ -17,4 +17,6 @@ public interface ContractService {
     void expire(Long contractId);
 
     ContractResponse renew(Long contractId, ContractRequest request);
+
+    List<ContractResponse> getContractHistory(Long employeeId);
 }
