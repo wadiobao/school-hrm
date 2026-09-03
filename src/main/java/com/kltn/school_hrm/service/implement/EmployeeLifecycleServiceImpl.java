@@ -3,10 +3,13 @@ package com.kltn.school_hrm.service.implement;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.kltn.school_hrm.entity.employee.Contract;
 import com.kltn.school_hrm.entity.employee.Employee;
 import com.kltn.school_hrm.entity.history.EmployeeStatusHistory;
 import com.kltn.school_hrm.enums.Enums.EmployeeStatus;
+import com.kltn.school_hrm.exception.custom.BusinessException;
 import com.kltn.school_hrm.exception.custom.NotFoundException;
+import com.kltn.school_hrm.repository.ContractRepository;
 import com.kltn.school_hrm.repository.EmployeeRepository;
 import com.kltn.school_hrm.repository.EmployeeStatusHistoryRepository;
 import com.kltn.school_hrm.service.EmployeeLifecycleService;
@@ -18,11 +21,21 @@ import lombok.RequiredArgsConstructor;
 public class EmployeeLifecycleServiceImpl implements EmployeeLifecycleService {
     private final EmployeeRepository employeeRepository;
     private final EmployeeStatusHistoryRepository employeeStatusHistoryRepository;
+    private final ContractRepository contractRepository;
 
     @Override
     @Transactional
     public void completeProbation(Long employeeId, String reason) {
         Employee employee = getEmployee(employeeId);
+
+        Contract probationContract = contractRepository.findActiveProbationContractByEmployeeId(employeeId)
+                .orElseThrow(() -> new BusinessException(
+                        "Employee does not have an active probation contract"));
+
+        probationContract.terminate();
+
+        contractRepository.save(probationContract);
+
         EmployeeStatus oldStatus = employee.getStatus();
 
         EmployeeStatus newStatus = EmployeeStatus.WORKING;

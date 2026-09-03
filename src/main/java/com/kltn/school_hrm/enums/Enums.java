@@ -113,6 +113,19 @@ public class Enums {
     }
 
     @Getter
+    public enum ContractType {
+        PROBATION("Thử việc"),
+        FIXED_TERM("Xác định thời hạn"),
+        INDEFINITE_TERM("Không xác định thời hạn");
+
+        private final String label;
+
+        ContractType(String label) {
+            this.label = label;
+        }
+    }
+
+    @Getter
     public enum Curriculum {
         IB("International Baccalaureate"),
         CAMBRIDGE("Cambridge International"),

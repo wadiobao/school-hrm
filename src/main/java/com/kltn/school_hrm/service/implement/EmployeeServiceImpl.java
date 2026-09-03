@@ -82,7 +82,7 @@ public class EmployeeServiceImpl implements EmployeeService {
 				.citizenId(request.getCitizenId())
 				.department(department)
 				.position(position)
-				.status(EmployeeStatus.WORKING)
+				.status(null)
 				.joinDate(request.getJoinDate())
 				.user(user)
 				.build();
