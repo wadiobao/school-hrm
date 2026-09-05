@@ -22,6 +22,7 @@ import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(rollbackFor = Exception.class)
 public class UserServiceImpl implements UserService {
 
 	private final UserRepository userRepository;

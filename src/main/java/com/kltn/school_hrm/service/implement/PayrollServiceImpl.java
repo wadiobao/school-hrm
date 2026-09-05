@@ -24,6 +24,7 @@ import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(rollbackFor = Exception.class)
 public class PayrollServiceImpl implements PayrollService {
 
     private final PayrollRepository payrollRepository;

@@ -21,6 +21,7 @@ import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(rollbackFor = Exception.class)
 public class LeaveServiceImpl implements LeaveService {
 
     private final LeaveRequestRepository leaveRequestRepository;

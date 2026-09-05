@@ -16,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(rollbackFor = Exception.class)
 public class SalaryComponentServiceImpl implements SalaryComponentService {
 
     private final SalaryComponentRepository salaryComponentRepository;

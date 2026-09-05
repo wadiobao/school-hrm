@@ -16,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(rollbackFor = Exception.class)
 public class PositionServiceImpl implements PositionService {
 
     private final PositionRepository positionRepository;

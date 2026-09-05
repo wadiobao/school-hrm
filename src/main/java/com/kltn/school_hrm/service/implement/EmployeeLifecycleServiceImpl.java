@@ -18,6 +18,7 @@ import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(rollbackFor = Exception.class)
 public class EmployeeLifecycleServiceImpl implements EmployeeLifecycleService {
     private final EmployeeRepository employeeRepository;
     private final EmployeeStatusHistoryRepository employeeStatusHistoryRepository;
