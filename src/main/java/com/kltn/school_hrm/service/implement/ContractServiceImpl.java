@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.kltn.school_hrm.dto.request.ContractRequest;
 import com.kltn.school_hrm.dto.response.ContractResponse;
@@ -21,11 +22,11 @@ import com.kltn.school_hrm.repository.EmployeeRepository;
 import com.kltn.school_hrm.repository.PositionRepository;
 import com.kltn.school_hrm.service.ContractService;
 
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(rollbackFor = Exception.class)
 public class ContractServiceImpl implements ContractService {
 
     private final ContractRepository contractRepository;
@@ -58,12 +59,15 @@ public class ContractServiceImpl implements ContractService {
         }
 
         // 2. Kiểm tra overlap hợp đồng
-        List<Contract> activeContracts = contractRepository.findByEmployeeIdAndStatus(employee.getId(), ContractStatus.ACTIVE);
+        List<Contract> activeContracts = contractRepository.findByEmployeeIdAndStatus(employee.getId(),
+                ContractStatus.ACTIVE);
         for (Contract existing : activeContracts) {
-            // Nếu hợp đồng hiện tại là vô thời hạn, không thể tạo hợp đồng mới trùng hoặc sau nó
+            // Nếu hợp đồng hiện tại là vô thời hạn, không thể tạo hợp đồng mới trùng hoặc
+            // sau nó
             if (existing.getEndDate() == null) {
                 if (!request.getStartDate().isBefore(existing.getStartDate())) {
-                    throw new BusinessException("Nhân viên này đang có hợp đồng vô thời hạn, không thể tạo hợp đồng mới.");
+                    throw new BusinessException(
+                            "Nhân viên này đang có hợp đồng vô thời hạn, không thể tạo hợp đồng mới.");
                 }
             } else {
                 // Nếu contract mới bắt đầu trước khi contract cũ kết thúc
@@ -73,12 +77,11 @@ public class ContractServiceImpl implements ContractService {
             }
         }
 
-        Currency requestCurrency = Currency.getInstance(request.getCurrency());
-
         if (request.getType() == ContractType.PROBATION) {
             employee.setStatus(EmployeeStatus.PROBATION);
         } else if (employee.getStatus() == EmployeeStatus.PROBATION && request.getType() != ContractType.PROBATION) {
-            // Optional: automatically transition to WORKING if a non-probation contract is created
+            // Optional: automatically transition to WORKING if a non-probation contract is
+            // created
             employee.setStatus(EmployeeStatus.WORKING);
         }
 
@@ -91,7 +94,7 @@ public class ContractServiceImpl implements ContractService {
                 .startDate(request.getStartDate())
                 .endDate(request.getEndDate())
                 .grossSalary(request.getGrossSalary())
-                .currency(requestCurrency)
+                .currency(request.getCurrency())
                 .housingAllowance(request.getHousingAllowance())
                 .flightAllowance(request.getFlightAllowance())
                 .relocationAllowance(request.getRelocationAllowance())
@@ -133,12 +136,12 @@ public class ContractServiceImpl implements ContractService {
     public ContractResponse renew(Long contractId, ContractRequest request) {
         // Renew typically means creating a new contract that follows the current one
         Contract existingContract = getContract(contractId);
-        
+
         // ensure the request startDate is after existing endDate
         if (existingContract.getEndDate() == null) {
             throw new BusinessException("Cannot renew an indefinite contract");
         }
-        
+
         if (!request.getStartDate().isAfter(existingContract.getEndDate())) {
             throw new BusinessException("Renewed contract start date must be after current contract end date");
         }
@@ -181,7 +184,7 @@ public class ContractServiceImpl implements ContractService {
                 .type(contract.getType())
                 .status(contract.getStatus())
                 .grossSalary(contract.getGrossSalary())
-                .currency(contract.getCurrency() != null ? contract.getCurrency().getCurrencyCode() : null)
+                .currency(contract.getCurrency())
                 .housingAllowance(contract.getHousingAllowance())
                 .flightAllowance(contract.getFlightAllowance())
                 .relocationAllowance(contract.getRelocationAllowance())

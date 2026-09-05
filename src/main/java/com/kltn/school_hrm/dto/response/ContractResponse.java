@@ -4,8 +4,10 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+import com.fasterxml.jackson.annotation.JsonValue;
 import com.kltn.school_hrm.enums.Enums.ContractStatus;
 import com.kltn.school_hrm.enums.Enums.ContractType;
+import com.kltn.school_hrm.enums.Enums.Currency;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -23,7 +25,7 @@ public class ContractResponse {
 
     // Thông tin ngắn gọn của nhân viên sở hữu hợp đồng
     private EmployeeSummary employee;
-    
+
     private String positionName;
 
     private LocalDate startDate;
@@ -32,7 +34,8 @@ public class ContractResponse {
     private ContractStatus status;
 
     private BigDecimal grossSalary;
-    private String currency; // Trả về dạng String "VND" hoặc "USD"
+
+    private Currency currency; // Trả về dạng String "VND" hoặc "USD"
 
     private BigDecimal housingAllowance;
     private BigDecimal flightAllowance;

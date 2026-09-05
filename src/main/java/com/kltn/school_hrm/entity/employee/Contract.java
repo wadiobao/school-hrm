@@ -2,12 +2,12 @@ package com.kltn.school_hrm.entity.employee;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.Currency;
 
 import com.kltn.school_hrm.entity.base.BaseEntity;
 import com.kltn.school_hrm.entity.core.Position;
 import com.kltn.school_hrm.enums.Enums.ContractStatus;
 import com.kltn.school_hrm.enums.Enums.ContractType;
+import com.kltn.school_hrm.enums.Enums.Currency;
 import com.kltn.school_hrm.exception.custom.BusinessException;
 
 import jakarta.persistence.Column;
@@ -140,5 +140,15 @@ public class Contract extends BaseEntity {
 		}
 
 		this.status = ContractStatus.EXPIRED;
+	}
+
+	public void changeSalary(BigDecimal newSalary) {
+
+		if (newSalary == null || newSalary.signum() <= 0) {
+			throw new IllegalArgumentException(
+					"Salary must be greater than 0");
+		}
+
+		this.grossSalary = newSalary;
 	}
 }

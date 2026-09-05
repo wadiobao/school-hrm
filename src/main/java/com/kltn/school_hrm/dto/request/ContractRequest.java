@@ -5,6 +5,7 @@ import java.time.LocalDate;
 
 import com.kltn.school_hrm.enums.Enums.ContractStatus;
 import com.kltn.school_hrm.enums.Enums.ContractType;
+import com.kltn.school_hrm.enums.Enums.Currency;
 
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
@@ -46,9 +47,8 @@ public class ContractRequest {
     @DecimalMin(value = "0.0", message = "Lương gross phải lớn hơn hoặc bằng 0")
     private BigDecimal grossSalary;
 
-    @NotBlank(message = "Đơn vị tiền tệ không được để trống")
-    @Pattern(regexp = "^(VND|USD)$", message = "Đơn vị tiền tệ chỉ chấp nhận VND hoặc USD")
-    private String currency;
+    @NotNull(message = "Đơn vị tiền tệ không được để trống")
+    private Currency currency;
 
     @DecimalMin(value = "0.0", message = "Phụ cấp nhà ở phải lớn hơn hoặc bằng 0")
     private BigDecimal housingAllowance;

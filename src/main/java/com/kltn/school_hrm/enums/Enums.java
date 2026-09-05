@@ -1,5 +1,8 @@
 package com.kltn.school_hrm.enums;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonValue;
+
 import lombok.Getter;
 
 public class Enums {
@@ -96,6 +99,21 @@ public class Enums {
 
         Currency(String label) {
             this.label = label;
+        }
+
+        @JsonCreator
+        public static Currency fromValue(String value) {
+            for (Currency currency : Currency.values()) {
+                if (currency.name().equalsIgnoreCase(value)) {
+                    return currency;
+                }
+            }
+            throw new IllegalArgumentException("Invalid currency: " + value);
+        }
+
+        @JsonValue
+        public String getValue() {
+            return name();
         }
     }
 
@@ -216,6 +234,36 @@ public class Enums {
 
         PayrollStatus(String label) {
             this.label = label;
+        }
+    }
+
+    @Getter
+    public enum SalaryChangeReason {
+        ANNUAL_REVIEW("Đánh giá hàng năm"),
+        PROMOTION("Thăng chức"),
+        PROBATION_COMPLETED("Hoàn thành thử việc"),
+        ADJUSTMENT("Điều chỉnh"),
+        OTHER("Khác");
+
+        private final String label;
+
+        SalaryChangeReason(String label) {
+            this.label = label;
+        }
+
+        @JsonCreator
+        public static SalaryChangeReason fromValue(String value) {
+            for (SalaryChangeReason reason : SalaryChangeReason.values()) {
+                if (reason.name().equalsIgnoreCase(value)) {
+                    return reason;
+                }
+            }
+            throw new IllegalArgumentException("Invalid salary change reason: " + value);
+        }
+
+        @JsonValue
+        public String getValue() {
+            return name();
         }
     }
 }
