@@ -21,8 +21,10 @@ public class LeaveResponse {
     private LeaveType leaveType;
     private LocalDate startDate;
     private LocalDate endDate;
+    private java.math.BigDecimal totalDays;
     private String reason;
     private Long substituteTeacherId;
     private List<Long> approverId;
     private RequestStatus status;
 }
+

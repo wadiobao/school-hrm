@@ -29,4 +29,21 @@ public interface LeaveRequestRepository extends JpaRepository<LeaveRequest, Long
 			@Param("statuses") Collection<RequestStatus> statuses,
 			@Param("newStart") LocalDate newStart,
 			@Param("newEnd") LocalDate newEnd);
+
+	@Query("""
+			    SELECT COUNT(lr) > 0
+			    FROM LeaveRequest lr
+			    WHERE lr.employee.id = :employeeId
+			      AND lr.id <> :excludeId
+			      AND lr.status IN :statuses
+			      AND lr.startDate <= :newEnd
+			      AND lr.endDate >= :newStart
+			""")
+	boolean existsOverlapExcludingId(
+			@Param("employeeId") Long employeeId,
+			@Param("excludeId") Long excludeId,
+			@Param("statuses") Collection<RequestStatus> statuses,
+			@Param("newStart") LocalDate newStart,
+			@Param("newEnd") LocalDate newEnd);
 }
+

@@ -11,9 +11,7 @@ import com.kltn.school_hrm.exception.custom.BusinessException;
 import com.kltn.school_hrm.repository.LeaveBalanceRepository;
 import com.kltn.school_hrm.service.LeaveBalanceService;
 
-import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
-import lombok.experimental.FieldDefaults;
 
 @Service
 @RequiredArgsConstructor
@@ -23,43 +21,48 @@ public class LeaveBalanceServiceImpl implements LeaveBalanceService {
     private final LeaveBalanceRepository leaveBalanceRepository;
 
     @Override
-    public void reserve(Employee employee, int year, int days) {
-        LeaveBalance balance = leaveBalanceRepository
-                .findByEmployeeIdAndYear(employee.getId(), year)
-                .orElseThrow(() -> new BusinessException(
-                        "Không tìm thấy quỹ phép"));
-
-        BigDecimal available = balance.getTotalDays()
-                .subtract(balance.getUsedDays())
-                .subtract(balance.getPendingDays());
-
-        if (available.compareTo(BigDecimal.valueOf(days)) < 0) {
-            throw new BusinessException(
-                    "Không đủ ngày phép");
-
+    public void reserve(Employee employee, int year, BigDecimal days) {
+        if (days == null || days.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new BusinessException("Số ngày nghỉ phải lớn hơn 0");
         }
 
-        balance.setPendingDays(balance.getPendingDays().add(BigDecimal.valueOf(days)));
+        LeaveBalance balance = leaveBalanceRepository
+                .findByEmployeeIdAndYear(employee.getId(), year)
+                .orElseThrow(() -> new BusinessException("Không tìm thấy quỹ phép"));
+
+        BigDecimal available = balance.getRemainingDays();
+
+        if (available.compareTo(days) < 0) {
+            throw new BusinessException("Không đủ ngày phép");
+        }
+
+        balance.setPendingDays(balance.getPendingDays().add(days));
     }
 
     @Override
-    public void consume(Employee employee, int year, int days) {
+    public void consume(Employee employee, int year, BigDecimal days) {
+        if (days == null || days.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new BusinessException("Số ngày nghỉ phải lớn hơn 0");
+        }
+
         LeaveBalance balance = leaveBalanceRepository
                 .findByEmployeeIdAndYear(employee.getId(), year)
-                .orElseThrow(() -> new BusinessException(
-                        "Không tìm thấy quỹ phép"));
+                .orElseThrow(() -> new BusinessException("Không tìm thấy quỹ phép"));
 
-        balance.setUsedDays(balance.getUsedDays().add(BigDecimal.valueOf(days)));
-        balance.setPendingDays(balance.getPendingDays().subtract(BigDecimal.valueOf(days)));
+        balance.setUsedDays(balance.getUsedDays().add(days));
+        balance.setPendingDays(balance.getPendingDays().subtract(days));
     }
 
     @Override
-    public void release(Employee employee, int year, int days) {
+    public void release(Employee employee, int year, BigDecimal days) {
+        if (days == null || days.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new BusinessException("Số ngày nghỉ phải lớn hơn 0");
+        }
+
         LeaveBalance balance = leaveBalanceRepository
                 .findByEmployeeIdAndYear(employee.getId(), year)
-                .orElseThrow(() -> new BusinessException(
-                        "Không tìm thấy quỹ phép"));
+                .orElseThrow(() -> new BusinessException("Không tìm thấy quỹ phép"));
 
-        balance.setPendingDays(balance.getPendingDays().subtract(BigDecimal.valueOf(days)));
+        balance.setPendingDays(balance.getPendingDays().subtract(days));
     }
 }

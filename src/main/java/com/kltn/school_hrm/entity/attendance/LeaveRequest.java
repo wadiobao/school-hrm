@@ -1,5 +1,6 @@
 package com.kltn.school_hrm.entity.attendance;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -49,8 +50,9 @@ public class LeaveRequest extends BaseEntity {
 	@Column(name = "end_date", nullable = false)
 	private LocalDate endDate;
 
-	@Column(name = "total_days", nullable = false)
-	private Integer totalDays;
+	/** Số ngày nghỉ thực tế (loại trừ cuối tuần và ngày lễ). Bước tối thiểu: 0.5 */
+	@Column(name = "total_days", nullable = false, precision = 5, scale = 1)
+	private BigDecimal totalDays;
 
 	@Column(columnDefinition = "TEXT")
 	private String reason;

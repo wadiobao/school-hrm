@@ -18,8 +18,7 @@ public interface LeaveService {
     List<LeaveResponse> getLeaveRequestsByEmployeeId(Long employeeId);
 
     LeaveResponse approveLeaveRequest(Long id, LeaveDecisionRequest request);
+ 
+     LeaveResponse rejectLeaveRequest(Long id, LeaveDecisionRequest request);
+ }
 
-    LeaveResponse rejectLeaveRequest(Long id, LeaveDecisionRequest request);
-
-    void deleteLeaveRequest(Long id);
-}

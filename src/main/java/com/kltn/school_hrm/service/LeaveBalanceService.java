@@ -1,13 +1,16 @@
 package com.kltn.school_hrm.service;
 
+import java.math.BigDecimal;
+
 import com.kltn.school_hrm.entity.attendance.LeaveRequest;
 import com.kltn.school_hrm.entity.employee.Employee;
 
 public interface LeaveBalanceService {
 
-    public void reserve(Employee employee, int year, int days);
+    void reserve(Employee employee, int year, BigDecimal days);
 
-    public void consume(Employee employee, int year, int days);
+    void consume(Employee employee, int year, BigDecimal days);
 
-    public void release(Employee employee, int year, int days);
+    void release(Employee employee, int year, BigDecimal days);
 }
+

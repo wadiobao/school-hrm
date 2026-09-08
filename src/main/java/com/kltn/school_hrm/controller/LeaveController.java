@@ -66,10 +66,5 @@ public class LeaveController {
     public ResponseEntity<ApiResponse<LeaveResponse>> rejectLeaveRequest(@PathVariable Long id, @RequestBody LeaveDecisionRequest request) {
         return ResponseEntity.ok(ApiResponse.success(leaveService.rejectLeaveRequest(id, request), "Leave request rejected"));
     }
-
-    @DeleteMapping("/{id}")
-    public ResponseEntity<ApiResponse<Void>> deleteLeaveRequest(@PathVariable Long id) {
-        leaveService.deleteLeaveRequest(id);
-        return ResponseEntity.ok(ApiResponse.success(null, "Leave request deleted successfully"));
-    }
 }
+

@@ -203,7 +203,8 @@ public class Enums {
     public enum RequestStatus {
         PENDING("Chờ phê duyệt"),
         APPROVED("Đã phê duyệt"),
-        REJECTED("Từ chối");
+        REJECTED("Từ chối"),
+        CANCELLED("Đã hủy");
 
         private final String label;
 

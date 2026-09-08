@@ -26,46 +26,41 @@ public class LeaveApprovalServiceImpl implements LeaveApprovalService {
 
     @Override
     public void createApprovalSteps(LeaveRequest request) {
-
-        LeaveApproval approver;
-
         if (request.getApprovals() == null) {
-            approver = LeaveApproval.builder()
-                    .leaveRequest(request)
-                    .approver(request.getEmployee().getDepartment().getManager())
-                    .approvalLevel(1)
-                    .status(ApprovalStatus.PENDING)
-                    .approvedAt(null)
-                    .comment(null)
-                    .build();
-
-            leaveApprovalRepository.save(approver);
-        } else {
-            Integer topLevel = request.getApprovals().stream()
-                    .map(LeaveApproval::getApprovalLevel)
-                    .max(Integer::compare)
-                    .get();
-
-            Employee topLevelApprover = request.getApprovals().stream()
-                    .filter(ap -> ap.getApprovalLevel().equals(topLevel))
-                    .findFirst()
-                    .map(LeaveApproval::getApprover)
-                    .get();
-
-            approver = LeaveApproval.builder()
-                    .leaveRequest(request)
-                    .approver(topLevelApprover.getDepartment().getManager())
-                    .approvalLevel(topLevel + 1)
-                    .status(ApprovalStatus.PENDING)
-                    .approvedAt(null)
-                    .comment(null)
-                    .build();
-
-            leaveApprovalRepository.save(approver);
+            request.setApprovals(new java.util.ArrayList<>());
         }
 
-        request.getApprovals().add(approver);
+        Employee employee = request.getEmployee();
+        if (employee.getDepartment() == null || employee.getDepartment().getManager() == null) {
+            throw new BusinessException("Nhân viên chưa có phòng ban hoặc trưởng phòng ban");
+        }
+
+        // Cấp 1: Quản lý trực tiếp (Department Manager)
+        LeaveApproval manager = LeaveApproval.builder()
+                .leaveRequest(request)
+                .approver(employee.getDepartment().getManager())
+                .approvalLevel(1)
+                .status(ApprovalStatus.PENDING)
+                .build();
+        leaveApprovalRepository.save(manager);
+        request.getApprovals().add(manager);
+
+        // Nếu nghỉ từ 2 ngày trở lên: Cần thêm cấp 2 (Hiệu trưởng / Parent Department Manager)
+        if (request.getTotalDays() != null && request.getTotalDays().compareTo(java.math.BigDecimal.valueOf(2)) >= 0) {
+            if (employee.getDepartment().getParentDepartment() != null
+                    && employee.getDepartment().getParentDepartment().getManager() != null) {
+                LeaveApproval principal = LeaveApproval.builder()
+                        .leaveRequest(request)
+                        .approver(employee.getDepartment().getParentDepartment().getManager())
+                        .approvalLevel(2)
+                        .status(ApprovalStatus.PENDING)
+                        .build();
+                leaveApprovalRepository.save(principal);
+                request.getApprovals().add(principal);
+            }
+        }
     }
+
 
     @Override
     public void approveCurrentStep(LeaveRequest request, Long approverId, String comment) {

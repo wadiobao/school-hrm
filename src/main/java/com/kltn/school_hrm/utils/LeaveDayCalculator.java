@@ -1,9 +1,9 @@
 package com.kltn.school_hrm.utils;
 
-import java.util.Set;
-
+import java.math.BigDecimal;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Component;
@@ -18,7 +18,7 @@ import lombok.RequiredArgsConstructor;
 public class LeaveDayCalculator {
     private final HolidayRepository holidayRepository;
 
-    public int calculate(LocalDate startDate, LocalDate endDate) {
+    public BigDecimal calculate(LocalDate startDate, LocalDate endDate) {
 
         // Lấy danh sách các ngày lễ trong khoảng thời gian
         Set<LocalDate> holidays = holidayRepository
@@ -51,7 +51,7 @@ public class LeaveDayCalculator {
             current = current.plusDays(1);
         }
 
-        return totalDays;
+        return BigDecimal.valueOf(totalDays);
     }
 
     // Kiểm tra xem ngày hiện tại có phải là cuối tuần không
@@ -62,3 +62,4 @@ public class LeaveDayCalculator {
                 || day == DayOfWeek.SUNDAY;
     }
 }
+
