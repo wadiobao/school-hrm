@@ -266,4 +266,22 @@ public class Enums {
             return name();
         }
     }
+
+    @Getter
+    public enum ApprovalStatus {
+        PENDING("Chờ phê duyệt"),
+        APPROVED("Đã phê duyệt"),
+        REJECTED("Từ chối");
+
+        private final String label;
+
+        ApprovalStatus(String label) {
+            this.label = label;
+        }
+
+        @JsonValue
+        public String getValue() {
+            return name();
+        }
+    }
 }

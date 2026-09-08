@@ -1,6 +1,7 @@
 package com.kltn.school_hrm.entity.attendance;
 
 import java.time.LocalDate;
+import java.util.List;
 
 import com.kltn.school_hrm.entity.base.BaseEntity;
 import com.kltn.school_hrm.entity.core.User;
@@ -8,6 +9,7 @@ import com.kltn.school_hrm.entity.employee.Employee;
 import com.kltn.school_hrm.enums.Enums.RequestStatus;
 import com.kltn.school_hrm.enums.Enums.LeaveType;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -18,6 +20,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -46,6 +49,9 @@ public class LeaveRequest extends BaseEntity {
 	@Column(name = "end_date", nullable = false)
 	private LocalDate endDate;
 
+	@Column(name = "total_days", nullable = false)
+	private Integer totalDays;
+
 	@Column(columnDefinition = "TEXT")
 	private String reason;
 
@@ -53,9 +59,8 @@ public class LeaveRequest extends BaseEntity {
 	@JoinColumn(name = "substitute_teacher_id")
 	private Employee substituteTeacher;
 
-	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "approver_id")
-	private User approver;
+	@OneToMany(mappedBy = "leaveRequest", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = false)
+	private List<LeaveApproval> approvals;
 
 	@Enumerated(EnumType.STRING)
 	@Column(length = 20)

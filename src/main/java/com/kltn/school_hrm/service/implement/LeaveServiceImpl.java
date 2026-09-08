@@ -1,6 +1,7 @@
 package com.kltn.school_hrm.service.implement;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -8,11 +9,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.kltn.school_hrm.dto.request.LeaveCreateRequest;
+import com.kltn.school_hrm.dto.request.LeaveDecisionRequest;
 import com.kltn.school_hrm.dto.response.LeaveResponse;
+import com.kltn.school_hrm.entity.attendance.LeaveApproval;
 import com.kltn.school_hrm.entity.attendance.LeaveBalance;
 import com.kltn.school_hrm.entity.attendance.LeaveRequest;
 import com.kltn.school_hrm.entity.core.User;
 import com.kltn.school_hrm.entity.employee.Employee;
+import com.kltn.school_hrm.enums.Enums.ApprovalStatus;
 import com.kltn.school_hrm.enums.Enums.EmployeeStatus;
 import com.kltn.school_hrm.enums.Enums.RequestStatus;
 import com.kltn.school_hrm.exception.custom.BusinessException;
@@ -20,6 +24,8 @@ import com.kltn.school_hrm.repository.EmployeeRepository;
 import com.kltn.school_hrm.repository.LeaveBalanceRepository;
 import com.kltn.school_hrm.repository.LeaveRequestRepository;
 import com.kltn.school_hrm.repository.UserRepository;
+import com.kltn.school_hrm.service.LeaveApprovalService;
+import com.kltn.school_hrm.service.LeaveBalanceService;
 import com.kltn.school_hrm.service.LeaveService;
 import com.kltn.school_hrm.utils.LeaveDayCalculator;
 
@@ -33,8 +39,9 @@ public class LeaveServiceImpl implements LeaveService {
     private final LeaveRequestRepository leaveRequestRepository;
     private final EmployeeRepository employeeRepository;
     private final UserRepository userRepository;
-    private final LeaveBalanceRepository leaveBalanceRepository;
+    private final LeaveBalanceService leaveBalanceService;
     private final LeaveDayCalculator leaveDayCalculator;
+    private final LeaveApprovalService leaveApprovalService;
 
     // Các trạng thái không cho phép tạo đơn nghỉ trùng lặp
     private static final List<RequestStatus> BLOCKING_STATUSES = List.of(
@@ -71,17 +78,16 @@ public class LeaveServiceImpl implements LeaveService {
         int leaveDays = leaveDayCalculator.calculate(request.getStartDate(), request.getEndDate());
 
         if (leaveDays <= 0) {
-            throw new BusinessException("Cần phải nghỉ ít nhất 1 ngày làm việc"); 
+            throw new BusinessException("Cần phải nghỉ ít nhất 1 ngày làm việc");
         }
 
-        // Kiểm tra số ngày nghỉ
-        LeaveBalance leaveBalance = leaveBalanceRepository.findByEmployeeIdAndYear(employee.getId(), request.getStartDate().getYear())
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy thông tin số ngày nghỉ"));
-
-        // Kiểm tra có đủ ngày nghỉ không
-        if (leaveBalance.getRemainingDays().compareTo(BigDecimal.valueOf(leaveDays)) < 0) {
-            throw new BusinessException("Bạn không có đủ ngày nghỉ");
+        // Chặn không cho nghỉ qua năm
+        if (request.getStartDate().getYear() != request.getEndDate().getYear()) {
+            throw new BusinessException("Đơn nghỉ không thể kéo dài qua năm");
         }
+
+        // Kiểm tra số ngày nghỉ và giữ chỗ quỹ phép
+        leaveBalanceService.reserve(employee, request.getStartDate().getYear(), leaveDays);
 
         // Tạo đơn nghỉ
         LeaveRequest leaveRequest = LeaveRequest.builder()
@@ -89,14 +95,44 @@ public class LeaveServiceImpl implements LeaveService {
                 .leaveType(request.getLeaveType())
                 .startDate(request.getStartDate())
                 .endDate(request.getEndDate())
+                .totalDays(leaveDays)
                 .reason(request.getReason())
                 .status(RequestStatus.PENDING)
                 .build();
 
-        if (request.getSubstituteTeacherId() != null) {
-            Employee substitute = employeeRepository.findById(request.getSubstituteTeacherId())
-                    .orElseThrow(() -> new RuntimeException("Substitute teacher not found"));
-            leaveRequest.setSubstituteTeacher(substitute);
+        // Tạo danh sách phê duyệt tùy theo số ngày nghỉ
+        if (leaveDays < 2) {
+            // quản lý trực tiếp phê duyệt
+            LeaveApproval manager = LeaveApproval.builder()
+                    .leaveRequest(leaveRequest)
+                    .approver(employee.getDepartment().getManager())
+                    .approvalLevel(1)
+                    .status(ApprovalStatus.PENDING)
+                    .approvedAt(null)
+                    .comment(null)
+                    .build();
+            leaveRequest.setApprovals(List.of(manager));
+        } else {
+            // quản lý trực tiếp phê duyệt
+            LeaveApproval manager = LeaveApproval.builder()
+                    .leaveRequest(leaveRequest)
+                    .approver(employee.getDepartment().getManager())
+                    .approvalLevel(1)
+                    .status(ApprovalStatus.PENDING)
+                    .approvedAt(null)
+                    .comment(null)
+                    .build();
+
+            // hiệu trưởng phê duyệt
+            LeaveApproval principal = LeaveApproval.builder()
+                    .leaveRequest(leaveRequest)
+                    .approver(employee.getDepartment().getParentDepartment().getManager())
+                    .approvalLevel(2)
+                    .status(ApprovalStatus.PENDING)
+                    .approvedAt(null)
+                    .comment(null)
+                    .build();
+            leaveRequest.setApprovals(List.of(manager, principal));
         }
 
         leaveRequest = leaveRequestRepository.save(leaveRequest);
@@ -157,31 +193,39 @@ public class LeaveServiceImpl implements LeaveService {
 
     @Override
     @Transactional
-    public LeaveResponse approveLeaveRequest(Long id, Long approverId) {
+    public LeaveResponse approveLeaveRequest(Long id, LeaveDecisionRequest request) {
         LeaveRequest leaveRequest = leaveRequestRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Leave request not found"));
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn nghỉ"));
 
-        User approver = userRepository.findById(approverId)
-                .orElseThrow(() -> new RuntimeException("Approver user not found"));
+        if (!leaveRequest.getStatus().equals(RequestStatus.PENDING)) {
+            throw new RuntimeException("Đơn nghỉ đã được xử lý");
+        }
 
-        leaveRequest.setStatus(RequestStatus.APPROVED);
-        leaveRequest.setApprover(approver);
+        leaveApprovalService.approveCurrentStep(leaveRequest, request.getApproverId(), request.getComment());
+
+        if (leaveApprovalService.isFullyApproved(leaveRequest)) {
+            leaveRequest.setStatus(RequestStatus.APPROVED);
+
+            leaveBalanceService.consume(
+                    leaveRequest.getEmployee(),
+                    leaveRequest.getStartDate().getYear(),
+                    leaveRequest.getTotalDays());
+        }
 
         leaveRequest = leaveRequestRepository.save(leaveRequest);
+
         return mapToResponse(leaveRequest);
     }
 
     @Override
     @Transactional
-    public LeaveResponse rejectLeaveRequest(Long id, Long approverId) {
+    public LeaveResponse rejectLeaveRequest(Long id, LeaveDecisionRequest request) {
         LeaveRequest leaveRequest = leaveRequestRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Leave request not found"));
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn nghỉ"));
 
-        User approver = userRepository.findById(approverId)
-                .orElseThrow(() -> new RuntimeException("Approver user not found"));
+        leaveApprovalService.rejectCurrentStep(leaveRequest, request.getApproverId(), request.getComment());
 
         leaveRequest.setStatus(RequestStatus.REJECTED);
-        leaveRequest.setApprover(approver);
 
         leaveRequest = leaveRequestRepository.save(leaveRequest);
         return mapToResponse(leaveRequest);
@@ -207,7 +251,10 @@ public class LeaveServiceImpl implements LeaveService {
                 .substituteTeacherId(
                         leaveRequest.getSubstituteTeacher() != null ? leaveRequest.getSubstituteTeacher().getId()
                                 : null)
-                .approverId(leaveRequest.getApprover() != null ? leaveRequest.getApprover().getId() : null)
+                .approverId(leaveRequest.getApprovals().stream()
+                        .map(LeaveApproval::getApprover)
+                        .map(Employee::getId)
+                        .collect(Collectors.toList()))
                 .status(leaveRequest.getStatus())
                 .build();
     }

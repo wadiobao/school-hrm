@@ -6,6 +6,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.kltn.school_hrm.dto.common.ApiResponse;
 import com.kltn.school_hrm.dto.request.LeaveCreateRequest;
+import com.kltn.school_hrm.dto.request.LeaveDecisionRequest;
 import com.kltn.school_hrm.dto.response.LeaveResponse;
 import com.kltn.school_hrm.service.LeaveService;
 
@@ -55,14 +57,14 @@ public class LeaveController {
         return ResponseEntity.ok(ApiResponse.success(leaveService.getLeaveRequestsByEmployeeId(employeeId), "Leave requests retrieved successfully"));
     }
 
-    @PutMapping("/{id}/approve")
-    public ResponseEntity<ApiResponse<LeaveResponse>> approveLeaveRequest(@PathVariable Long id, @RequestParam Long approverId) {
-        return ResponseEntity.ok(ApiResponse.success(leaveService.approveLeaveRequest(id, approverId), "Leave request approved"));
+    @PatchMapping("/{id}/approve")
+    public ResponseEntity<ApiResponse<LeaveResponse>> approveLeaveRequest(@PathVariable Long id, @RequestBody LeaveDecisionRequest request) {
+        return ResponseEntity.ok(ApiResponse.success(leaveService.approveLeaveRequest(id, request), "Leave request approved"));
     }
 
-    @PutMapping("/{id}/reject")
-    public ResponseEntity<ApiResponse<LeaveResponse>> rejectLeaveRequest(@PathVariable Long id, @RequestParam Long approverId) {
-        return ResponseEntity.ok(ApiResponse.success(leaveService.rejectLeaveRequest(id, approverId), "Leave request rejected"));
+    @PatchMapping("/{id}/reject")
+    public ResponseEntity<ApiResponse<LeaveResponse>> rejectLeaveRequest(@PathVariable Long id, @RequestBody LeaveDecisionRequest request) {
+        return ResponseEntity.ok(ApiResponse.success(leaveService.rejectLeaveRequest(id, request), "Leave request rejected"));
     }
 
     @DeleteMapping("/{id}")

@@ -1,6 +1,7 @@
 package com.kltn.school_hrm.dto.response;
 
 import java.time.LocalDate;
+import java.util.List;
 
 import com.kltn.school_hrm.enums.Enums.RequestStatus;
 import com.kltn.school_hrm.enums.Enums.LeaveType;
@@ -22,6 +23,6 @@ public class LeaveResponse {
     private LocalDate endDate;
     private String reason;
     private Long substituteTeacherId;
-    private Long approverId;
+    private List<Long> approverId;
     private RequestStatus status;
 }
