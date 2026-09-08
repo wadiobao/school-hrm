@@ -8,4 +8,6 @@ public interface LeaveBalanceService {
     public void reserve(Employee employee, int year, int days);
 
     public void consume(Employee employee, int year, int days);
+
+    public void release(Employee employee, int year, int days);
 }

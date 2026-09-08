@@ -226,6 +226,10 @@ public class LeaveServiceImpl implements LeaveService {
         leaveApprovalService.rejectCurrentStep(leaveRequest, request.getApproverId(), request.getComment());
 
         leaveRequest.setStatus(RequestStatus.REJECTED);
+        leaveBalanceService.release(
+                leaveRequest.getEmployee(),
+                leaveRequest.getStartDate().getYear(),
+                leaveRequest.getTotalDays());
 
         leaveRequest = leaveRequestRepository.save(leaveRequest);
         return mapToResponse(leaveRequest);

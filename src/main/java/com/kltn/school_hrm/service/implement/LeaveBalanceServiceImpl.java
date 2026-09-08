@@ -53,4 +53,13 @@ public class LeaveBalanceServiceImpl implements LeaveBalanceService {
         balance.setPendingDays(balance.getPendingDays().subtract(BigDecimal.valueOf(days)));
     }
 
+    @Override
+    public void release(Employee employee, int year, int days) {
+        LeaveBalance balance = leaveBalanceRepository
+                .findByEmployeeIdAndYear(employee.getId(), year)
+                .orElseThrow(() -> new BusinessException(
+                        "Không tìm thấy quỹ phép"));
+
+        balance.setPendingDays(balance.getPendingDays().subtract(BigDecimal.valueOf(days)));
+    }
 }
