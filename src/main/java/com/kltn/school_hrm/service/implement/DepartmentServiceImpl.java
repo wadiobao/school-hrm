@@ -21,6 +21,7 @@ import com.kltn.school_hrm.enums.Enums.EmployeeStatus;
 import com.kltn.school_hrm.enums.Enums.RoleCode;
 import com.kltn.school_hrm.exception.custom.BusinessException;
 import com.kltn.school_hrm.exception.custom.ResourceNotFoundException;
+import com.kltn.school_hrm.repository.LeaveApprovalRepository;
 import com.kltn.school_hrm.repository.RoleRepository;
 import com.kltn.school_hrm.repository.UserRepository;
 
@@ -35,6 +36,7 @@ public class DepartmentServiceImpl implements DepartmentService {
     private final EmployeeRepository employeeRepository;
     private final RoleRepository roleRepository;
     private final UserRepository userRepository;
+    private final LeaveApprovalRepository leaveApprovalRepository;
     private final DepartmentChartValidationService departmentChartValidationService;
 
     @Override
@@ -88,31 +90,52 @@ public class DepartmentServiceImpl implements DepartmentService {
 
     @Override
     @Transactional
-    public DepartmentResponse assignDepartmentManager(Long departmentId, Long employeeId) {
+    public DepartmentResponse updateDepartmentManager(Long departmentId, Long employeeId) {
         Department department = departmentRepository.findById(departmentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy phòng ban với id: " + departmentId));
 
-        Employee manager = validateAndGetManager(employeeId);
+        Employee oldManager = department.getManager();
 
-        // Kiểm tra vòng lặp nếu department đã có manager
-        if (department.getManager() != null && !department.getManager().getId().equals(employeeId)) {
-            departmentChartValidationService.validateParentChildAssignment(department.getManager().getId(), employeeId);
+        // 1. Nếu không có gì thay đổi
+        if (oldManager != null && oldManager.getId().equals(employeeId)) {
+            return mapToResponse(department);
+        }
+        if (oldManager == null && employeeId == null) {
+            return mapToResponse(department);
         }
 
-        department.setManager(manager);
-        promoteEmployeeUserRole(manager);
+        // 2. Thu hồi quyền quản lý của sếp cũ (nếu có và không còn quản lý phòng ban khác)
+        if (oldManager != null) {
+            demoteEmployeeUserRole(oldManager, departmentId);
+        }
 
-        department = departmentRepository.save(department);
-        return mapToResponse(department);
-    }
+        // 3. Trường hợp BÃI NHIỆM (employeeId == null)
+        if (employeeId == null) {
+            department.setManager(null);
+        } else {
+            // 4. Trường hợp BỔ NHIỆM / THAY THẾ (employeeId != null)
+            Employee newManager = validateAndGetManager(employeeId);
 
-    @Override
-    @Transactional
-    public DepartmentResponse removeDepartmentManager(Long departmentId) {
-        Department department = departmentRepository.findById(departmentId)
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy phòng ban với id: " + departmentId));
+            // Kiểm tra vòng lặp nếu trước đó đã có sếp cũ
+            if (oldManager != null) {
+                departmentChartValidationService.validateParentChildAssignment(oldManager.getId(), employeeId);
+            }
 
-        department.setManager(null);
+            department.setManager(newManager);
+            promoteEmployeeUserRole(newManager);
+
+            // Đồng bộ phòng ban làm việc của Manager về chính phòng ban đó
+            if (newManager.getDepartment() == null || !newManager.getDepartment().getId().equals(department.getId())) {
+                newManager.setDepartment(department);
+                employeeRepository.save(newManager);
+            }
+
+            // Chuyển giao các đơn nghỉ phép PENDING từ sếp cũ sang sếp mới
+            if (oldManager != null) {
+                leaveApprovalRepository.transferPendingApprovals(oldManager.getId(), newManager.getId());
+            }
+        }
+
         department = departmentRepository.save(department);
         return mapToResponse(department);
     }
@@ -122,7 +145,8 @@ public class DepartmentServiceImpl implements DepartmentService {
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy nhân viên với id: " + employeeId));
 
         if (employee.getStatus() != null && employee.getStatus() != EmployeeStatus.WORKING) {
-            throw new BusinessException("Nhân viên phải đang ở trạng thái 'Đang làm việc' (WORKING) mới có thể đảm nhận vị trí quản lý");
+            throw new BusinessException(
+                    "Nhân viên phải đang ở trạng thái 'Đang làm việc' (WORKING) mới có thể đảm nhận vị trí quản lý");
         }
 
         return employee;
@@ -133,8 +157,8 @@ public class DepartmentServiceImpl implements DepartmentService {
             User user = manager.getUser();
             // Nếu user chưa phải là SUPER_ADMIN hoặc BOARD_OF_DIRECTORS, nâng quyền lên HEAD_OF_DEPARTMENT
             if (user.getRole() == null ||
-                (user.getRole().getRoleCode() != RoleCode.SUPER_ADMIN &&
-                 user.getRole().getRoleCode() != RoleCode.BOARD_OF_DIRECTORS)) {
+                    (user.getRole().getRoleCode() != RoleCode.SUPER_ADMIN &&
+                            user.getRole().getRoleCode() != RoleCode.BOARD_OF_DIRECTORS)) {
                 roleRepository.findByRoleCode(RoleCode.HEAD_OF_DEPARTMENT).ifPresent(role -> {
                     user.setRole(role);
                     userRepository.save(user);
@@ -142,6 +166,23 @@ public class DepartmentServiceImpl implements DepartmentService {
             }
         }
     }
+
+    private void demoteEmployeeUserRole(Employee oldManager, Long currentDepartmentId) {
+        // Chỉ hạ quyền nếu nhân viên không còn quản lý phòng ban nào khác
+        long otherDepartmentsManaged = departmentRepository.countByManagerIdAndIdNot(oldManager.getId(), currentDepartmentId);
+        if (otherDepartmentsManaged == 0 && oldManager.getUser() != null) {
+            User user = oldManager.getUser();
+            // Chỉ hạ quyền nếu role hiện tại là HEAD_OF_DEPARTMENT
+            if (user.getRole() != null && user.getRole().getRoleCode() == RoleCode.HEAD_OF_DEPARTMENT) {
+                RoleCode fallbackRole = (oldManager.getTeacherType() != null) ? RoleCode.TEACHER : RoleCode.STAFF;
+                roleRepository.findByRoleCode(fallbackRole).ifPresent(role -> {
+                    user.setRole(role);
+                    userRepository.save(user);
+                });
+            }
+        }
+    }
+
 
     @Override
     public DepartmentResponse getDepartmentById(Long id) {

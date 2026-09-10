@@ -55,20 +55,22 @@ public class DepartmentController {
         return ResponseEntity.ok(ApiResponse.success(null, "Department deleted successfully"));
     }
 
-    @PostMapping("/{id}/assign-manager/{employeeId}")
-    public ResponseEntity<ApiResponse<DepartmentResponse>> assignDepartmentManager(
+    @PutMapping("/{id}/manager")
+    public ResponseEntity<ApiResponse<DepartmentResponse>> updateDepartmentManager(
+            @PathVariable Long id,
+            @org.springframework.web.bind.annotation.RequestParam(required = false) Long employeeId) {
+        return ResponseEntity.ok(ApiResponse.success(
+                departmentService.updateDepartmentManager(id, employeeId),
+                employeeId != null ? "Assigned department manager successfully" : "Removed department manager successfully"));
+    }
+
+    @PutMapping("/{id}/manager/{employeeId}")
+    public ResponseEntity<ApiResponse<DepartmentResponse>> setDepartmentManager(
             @PathVariable Long id,
             @PathVariable Long employeeId) {
         return ResponseEntity.ok(ApiResponse.success(
-                departmentService.assignDepartmentManager(id, employeeId),
+                departmentService.updateDepartmentManager(id, employeeId),
                 "Assigned department manager successfully"));
-    }
-
-    @PostMapping("/{id}/remove-manager")
-    public ResponseEntity<ApiResponse<DepartmentResponse>> removeDepartmentManager(@PathVariable Long id) {
-        return ResponseEntity.ok(ApiResponse.success(
-                departmentService.removeDepartmentManager(id),
-                "Removed department manager successfully"));
     }
 }
 

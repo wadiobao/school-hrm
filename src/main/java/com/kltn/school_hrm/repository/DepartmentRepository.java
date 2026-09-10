@@ -11,4 +11,5 @@ import com.kltn.school_hrm.entity.core.Department;
 public interface DepartmentRepository extends JpaRepository<Department, Long> {
 	Optional<Department> findByCode(String code);
 	boolean existsByCode(String code);
+	long countByManagerIdAndIdNot(Long managerId, Long departmentId);
 }
