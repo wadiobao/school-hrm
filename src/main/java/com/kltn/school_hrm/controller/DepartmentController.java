@@ -54,4 +54,21 @@ public class DepartmentController {
         departmentService.deleteDepartment(id);
         return ResponseEntity.ok(ApiResponse.success(null, "Department deleted successfully"));
     }
+
+    @PostMapping("/{id}/assign-manager/{employeeId}")
+    public ResponseEntity<ApiResponse<DepartmentResponse>> assignDepartmentManager(
+            @PathVariable Long id,
+            @PathVariable Long employeeId) {
+        return ResponseEntity.ok(ApiResponse.success(
+                departmentService.assignDepartmentManager(id, employeeId),
+                "Assigned department manager successfully"));
+    }
+
+    @PostMapping("/{id}/remove-manager")
+    public ResponseEntity<ApiResponse<DepartmentResponse>> removeDepartmentManager(@PathVariable Long id) {
+        return ResponseEntity.ok(ApiResponse.success(
+                departmentService.removeDepartmentManager(id),
+                "Removed department manager successfully"));
+    }
 }
+

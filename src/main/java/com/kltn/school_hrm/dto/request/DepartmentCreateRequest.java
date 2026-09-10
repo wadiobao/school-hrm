@@ -18,6 +18,4 @@ public class DepartmentCreateRequest {
     private String name;
 
     private Long parentId;
-    
-    private Long managerId;
 }

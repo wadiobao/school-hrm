@@ -15,6 +15,15 @@ import com.kltn.school_hrm.repository.EmployeeRepository;
 import com.kltn.school_hrm.service.DepartmentService;
 import com.kltn.school_hrm.utils.DepartmentChartValidationService;
 
+import com.kltn.school_hrm.entity.core.Role;
+import com.kltn.school_hrm.entity.core.User;
+import com.kltn.school_hrm.enums.Enums.EmployeeStatus;
+import com.kltn.school_hrm.enums.Enums.RoleCode;
+import com.kltn.school_hrm.exception.custom.BusinessException;
+import com.kltn.school_hrm.exception.custom.ResourceNotFoundException;
+import com.kltn.school_hrm.repository.RoleRepository;
+import com.kltn.school_hrm.repository.UserRepository;
+
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -24,6 +33,8 @@ public class DepartmentServiceImpl implements DepartmentService {
 
     private final DepartmentRepository departmentRepository;
     private final EmployeeRepository employeeRepository;
+    private final RoleRepository roleRepository;
+    private final UserRepository userRepository;
     private final DepartmentChartValidationService departmentChartValidationService;
 
     @Override
@@ -44,11 +55,7 @@ public class DepartmentServiceImpl implements DepartmentService {
             department.setParentDepartment(parent);
         }
 
-        if (request.getManagerId() != null) {
-            Employee manager = employeeRepository.findById(request.getManagerId())
-                    .orElseThrow(() -> new RuntimeException("Manager employee not found"));
-            department.setManager(manager);
-        }
+        department.setManager(null);
 
         department = departmentRepository.save(department);
         return mapToResponse(department);
@@ -75,23 +82,65 @@ public class DepartmentServiceImpl implements DepartmentService {
             department.setParentDepartment(null);
         }
 
-        if (request.getManagerId() != null) {
-            Employee manager = employeeRepository.findById(request.getManagerId())
-                    .orElseThrow(() -> new RuntimeException("Manager employee not found"));
+        department = departmentRepository.save(department);
+        return mapToResponse(department);
+    }
 
-            // Nếu đã có sếp cũ, check cycle trước khi đổi
-            if (department.getManager() != null) {
-                departmentChartValidationService.validateParentChildAssignment(department.getManager().getId(),
-                        request.getManagerId());
-            }
+    @Override
+    @Transactional
+    public DepartmentResponse assignDepartmentManager(Long departmentId, Long employeeId) {
+        Department department = departmentRepository.findById(departmentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy phòng ban với id: " + departmentId));
 
-            department.setManager(manager);
-        } else {
-            department.setManager(null);
+        Employee manager = validateAndGetManager(employeeId);
+
+        // Kiểm tra vòng lặp nếu department đã có manager
+        if (department.getManager() != null && !department.getManager().getId().equals(employeeId)) {
+            departmentChartValidationService.validateParentChildAssignment(department.getManager().getId(), employeeId);
         }
+
+        department.setManager(manager);
+        promoteEmployeeUserRole(manager);
 
         department = departmentRepository.save(department);
         return mapToResponse(department);
+    }
+
+    @Override
+    @Transactional
+    public DepartmentResponse removeDepartmentManager(Long departmentId) {
+        Department department = departmentRepository.findById(departmentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy phòng ban với id: " + departmentId));
+
+        department.setManager(null);
+        department = departmentRepository.save(department);
+        return mapToResponse(department);
+    }
+
+    private Employee validateAndGetManager(Long employeeId) {
+        Employee employee = employeeRepository.findById(employeeId)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy nhân viên với id: " + employeeId));
+
+        if (employee.getStatus() != null && employee.getStatus() != EmployeeStatus.WORKING) {
+            throw new BusinessException("Nhân viên phải đang ở trạng thái 'Đang làm việc' (WORKING) mới có thể đảm nhận vị trí quản lý");
+        }
+
+        return employee;
+    }
+
+    private void promoteEmployeeUserRole(Employee manager) {
+        if (manager.getUser() != null) {
+            User user = manager.getUser();
+            // Nếu user chưa phải là SUPER_ADMIN hoặc BOARD_OF_DIRECTORS, nâng quyền lên HEAD_OF_DEPARTMENT
+            if (user.getRole() == null ||
+                (user.getRole().getRoleCode() != RoleCode.SUPER_ADMIN &&
+                 user.getRole().getRoleCode() != RoleCode.BOARD_OF_DIRECTORS)) {
+                roleRepository.findByRoleCode(RoleCode.HEAD_OF_DEPARTMENT).ifPresent(role -> {
+                    user.setRole(role);
+                    userRepository.save(user);
+                });
+            }
+        }
     }
 
     @Override

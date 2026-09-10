@@ -50,15 +50,30 @@ public class DepartmentChartValidationService {
         Long checkManagerId = targetManagerId;
 
         while (checkManagerId != null) {
+
+            Long currentId = checkManagerId;
+
             // Phát hiện điểm lặp
-            if (checkManagerId.equals(employeeId)) {
+            if (currentId.equals(employeeId)) {
                 return true;
             }
 
             // Leo lên Sếp cấp cao hơn
-            Employee checkEmployee = employeeRepository.findById(checkManagerId)
-                    .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy nhân viên với id "));
-            checkManagerId = checkEmployee.getDepartment().getManager().getId();
+            Employee checkEmployee = employeeRepository.findById(currentId)
+                    .orElseThrow(
+                            () -> new ResourceNotFoundException("Không tìm thấy nhân viên với id: " + checkManagerId));
+
+            if (checkEmployee.getDepartment() == null || checkEmployee.getDepartment().getManager() == null) {
+                break;
+            }
+
+            Long nextManagerId = checkEmployee.getDepartment().getManager().getId();
+            // Nếu chính nhân viên này là manager của phòng ban mình thì không leo tiếp để
+            // tránh lặp vô tận
+            if (nextManagerId.equals(currentId)) {
+                break;
+            }
+            currentId = nextManagerId;
         }
 
         return false; // An toàn
