@@ -1,0 +1,307 @@
+﻿<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>School HRM - Quản lý Chấm công</title>
+</head>
+<html th:replace="~{layout/main-layout :: layout(~{::content}, ~{::scripts}, 'Quản lý Chấm công')}">
+
+    <div th:fragment="content">
+        <!-- Date Selector & Action Toolbar -->
+        <div class="card mb-4 border-0 shadow-sm">
+            <div class="card-body">
+                <div class="row g-3 align-items-center">
+                    <div class="col-md-4">
+                        <div class="input-group">
+                            <span class="input-group-text bg-white"><i class="bi bi-calendar-event text-primary"></i></span>
+                            <input type="date" id="selected-workDate" class="form-control" onchange="loadAttendances()">
+                        </div>
+                    </div>
+                    <div class="col-md-8 d-flex justify-content-end gap-2">
+                        <button class="btn btn-outline-secondary" onclick="setToday()">
+                            <i class="bi bi-calendar2-day"></i> Hôm nay
+                        </button>
+                        <button class="btn btn-primary" onclick="openAddAttendanceModal()">
+                            <i class="bi bi-plus-lg me-1"></i> Ghi nhận Chấm công
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Attendance Table Card -->
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Nhân viên</th>
+                                <th>Mã NV</th>
+                                <th>Ngày làm việc</th>
+                                <th>Giờ Check-in</th>
+                                <th>Giờ Check-out</th>
+                                <th>Thiết bị / Phương thức</th>
+                                <th>Trạng thái</th>
+                                <th class="text-end pe-4">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody id="attendance-table-body">
+                            <tr>
+                                <td colspan="8" class="text-center py-5 text-muted">Đang tải dữ liệu...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add / Edit Attendance Modal -->
+        <div class="modal fade" id="attendanceModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title fw-bold" id="attModalTitle">Ghi nhận Chấm công</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="attendanceForm">
+                            <input type="hidden" id="att-id">
+                            <div class="mb-3">
+                                <label class="form-label required">Nhân viên *</label>
+                                <select id="att-employeeId" class="form-select" required>
+                                    <option value="">-- Chọn nhân sự --</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label required">Ngày làm việc *</label>
+                                <input type="date" id="att-workDate" class="form-control" required>
+                            </div>
+                            <div class="row g-2 mb-3">
+                                <div class="col-6">
+                                    <label class="form-label">Giờ vào (Check-in)</label>
+                                    <input type="time" id="att-checkIn" class="form-control">
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label">Giờ ra (Check-out)</label>
+                                    <input type="time" id="att-checkOut" class="form-control">
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Trạng thái chấm công</label>
+                                <select id="att-status" class="form-select">
+                                    <option value="PRESENT">Có mặt (PRESENT)</option>
+                                    <option value="LATE">Đi trễ (LATE)</option>
+                                    <option value="EARLY_LEAVE">Về sớm (EARLY_LEAVE)</option>
+                                    <option value="ABSENT">Vắng mặt (ABSENT)</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Thiết bị / Nguồn</label>
+                                <input type="text" id="att-deviceId" class="form-control" placeholder="VD: WEB_MANUAL, FINGERPRINT_01">
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                        <button type="button" class="btn btn-primary" onclick="saveAttendance()">Lưu ghi nhận</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Delete Modal -->
+        <div class="modal fade" id="deleteAttModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-sm modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-body text-center p-4">
+                        <i class="bi bi-exclamation-triangle text-danger" style="font-size: 3rem;"></i>
+                        <h5 class="mt-3">Xác nhận xóa</h5>
+                        <p class="text-muted small">Bạn có chắc chắn muốn xóa bản ghi chấm công này?</p>
+                        <div class="d-flex justify-content-center gap-2 mt-4">
+                            <button type="button" class="btn btn-light" data-bs-dismiss="modal">Hủy</button>
+                            <button type="button" class="btn btn-danger" id="confirm-delete-att-btn">Xóa</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div th:fragment="scripts">
+        <script>
+            let employeeList = [];
+
+            document.addEventListener('DOMContentLoaded', async () => {
+                setToday();
+                await loadEmployees();
+                loadAttendances();
+            });
+
+            function setToday() {
+                const today = new Date().toISOString().split('T')[0];
+                document.getElementById('selected-workDate').value = today;
+                loadAttendances();
+            }
+
+            async function loadEmployees() {
+                try {
+                    const res = await fetchApi('/api/v1/employees?size=100');
+                    if (res && res.data && res.data.content) {
+                        employeeList = res.data.content;
+                        const sel = document.getElementById('att-employeeId');
+                        employeeList.forEach(emp => {
+                            sel.innerHTML += `<option value="${emp.id}">${emp.fullName} (${emp.employeeCode})</option>`;
+                        });
+                    }
+                } catch (e) {
+                    console.error('Error loading employees', e);
+                }
+            }
+
+            async function loadAttendances() {
+                const workDate = document.getElementById('selected-workDate').value;
+                const tbody = document.getElementById('attendance-table-body');
+                if (!workDate) return;
+
+                tbody.innerHTML = '<tr><td colspan="8" class="text-center py-5 text-muted">Đang tải dữ liệu chấm công...</td></tr>';
+
+                try {
+                    const res = await fetchApi(`/api/v1/attendances/date?workDate=${workDate}`);
+                    if (res && res.data) {
+                        const attendances = res.data;
+                        if (attendances.length === 0) {
+                            tbody.innerHTML = '<tr><td colspan="8" class="text-center py-5 text-muted">Không có bản ghi chấm công nào vào ngày này</td></tr>';
+                            return;
+                        }
+
+                        tbody.innerHTML = attendances.map(att => {
+                            let badgeClass = 'bg-success';
+                            let statusText = 'Có mặt';
+                            if (att.status === 'LATE') {
+                                badgeClass = 'bg-warning text-dark';
+                                statusText = 'Đi trễ';
+                            } else if (att.status === 'ABSENT') {
+                                badgeClass = 'bg-danger';
+                                statusText = 'Vắng mặt';
+                            } else if (att.status === 'EARLY_LEAVE') {
+                                badgeClass = 'bg-secondary';
+                                statusText = 'Về sớm';
+                            }
+
+                            return `
+                                <tr>
+                                    <td class="fw-bold">${att.employeeName || 'N/A'}</td>
+                                    <td><span class="badge bg-light text-dark border">${att.employeeCode || 'N/A'}</span></td>
+                                    <td>${formatDate(att.workDate)}</td>
+                                    <td><span class="badge bg-light text-success border"><i class="bi bi-box-arrow-in-right me-1"></i>${formatTime(att.checkIn)}</span></td>
+                                    <td><span class="badge bg-light text-danger border"><i class="bi bi-box-arrow-right me-1"></i>${formatTime(att.checkOut)}</span></td>
+                                    <td><small class="text-muted">${att.deviceId || 'WEB_MANUAL'}</small></td>
+                                    <td><span class="badge ${badgeClass}">${statusText}</span></td>
+                                    <td class="text-end pe-4">
+                                        <button class="btn btn-sm btn-outline-primary me-1" title="Sửa" onclick="editAttendance(${att.id})">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-danger" title="Xóa" onclick="confirmDeleteAtt(${att.id})">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            `;
+                        }).join('');
+                    }
+                } catch (e) {
+                    console.error('Error loading attendances', e);
+                    tbody.innerHTML = '<tr><td colspan="8" class="text-center py-5 text-danger">Có lỗi khi tải dữ liệu chấm công</td></tr>';
+                }
+            }
+
+            function openAddAttendanceModal() {
+                document.getElementById('attendanceForm').reset();
+                document.getElementById('att-id').value = '';
+                document.getElementById('att-workDate').value = document.getElementById('selected-workDate').value;
+                document.getElementById('att-deviceId').value = 'WEB_MANUAL';
+                document.getElementById('attModalTitle').textContent = 'Ghi nhận Chấm công';
+                openModal('attendanceModal');
+            }
+
+            async function editAttendance(id) {
+                try {
+                    const res = await fetchApi(`/api/v1/attendances/${id}`);
+                    if (res && res.data) {
+                        const att = res.data;
+                        document.getElementById('att-id').value = att.id;
+                        document.getElementById('att-employeeId').value = att.employeeId;
+                        document.getElementById('att-workDate').value = att.workDate;
+                        document.getElementById('att-checkIn').value = att.checkIn ? att.checkIn.substring(0, 5) : '';
+                        document.getElementById('att-checkOut').value = att.checkOut ? att.checkOut.substring(0, 5) : '';
+                        document.getElementById('att-status').value = att.status || 'PRESENT';
+                        document.getElementById('att-deviceId').value = att.deviceId || 'WEB_MANUAL';
+
+                        document.getElementById('attModalTitle').textContent = 'Chỉnh sửa Chấm công';
+                        openModal('attendanceModal');
+                    }
+                } catch (e) {
+                    console.error('Error fetching att', e);
+                }
+            }
+
+            async function saveAttendance() {
+                const id = document.getElementById('att-id').value;
+                const checkInVal = document.getElementById('att-checkIn').value;
+                const checkOutVal = document.getElementById('att-checkOut').value;
+
+                const payload = {
+                    employeeId: parseInt(document.getElementById('att-employeeId').value),
+                    workDate: document.getElementById('att-workDate').value,
+                    checkIn: checkInVal ? (checkInVal.length === 5 ? checkInVal + ':00' : checkInVal) : null,
+                    checkOut: checkOutVal ? (checkOutVal.length === 5 ? checkOutVal + ':00' : checkOutVal) : null,
+                    status: document.getElementById('att-status').value,
+                    deviceId: document.getElementById('att-deviceId').value.trim()
+                };
+
+                if (!payload.employeeId || !payload.workDate) {
+                    showAlert('Vui lòng chọn nhân viên và ngày làm việc', 'warning');
+                    return;
+                }
+
+                try {
+                    if (id) {
+                        await fetchApi(`/api/v1/attendances/${id}`, {
+                            method: 'PUT',
+                            body: JSON.stringify(payload)
+                        });
+                        showAlert('Cập nhật chấm công thành công!', 'success');
+                    } else {
+                        await fetchApi('/api/v1/attendances', {
+                            method: 'POST',
+                            body: JSON.stringify(payload)
+                        });
+                        showAlert('Ghi nhận chấm công thành công!', 'success');
+                    }
+                    closeModal('attendanceModal');
+                    loadAttendances();
+                } catch (e) {
+                    console.error('Save att error', e);
+                }
+            }
+
+            let deleteTargetAttId = null;
+            function confirmDeleteAtt(id) {
+                deleteTargetAttId = id;
+                const btn = document.getElementById('confirm-delete-att-btn');
+                btn.onclick = async () => {
+                    try {
+                        await fetchApi(`/api/v1/attendances/${deleteTargetAttId}`, { method: 'DELETE' });
+                        showAlert('Đã xóa bản ghi chấm công!', 'success');
+                        closeModal('deleteAttModal');
+                        loadAttendances();
+                    } catch (e) {
+                        console.error('Delete att error', e);
+                    }
+                };
+                openModal('deleteAttModal');
+            }
+        </script>
+    </div>
+</body>
+</html>

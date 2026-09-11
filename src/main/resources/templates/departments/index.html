@@ -1,0 +1,298 @@
+﻿<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>School HRM - Quản lý Phòng ban / Khoa</title>
+</head>
+<html th:replace="~{layout/main-layout :: layout(~{::content}, ~{::scripts}, 'Quản lý Phòng ban')}">
+
+    <div th:fragment="content">
+        <!-- Action Toolbar -->
+        <div class="card mb-4 border-0 shadow-sm">
+            <div class="card-body d-flex justify-content-between align-items-center">
+                <div class="text-muted">
+                    <i class="bi bi-info-circle me-1"></i> Quản lý các đơn vị phòng ban, khoa chuyên môn và trưởng bộ phận.
+                </div>
+                <button class="btn btn-primary" onclick="openAddDepartmentModal()">
+                    <i class="bi bi-plus-lg me-1"></i> Thêm Phòng ban mới
+                </button>
+            </div>
+        </div>
+
+        <!-- Department Table Card -->
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Mã Phòng ban</th>
+                                <th>Tên Phòng ban / Khoa</th>
+                                <th>Đơn vị cấp trên</th>
+                                <th>Trưởng bộ phận</th>
+                                <th class="text-end pe-4">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody id="department-table-body">
+                            <tr>
+                                <td colspan="5" class="text-center py-5 text-muted">Đang tải dữ liệu...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add / Edit Department Modal -->
+        <div class="modal fade" id="departmentModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title fw-bold" id="deptModalTitle">Thêm mới Phòng ban</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="departmentForm">
+                            <input type="hidden" id="dept-id">
+                            <div class="mb-3">
+                                <label class="form-label required">Mã Phòng ban / Khoa *</label>
+                                <input type="text" id="dept-code" class="form-control" required placeholder="VD: CNTT, P-DT">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label required">Tên Phòng ban / Khoa *</label>
+                                <input type="text" id="dept-name" class="form-control" required placeholder="VD: Khoa Công Nghệ Thông Tin">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Đơn vị trực thuộc (Phòng ban cha nếu có)</label>
+                                <select id="dept-parentId" class="form-select">
+                                    <option value="">-- Không có (Đơn vị độc lập) --</option>
+                                </select>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                        <button type="button" class="btn btn-primary" onclick="saveDepartment()">Lưu thông tin</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Assign Manager Modal -->
+        <div class="modal fade" id="managerModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title fw-bold">Phân công Trưởng đơn vị</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" id="manager-dept-id">
+                        <div class="mb-3">
+                            <label class="form-label">Chọn nhân sự phụ trách làm Trưởng phòng</label>
+                            <select id="manager-employeeId" class="form-select">
+                                <option value="">-- Hủy phân công / Bỏ trống --</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                        <button type="button" class="btn btn-primary" onclick="saveManager()">Cập nhật</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Delete Modal -->
+        <div class="modal fade" id="deleteDeptModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-sm modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-body text-center p-4">
+                        <i class="bi bi-exclamation-triangle text-danger" style="font-size: 3rem;"></i>
+                        <h5 class="mt-3">Xác nhận xóa</h5>
+                        <p class="text-muted small">Bạn có chắc chắn muốn xóa phòng ban này?</p>
+                        <div class="d-flex justify-content-center gap-2 mt-4">
+                            <button type="button" class="btn btn-light" data-bs-dismiss="modal">Hủy</button>
+                            <button type="button" class="btn btn-danger" id="confirm-delete-dept-btn">Xóa</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div th:fragment="scripts">
+        <script>
+            let departmentList = [];
+            let employeeList = [];
+
+            document.addEventListener('DOMContentLoaded', () => {
+                loadDepartments();
+                loadEmployeesForManager();
+            });
+
+            async function loadEmployeesForManager() {
+                try {
+                    const res = await fetchApi('/api/v1/employees?size=100');
+                    if (res && res.data && res.data.content) {
+                        employeeList = res.data.content;
+                        const sel = document.getElementById('manager-employeeId');
+                        employeeList.forEach(emp => {
+                            sel.innerHTML += `<option value="${emp.id}">${emp.fullName} (${emp.employeeCode})</option>`;
+                        });
+                    }
+                } catch (e) {
+                    console.error('Error loading employees for manager', e);
+                }
+            }
+
+            async function loadDepartments() {
+                const tbody = document.getElementById('department-table-body');
+                try {
+                    const res = await fetchApi('/api/v1/departments');
+                    if (res && res.data) {
+                        departmentList = res.data;
+                        if (departmentList.length === 0) {
+                            tbody.innerHTML = '<tr><td colspan="5" class="text-center py-5 text-muted">Chưa có phòng ban nào</td></tr>';
+                            return;
+                        }
+
+                        tbody.innerHTML = departmentList.map(dept => `
+                            <tr>
+                                <td><span class="badge bg-light text-primary border">${dept.code}</span></td>
+                                <td class="fw-semibold text-dark">${dept.name}</td>
+                                <td>${dept.parentName ? `<span class="badge bg-secondary">${dept.parentName}</span>` : '<span class="text-muted small">Cấp cao nhất</span>'}</td>
+                                <td>
+                                    ${dept.managerName ? 
+                                        `<span class="badge bg-success bg-opacity-10 text-success border border-success"><i class="bi bi-person-badge me-1"></i>${dept.managerName}</span>` : 
+                                        '<span class="text-muted small">Chưa phân công</span>'}
+                                </td>
+                                <td class="text-end pe-4">
+                                    <button class="btn btn-sm btn-outline-info me-1" title="Phân công Trưởng đơn vị" onclick="openAssignManagerModal(${dept.id}, ${dept.managerId || 'null'})">
+                                        <i class="bi bi-person-check"></i> Bổ nhiệm
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-primary me-1" title="Sửa" onclick="editDepartment(${dept.id})">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger" title="Xóa" onclick="confirmDeleteDept(${dept.id})">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        `).join('');
+                    }
+                } catch (e) {
+                    console.error('Error loading departments', e);
+                    tbody.innerHTML = '<tr><td colspan="5" class="text-center py-5 text-danger">Có lỗi khi tải danh sách phòng ban</td></tr>';
+                }
+            }
+
+            function openAddDepartmentModal() {
+                document.getElementById('departmentForm').reset();
+                document.getElementById('dept-id').value = '';
+                document.getElementById('deptModalTitle').textContent = 'Thêm mới Phòng ban';
+                populateParentSelect();
+                openModal('departmentModal');
+            }
+
+            function populateParentSelect(excludeId = null) {
+                const parentSel = document.getElementById('dept-parentId');
+                parentSel.innerHTML = '<option value="">-- Không có (Đơn vị độc lập) --</option>';
+                departmentList.filter(d => d.id !== excludeId).forEach(d => {
+                    parentSel.innerHTML += `<option value="${d.id}">${d.name} (${d.code})</option>`;
+                });
+            }
+
+            async function editDepartment(id) {
+                try {
+                    const res = await fetchApi(`/api/v1/departments/${id}`);
+                    if (res && res.data) {
+                        const dept = res.data;
+                        document.getElementById('dept-id').value = dept.id;
+                        document.getElementById('dept-code').value = dept.code;
+                        document.getElementById('dept-name').value = dept.name;
+                        populateParentSelect(dept.id);
+                        document.getElementById('dept-parentId').value = dept.parentId || '';
+                        document.getElementById('deptModalTitle').textContent = 'Chỉnh sửa Phòng ban';
+                        openModal('departmentModal');
+                    }
+                } catch (e) {
+                    console.error('Error edit dept', e);
+                }
+            }
+
+            async function saveDepartment() {
+                const id = document.getElementById('dept-id').value;
+                const parentIdVal = document.getElementById('dept-parentId').value;
+                const payload = {
+                    code: document.getElementById('dept-code').value.trim(),
+                    name: document.getElementById('dept-name').value.trim(),
+                    parentId: parentIdVal ? parseInt(parentIdVal) : null
+                };
+
+                if (!payload.code || !payload.name) {
+                    showAlert('Vui lòng nhập đầy đủ Mã và Tên phòng ban', 'warning');
+                    return;
+                }
+
+                try {
+                    if (id) {
+                        await fetchApi(`/api/v1/departments/${id}`, {
+                            method: 'PUT',
+                            body: JSON.stringify(payload)
+                        });
+                        showAlert('Cập nhật phòng ban thành công!', 'success');
+                    } else {
+                        await fetchApi('/api/v1/departments', {
+                            method: 'POST',
+                            body: JSON.stringify(payload)
+                        });
+                        showAlert('Thêm mới phòng ban thành công!', 'success');
+                    }
+                    closeModal('departmentModal');
+                    loadDepartments();
+                } catch (e) {
+                    console.error('Save dept error', e);
+                }
+            }
+
+            function openAssignManagerModal(deptId, currentManagerId) {
+                document.getElementById('manager-dept-id').value = deptId;
+                document.getElementById('manager-employeeId').value = currentManagerId || '';
+                openModal('managerModal');
+            }
+
+            async function saveManager() {
+                const deptId = document.getElementById('manager-dept-id').value;
+                const empId = document.getElementById('manager-employeeId').value;
+                try {
+                    let url = `/api/v1/departments/${deptId}/manager`;
+                    if (empId) url += `?employeeId=${empId}`;
+                    await fetchApi(url, { method: 'PUT' });
+                    showAlert('Cập nhật Trưởng bộ phận thành công!', 'success');
+                    closeModal('managerModal');
+                    loadDepartments();
+                } catch (e) {
+                    console.error('Save manager error', e);
+                }
+            }
+
+            let deleteTargetDeptId = null;
+            function confirmDeleteDept(id) {
+                deleteTargetDeptId = id;
+                const btn = document.getElementById('confirm-delete-dept-btn');
+                btn.onclick = async () => {
+                    try {
+                        await fetchApi(`/api/v1/departments/${deleteTargetDeptId}`, { method: 'DELETE' });
+                        showAlert('Đã xóa phòng ban!', 'success');
+                        closeModal('deleteDeptModal');
+                        loadDepartments();
+                    } catch (e) {
+                        console.error('Delete dept error', e);
+                    }
+                };
+                openModal('deleteDeptModal');
+            }
+        </script>
+    </div>
+</body>
+</html>

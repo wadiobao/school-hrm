@@ -1,0 +1,329 @@
+﻿<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>School HRM - Quản lý Nghỉ phép</title>
+</head>
+<html th:replace="~{layout/main-layout :: layout(~{::content}, ~{::scripts}, 'Quản lý Nghỉ phép')}">
+
+    <div th:fragment="content">
+        <!-- Action Toolbar -->
+        <div class="card mb-4 border-0 shadow-sm">
+            <div class="card-body d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="btn-group" role="group">
+                        <button type="button" class="btn btn-outline-primary active" id="btn-filter-all" onclick="filterLeaveStatus('ALL')">Tất cả</button>
+                        <button type="button" class="btn btn-outline-warning" id="btn-filter-pending" onclick="filterLeaveStatus('PENDING')">Chờ duyệt</button>
+                        <button type="button" class="btn btn-outline-success" id="btn-filter-approved" onclick="filterLeaveStatus('APPROVED')">Đã duyệt</button>
+                        <button type="button" class="btn btn-outline-danger" id="btn-filter-rejected" onclick="filterLeaveStatus('REJECTED')">Từ chối</button>
+                    </div>
+                </div>
+                <button class="btn btn-primary" onclick="openCreateLeaveModal()">
+                    <i class="bi bi-plus-lg me-1"></i> Tạo đơn xin nghỉ phép
+                </button>
+            </div>
+        </div>
+
+        <!-- Leave Requests Table Card -->
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Nhân viên / Giáo viên</th>
+                                <th>Loại nghỉ phép</th>
+                                <th>Thời gian nghỉ</th>
+                                <th>Lý do</th>
+                                <th>Người dạy thay</th>
+                                <th>Trạng thái</th>
+                                <th class="text-end pe-4">Xử lý</th>
+                            </tr>
+                        </thead>
+                        <tbody id="leave-table-body">
+                            <tr>
+                                <td colspan="7" class="text-center py-5 text-muted">Đang tải dữ liệu...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Create Leave Request Modal -->
+        <div class="modal fade" id="leaveModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title fw-bold">Tạo đơn xin nghỉ phép</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="leaveForm">
+                            <div class="mb-3">
+                                <label class="form-label required">Nhân viên / Giáo viên xin nghỉ *</label>
+                                <select id="leave-employeeId" class="form-select" required>
+                                    <option value="">-- Chọn nhân viên --</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label required">Loại nghỉ phép *</label>
+                                <select id="leave-type" class="form-select" required>
+                                    <option value="ANNUAL">Nghỉ phép năm (ANNUAL)</option>
+                                    <option value="SICK">Nghỉ ốm (SICK)</option>
+                                    <option value="MATERNITY">Nghỉ thai sản (MATERNITY)</option>
+                                    <option value="UNPAID">Nghỉ không hưởng lương (UNPAID)</option>
+                                    <option value="BEREAVEMENT">Nghỉ tang lễ (BEREAVEMENT)</option>
+                                    <option value="WEDDING">Nghỉ cưới (WEDDING)</option>
+                                </select>
+                            </div>
+                            <div class="row g-2 mb-3">
+                                <div class="col-6">
+                                    <label class="form-label required">Từ ngày *</label>
+                                    <input type="date" id="leave-startDate" class="form-control" required>
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label required">Đến ngày *</label>
+                                    <input type="date" id="leave-endDate" class="form-control" required>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Giáo viên hỗ trợ dạy thay (nếu có)</label>
+                                <select id="leave-substituteTeacherId" class="form-select">
+                                    <option value="">-- Không có --</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Lý do xin nghỉ</label>
+                                <textarea id="leave-reason" rows="3" class="form-control" placeholder="Trình bày lý do xin nghỉ..."></textarea>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                        <button type="button" class="btn btn-primary" onclick="submitLeaveRequest()">Gửi đơn</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Approval / Rejection Decision Modal -->
+        <div class="modal fade" id="decisionModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title fw-bold" id="decisionModalTitle">Xử lý đơn nghỉ phép</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" id="decision-leave-id">
+                        <input type="hidden" id="decision-action-type">
+                        <div class="mb-3">
+                            <label class="form-label required">Người phê duyệt (Manager/Admin ID) *</label>
+                            <select id="decision-approverId" class="form-select" required>
+                                <option value="">-- Chọn người phê duyệt --</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Ghi chú / Ý kiến xử lý</label>
+                            <textarea id="decision-comment" rows="3" class="form-control" placeholder="Ghi chú thêm nếu có..."></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                        <button type="button" class="btn btn-primary" id="btn-confirm-decision" onclick="submitDecision()">Xác nhận</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div th:fragment="scripts">
+        <script>
+            let allLeaveRequests = [];
+            let currentFilterStatus = 'ALL';
+            let employeeList = [];
+
+            document.addEventListener('DOMContentLoaded', async () => {
+                await loadEmployees();
+                loadLeaveRequests();
+            });
+
+            async function loadEmployees() {
+                try {
+                    const res = await fetchApi('/api/v1/employees?size=100');
+                    if (res && res.data && res.data.content) {
+                        employeeList = res.data.content;
+                        const selEmp = document.getElementById('leave-employeeId');
+                        const selSub = document.getElementById('leave-substituteTeacherId');
+                        const selApprover = document.getElementById('decision-approverId');
+
+                        employeeList.forEach(emp => {
+                            const opt = `<option value="${emp.id}">${emp.fullName} (${emp.employeeCode})</option>`;
+                            selEmp.innerHTML += opt;
+                            selSub.innerHTML += opt;
+                            selApprover.innerHTML += opt;
+                        });
+                    }
+                } catch (e) {
+                    console.error('Error loading employees for leaves', e);
+                }
+            }
+
+            async function loadLeaveRequests() {
+                const tbody = document.getElementById('leave-table-body');
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center py-5 text-muted">Đang tải danh sách đơn nghỉ...</td></tr>';
+
+                try {
+                    const res = await fetchApi('/api/v1/leaves');
+                    if (res && res.data) {
+                        allLeaveRequests = res.data;
+                        renderLeaveTable();
+                    }
+                } catch (e) {
+                    console.error('Error loading leaves', e);
+                    tbody.innerHTML = '<tr><td colspan="7" class="text-center py-5 text-danger">Có lỗi khi tải danh sách đơn nghỉ phép</td></tr>';
+                }
+            }
+
+            function filterLeaveStatus(status) {
+                currentFilterStatus = status;
+                document.querySelectorAll('.btn-group .btn').forEach(b => b.classList.remove('active'));
+                if (status === 'ALL') document.getElementById('btn-filter-all').classList.add('active');
+                if (status === 'PENDING') document.getElementById('btn-filter-pending').classList.add('active');
+                if (status === 'APPROVED') document.getElementById('btn-filter-approved').classList.add('active');
+                if (status === 'REJECTED') document.getElementById('btn-filter-rejected').classList.add('active');
+                renderLeaveTable();
+            }
+
+            function renderLeaveTable() {
+                const tbody = document.getElementById('leave-table-body');
+                const list = currentFilterStatus === 'ALL' 
+                    ? allLeaveRequests 
+                    : allLeaveRequests.filter(l => l.status === currentFilterStatus);
+
+                if (list.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="7" class="text-center py-5 text-muted">Không có đơn nghỉ phép nào trong mục này</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = list.map(req => {
+                    let statusBadge = '<span class="badge bg-warning text-dark">Chờ duyệt</span>';
+                    if (req.status === 'APPROVED') statusBadge = '<span class="badge bg-success">Đã duyệt</span>';
+                    if (req.status === 'REJECTED') statusBadge = '<span class="badge bg-danger">Từ chối</span>';
+
+                    const isPending = req.status === 'PENDING';
+
+                    return `
+                        <tr>
+                            <td>
+                                <div class="fw-bold">${req.employeeName || 'N/A'}</div>
+                                <small class="text-muted">${req.employeeCode || ''}</small>
+                            </td>
+                            <td><span class="badge bg-light text-primary border">${req.leaveType}</span></td>
+                            <td>
+                                <div>${formatDate(req.startDate)} <i class="bi bi-arrow-right mx-1"></i> ${formatDate(req.endDate)}</div>
+                            </td>
+                            <td><small class="text-muted">${req.reason || 'Không có ghi chú'}</small></td>
+                            <td>${req.substituteTeacherName ? `<span class="badge bg-info bg-opacity-10 text-dark border">${req.substituteTeacherName}</span>` : '<span class="text-muted small">Không</span>'}</td>
+                            <td>${statusBadge}</td>
+                            <td class="text-end pe-4">
+                                ${isPending ? `
+                                    <button class="btn btn-sm btn-success me-1" title="Phê duyệt" onclick="openDecisionModal(${req.id}, 'APPROVE')">
+                                        <i class="bi bi-check-lg"></i> Duyệt
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger" title="Từ chối" onclick="openDecisionModal(${req.id}, 'REJECT')">
+                                        <i class="bi bi-x-lg"></i> Từ chối
+                                    </button>
+                                ` : `
+                                    <span class="text-muted small">Đã hoàn tất</span>
+                                `}
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+
+            function openCreateLeaveModal() {
+                document.getElementById('leaveForm').reset();
+                openModal('leaveModal');
+            }
+
+            async function submitLeaveRequest() {
+                const subIdVal = document.getElementById('leave-substituteTeacherId').value;
+                const payload = {
+                    employeeId: parseInt(document.getElementById('leave-employeeId').value),
+                    leaveType: document.getElementById('leave-type').value,
+                    startDate: document.getElementById('leave-startDate').value,
+                    endDate: document.getElementById('leave-endDate').value,
+                    reason: document.getElementById('leave-reason').value.trim(),
+                    substituteTeacherId: subIdVal ? parseInt(subIdVal) : null
+                };
+
+                if (!payload.employeeId || !payload.leaveType || !payload.startDate || !payload.endDate) {
+                    showAlert('Vui lòng điền đủ các trường bắt buộc (*)', 'warning');
+                    return;
+                }
+
+                try {
+                    await fetchApi('/api/v1/leaves', {
+                        method: 'POST',
+                        body: JSON.stringify(payload)
+                    });
+                    showAlert('Đã gửi đơn xin nghỉ phép thành công!', 'success');
+                    closeModal('leaveModal');
+                    loadLeaveRequests();
+                } catch (e) {
+                    console.error('Submit leave error', e);
+                }
+            }
+
+            function openDecisionModal(leaveId, actionType) {
+                document.getElementById('decision-leave-id').value = leaveId;
+                document.getElementById('decision-action-type').value = actionType;
+                document.getElementById('decision-comment').value = '';
+
+                const btn = document.getElementById('btn-confirm-decision');
+                if (actionType === 'APPROVE') {
+                    document.getElementById('decisionModalTitle').textContent = 'Xác nhận Phê duyệt Đơn';
+                    btn.textContent = 'Phê duyệt';
+                    btn.className = 'btn btn-success';
+                } else {
+                    document.getElementById('decisionModalTitle').textContent = 'Xác nhận Từ chối Đơn';
+                    btn.textContent = 'Từ chối';
+                    btn.className = 'btn btn-danger';
+                }
+                openModal('decisionModal');
+            }
+
+            async function submitDecision() {
+                const leaveId = document.getElementById('decision-leave-id').value;
+                const actionType = document.getElementById('decision-action-type').value;
+                const approverIdVal = document.getElementById('decision-approverId').value;
+
+                if (!approverIdVal) {
+                    showAlert('Vui lòng chọn Người phê duyệt', 'warning');
+                    return;
+                }
+
+                const payload = {
+                    approverId: parseInt(approverIdVal),
+                    comment: document.getElementById('decision-comment').value.trim()
+                };
+
+                try {
+                    const endpoint = actionType === 'APPROVE' ? `/api/v1/leaves/${leaveId}/approve` : `/api/v1/leaves/${leaveId}/reject`;
+                    await fetchApi(endpoint, {
+                        method: 'PATCH',
+                        body: JSON.stringify(payload)
+                    });
+                    showAlert(actionType === 'APPROVE' ? 'Đã phê duyệt đơn nghỉ phép!' : 'Đã từ chối đơn nghỉ phép!', 'success');
+                    closeModal('decisionModal');
+                    loadLeaveRequests();
+                } catch (e) {
+                    console.error('Decision error', e);
+                }
+            }
+        </script>
+    </div>
+</body>
+</html>

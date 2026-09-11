@@ -22,7 +22,8 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
 	// Tìm kiếm nhân viên theo phòng ban và từ khóa (tên/mã)
 	@Query("SELECT e FROM Employee e WHERE " +
 			"(:departmentId IS NULL OR e.department.id = :departmentId) AND " +
-			"(:keyword IS NULL OR LOWER(e.fullName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(e.employeeCode) LIKE LOWER(CONCAT('%', :keyword, '%')))")
+			"(:keyword IS NULL OR LOWER(e.fullName) LIKE LOWER(CONCAT('%', CAST(:keyword AS string), '%')) " +
+			"OR LOWER(e.employeeCode) LIKE LOWER(CONCAT('%', CAST(:keyword AS string), '%')))")
 	Page<Employee> searchEmployees(@Param("departmentId") Long departmentId,
 			@Param("keyword") String keyword,
 			Pageable pageable);

@@ -1,27 +1,138 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
-    <title>School HRM - Dashboard</title>
+    <title>School HRM - Dashboard Tổng Quan</title>
 </head>
-<body th:replace="~{layout/main-layout :: layout(~{::content}, ~{::scripts}, 'Dashboard')}">
+<html th:replace="~{layout/main-layout :: layout(~{::content}, ~{::scripts}, 'Dashboard')}">
 
     <div th:fragment="content">
-        <div class="row">
-            <div class="col-md-4">
-                <div class="card text-white bg-primary mb-3">
-                    <div class="card-header">Tổng Nhân Viên</div>
+        <!-- Stat KPI Cards Row -->
+        <div class="row g-4 mb-4">
+            <div class="col-xl-3 col-sm-6">
+                <div class="card stat-card bg-grad-primary shadow">
                     <div class="card-body">
-                        <h5 class="card-title" id="total-employees">Đang tải...</h5>
-                        <p class="card-text">Số lượng nhân viên hiện tại</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="text-white-50 text-uppercase mb-1" style="font-size: 0.8rem; letter-spacing: 0.5px;">Tổng Nhân Viên</h6>
+                                <h2 class="display-6 fw-bold mb-0 text-white" id="stat-total-employees">--</h2>
+                            </div>
+                            <div class="icon-bg">
+                                <i class="bi bi-people-fill"></i>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
-            <div class="col-md-4">
-                <div class="card text-white bg-success mb-3">
-                    <div class="card-header">Phòng ban</div>
+
+            <div class="col-xl-3 col-sm-6">
+                <div class="card stat-card bg-grad-success shadow">
                     <div class="card-body">
-                        <h5 class="card-title">...</h5>
-                        <p class="card-text">Các phòng ban đang hoạt động</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="text-white-50 text-uppercase mb-1" style="font-size: 0.8rem; letter-spacing: 0.5px;">Phòng Ban / Khoa</h6>
+                                <h2 class="display-6 fw-bold mb-0 text-white" id="stat-total-departments">--</h2>
+                            </div>
+                            <div class="icon-bg">
+                                <i class="bi bi-building"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-3 col-sm-6">
+                <div class="card stat-card bg-grad-warning shadow">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="text-white-50 text-uppercase mb-1" style="font-size: 0.8rem; letter-spacing: 0.5px;">Đơn Nghỉ Chờ Duyệt</h6>
+                                <h2 class="display-6 fw-bold mb-0 text-white" id="stat-pending-leaves">--</h2>
+                            </div>
+                            <div class="icon-bg">
+                                <i class="bi bi-hourglass-split"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-3 col-sm-6">
+                <div class="card stat-card bg-grad-info shadow">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="text-white-50 text-uppercase mb-1" style="font-size: 0.8rem; letter-spacing: 0.5px;">Chức Vụ Hệ Thống</h6>
+                                <h2 class="display-6 fw-bold mb-0 text-white" id="stat-total-positions">--</h2>
+                            </div>
+                            <div class="icon-bg">
+                                <i class="bi bi-award-fill"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick actions & Recent Employees -->
+        <div class="row g-4">
+            <div class="col-lg-8">
+                <div class="card shadow-sm h-100">
+                    <div class="card-header d-flex justify-content-between align-items-center bg-white py-3">
+                        <h6 class="m-0 fw-bold text-dark"><i class="bi bi-person-lines-fill me-2 text-primary"></i>Nhân viên vừa gia nhập</h6>
+                        <a href="/employees" class="btn btn-sm btn-outline-primary">Xem tất cả</a>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table align-middle table-hover mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Mã NV</th>
+                                        <th>Họ và Tên</th>
+                                        <th>Phòng ban</th>
+                                        <th>Chức vụ</th>
+                                        <th>Ngày vào làm</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="recent-employees-body">
+                                    <tr>
+                                        <td colspan="5" class="text-center py-4 text-muted">Đang tải dữ liệu...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <div class="card shadow-sm h-100">
+                    <div class="card-header bg-white py-3">
+                        <h6 class="m-0 fw-bold text-dark"><i class="bi bi-lightning-charge-fill me-2 text-warning"></i>Phím tắt nhanh</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-grid gap-3">
+                            <a href="/employees" class="btn btn-light text-start p-3 border d-flex align-items-center">
+                                <div class="avatar-circle me-3 bg-primary text-white"><i class="bi bi-person-plus-fill"></i></div>
+                                <div>
+                                    <div class="fw-semibold">Thêm nhân viên mới</div>
+                                    <small class="text-muted">Đăng ký thông tin hồ sơ nhân sự</small>
+                                </div>
+                            </a>
+                            <a href="/attendance" class="btn btn-light text-start p-3 border d-flex align-items-center">
+                                <div class="avatar-circle me-3 bg-success text-white"><i class="bi bi-check2-circle"></i></div>
+                                <div>
+                                    <div class="fw-semibold">Chấm công hôm nay</div>
+                                    <small class="text-muted">Theo dõi giờ vào/ra của giáo viên & nhân viên</small>
+                                </div>
+                            </a>
+                            <a href="/leaves" class="btn btn-light text-start p-3 border d-flex align-items-center">
+                                <div class="avatar-circle me-3 bg-warning text-white"><i class="bi bi-file-earmark-check-fill"></i></div>
+                                <div>
+                                    <div class="fw-semibold">Phê duyệt nghỉ phép</div>
+                                    <small class="text-muted">Xử lý các đơn xin phép nghỉ giảng dạy</small>
+                                </div>
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -30,16 +141,76 @@
 
     <div th:fragment="scripts">
         <script>
-            document.addEventListener('DOMContentLoaded', async () => {
-                try {
-                    const response = await fetchApi('/api/v1/employees?size=1');
-                    if (response && response.data) {
-                        document.getElementById('total-employees').textContent = response.data.totalElements || '0';
-                    }
-                } catch (error) {
-                    console.error('Lỗi khi tải dữ liệu dashboard', error);
-                }
+            document.addEventListener('DOMContentLoaded', () => {
+                loadDashboardData();
             });
+
+            async function loadDashboardData() {
+                // 1. Employees count & recent
+                try {
+                    const empRes = await fetchApi('/api/v1/employees?size=5&sort=createdAt,desc');
+                    if (empRes && empRes.data) {
+                        document.getElementById('stat-total-employees').textContent = empRes.data.totalElements || '0';
+                        renderRecentEmployees(empRes.data.content || []);
+                    }
+                } catch (e) {
+                    console.error('Error fetching employees', e);
+                }
+
+                // 2. Departments count
+                try {
+                    const deptRes = await fetchApi('/api/v1/departments');
+                    if (deptRes && deptRes.data) {
+                        document.getElementById('stat-total-departments').textContent = deptRes.data.length || '0';
+                    }
+                } catch (e) {
+                    console.error('Error fetching departments', e);
+                }
+
+                // 3. Positions count
+                try {
+                    const posRes = await fetchApi('/api/v1/positions');
+                    if (posRes && posRes.data) {
+                        document.getElementById('stat-total-positions').textContent = posRes.data.length || '0';
+                    }
+                } catch (e) {
+                    console.error('Error fetching positions', e);
+                }
+
+                // 4. Pending leaves count
+                try {
+                    const leaveRes = await fetchApi('/api/v1/leaves');
+                    if (leaveRes && leaveRes.data) {
+                        const pendingCount = leaveRes.data.filter(l => l.status === 'PENDING').length;
+                        document.getElementById('stat-pending-leaves').textContent = pendingCount;
+                    }
+                } catch (e) {
+                    console.error('Error fetching leaves', e);
+                }
+            }
+
+            function renderRecentEmployees(employees) {
+                const tbody = document.getElementById('recent-employees-body');
+                if (!tbody) return;
+
+                if (employees.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-muted">Chưa có nhân viên nào trong hệ thống</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = employees.map(emp => `
+                    <tr>
+                        <td class="fw-bold text-primary">${emp.employeeCode || 'N/A'}</td>
+                        <td>
+                            <div class="fw-semibold">${emp.fullName || 'N/A'}</div>
+                            <small class="text-muted">${emp.email || ''}</small>
+                        </td>
+                        <td><span class="badge bg-light text-dark border">${emp.departmentName || 'Chưa phân bổ'}</span></td>
+                        <td>${emp.positionName || 'N/A'}</td>
+                        <td>${formatDate(emp.joinDate)}</td>
+                    </tr>
+                `).join('');
+            }
         </script>
     </div>
 </body>

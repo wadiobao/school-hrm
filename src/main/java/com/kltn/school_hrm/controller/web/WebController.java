@@ -17,4 +17,24 @@ public class WebController {
     public String employees() {
         return "employees/list";
     }
+
+    @GetMapping("/departments")
+    public String departments() {
+        return "departments/index";
+    }
+
+    @GetMapping("/positions")
+    public String positions() {
+        return "positions/index";
+    }
+
+    @GetMapping("/attendance")
+    public String attendance() {
+        return "attendance/index";
+    }
+
+    @GetMapping("/leaves")
+    public String leaves() {
+        return "leaves/index";
+    }
 }
