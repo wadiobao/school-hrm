@@ -29,4 +29,7 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
 			Pageable pageable);
 
 	boolean existsByCitizenId(String citizenId);
+
+	java.util.List<Employee> findByStatusIn(java.util.List<com.kltn.school_hrm.enums.Enums.EmployeeStatus> statuses);
 }
+
