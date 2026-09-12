@@ -204,7 +204,8 @@ public class Enums {
         PENDING("Chờ phê duyệt"),
         APPROVED("Đã phê duyệt"),
         REJECTED("Từ chối"),
-        CANCELLED("Đã hủy");
+        CANCELLED("Đã hủy"),
+        OVERDUE("Quá hạn phê duyệt");
 
         private final String label;
 
@@ -212,6 +213,7 @@ public class Enums {
             this.label = label;
         }
     }
+
 
     @Getter
     public enum ComponentType {
@@ -283,6 +285,20 @@ public class Enums {
         @JsonValue
         public String getValue() {
             return name();
+        }
+    }
+
+    @Getter
+    public enum LeaveBalanceTransactionType {
+        ACCRUAL("Cộng phép"),
+        LEAVE("Sử dụng phép"),
+        ADJUSTMENT("Điều chỉnh tăng/giảm"),
+        EXPIRATION("Phép hết hạn");
+
+        private final String label;
+
+        LeaveBalanceTransactionType(String label) {
+            this.label = label;
         }
     }
 }

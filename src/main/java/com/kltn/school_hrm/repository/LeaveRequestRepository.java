@@ -16,6 +16,10 @@ import java.util.List;
 public interface LeaveRequestRepository extends JpaRepository<LeaveRequest, Long> {
 	List<LeaveRequest> findByEmployeeId(Long employeeId);
 
+	List<LeaveRequest> findByStatus(RequestStatus status);
+
+	List<LeaveRequest> findByStatusIn(Collection<RequestStatus> statuses);
+
 	@Query("""
 			    SELECT COUNT(lr) > 0
 			    FROM LeaveRequest lr

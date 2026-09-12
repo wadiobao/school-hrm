@@ -1,6 +1,8 @@
 package com.kltn.school_hrm.service.implement;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -14,6 +16,7 @@ import com.kltn.school_hrm.dto.response.LeaveResponse;
 import com.kltn.school_hrm.entity.attendance.LeaveApproval;
 import com.kltn.school_hrm.entity.attendance.LeaveRequest;
 import com.kltn.school_hrm.entity.employee.Employee;
+import com.kltn.school_hrm.enums.Enums.ApprovalStatus;
 import com.kltn.school_hrm.enums.Enums.EmployeeStatus;
 import com.kltn.school_hrm.enums.Enums.RequestStatus;
 import com.kltn.school_hrm.exception.custom.BusinessException;
@@ -208,7 +211,8 @@ public class LeaveServiceImpl implements LeaveService {
             leaveBalanceService.consume(
                     leaveRequest.getEmployee(),
                     leaveRequest.getStartDate().getYear(),
-                    leaveRequest.getTotalDays());
+                    leaveRequest.getTotalDays(),
+                    leaveRequest);
         }
 
         leaveRequest = leaveRequestRepository.save(leaveRequest);
@@ -236,6 +240,69 @@ public class LeaveServiceImpl implements LeaveService {
 
         leaveRequest = leaveRequestRepository.save(leaveRequest);
         return mapToResponse(leaveRequest);
+    }
+
+    @Override
+    public List<LeaveResponse> getOverdueLeaveRequests() {
+        LocalDateTime now = LocalDateTime.now();
+
+        return leaveRequestRepository.findByStatus(RequestStatus.PENDING).stream()
+                .filter(req -> isOverdue(req, now))
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional
+    public List<LeaveResponse> processOverdueLeaveRequests() {
+        LocalDateTime now = LocalDateTime.now();
+        List<LeaveRequest> pendingRequests = leaveRequestRepository.findByStatus(RequestStatus.PENDING);
+        List<LeaveRequest> overdueRequests = new ArrayList<>();
+
+        for (LeaveRequest req : pendingRequests) {
+            if (isOverdue(req, now)) {
+                req.setStatus(RequestStatus.OVERDUE);
+
+                // Hủy các bước phê duyệt đang chờ (PENDING)
+                if (req.getApprovals() != null) {
+                    for (LeaveApproval approval : req.getApprovals()) {
+                        if (approval.getStatus() == ApprovalStatus.PENDING) {
+                            approval.setStatus(ApprovalStatus.REJECTED);
+                            approval.setComment("Tự động từ chối do quá hạn phê duyệt");
+                            approval.setApprovedAt(now);
+                        }
+                    }
+                }
+
+                // Giải phóng quỹ phép pending
+                leaveBalanceService.release(
+                        req.getEmployee(),
+                        req.getStartDate().getYear(),
+                        req.getTotalDays());
+
+                overdueRequests.add(leaveRequestRepository.save(req));
+            }
+        }
+
+        return overdueRequests.stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    private boolean isOverdue(LeaveRequest req, LocalDateTime now) {
+        if (req.getTotalDays() == null || req.getTotalDays().compareTo(BigDecimal.ZERO) <= 0) {
+            return false;
+        }
+
+        // Ngưỡng quá hạn: số ngày nghỉ / 2 (tính theo giờ: (totalDays / 2) * 24h)
+        double thresholdHours = req.getTotalDays().doubleValue() / 2.0 * 24.0;
+
+        LocalDateTime referenceTime = req.getCreatedAt() != null
+                ? req.getCreatedAt()
+                : (req.getStartDate() != null ? req.getStartDate().atStartOfDay() : now);
+
+        long waitingHours = java.time.Duration.between(referenceTime, now).toHours();
+        return waitingHours > thresholdHours;
     }
 
     private LeaveResponse mapToResponse(LeaveRequest leaveRequest) {

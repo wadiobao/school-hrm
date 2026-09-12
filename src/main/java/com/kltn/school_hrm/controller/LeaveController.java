@@ -66,5 +66,17 @@ public class LeaveController {
     public ResponseEntity<ApiResponse<LeaveResponse>> rejectLeaveRequest(@PathVariable Long id, @RequestBody LeaveDecisionRequest request) {
         return ResponseEntity.ok(ApiResponse.success(leaveService.rejectLeaveRequest(id, request), "Leave request rejected"));
     }
+
+    @GetMapping("/overdue")
+    public ResponseEntity<ApiResponse<List<LeaveResponse>>> getOverdueLeaveRequests() {
+        return ResponseEntity.ok(ApiResponse.success(leaveService.getOverdueLeaveRequests(), "Overdue leave requests retrieved successfully"));
+    }
+
+    @PostMapping("/overdue/process")
+    public ResponseEntity<ApiResponse<List<LeaveResponse>>> processOverdueLeaveRequests() {
+        return ResponseEntity.ok(ApiResponse.success(leaveService.processOverdueLeaveRequests(), "Overdue leave requests processed successfully"));
+    }
 }
+
+
 
