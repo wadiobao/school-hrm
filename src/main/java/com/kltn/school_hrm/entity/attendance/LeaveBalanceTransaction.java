@@ -47,4 +47,7 @@ public class LeaveBalanceTransaction extends BaseEntity {
 
     private String referenceId;
 
+    @Column(nullable = false, unique = true)
+    private String transactionKey;
+
 }

@@ -23,7 +23,8 @@ public class LeaveBalanceTransactionServiceImpl implements LeaveBalanceTransacti
     private final LeaveBalanceTransactionRepository leaveBalanceTransactionRepository;
 
     @Override
-    public LeaveBalanceTransaction createApprovedLeaveBalanceTransaction(LeaveBalance leaveBalance, BigDecimal days, LeaveRequest leaveRequest) {
+    public LeaveBalanceTransaction createApprovedLeaveBalanceTransaction(LeaveBalance leaveBalance, BigDecimal days,
+            LeaveRequest leaveRequest) {
         String reason = null;
         String referenceId = null;
         if (leaveRequest != null) {
@@ -47,6 +48,7 @@ public class LeaveBalanceTransactionServiceImpl implements LeaveBalanceTransacti
                 .reason(reason)
                 .referenceId(referenceId)
                 .amount(days.negate())
+                .transactionKey(generateLeaveKey(leaveRequest.getId()))
                 .build();
         return leaveBalanceTransactionRepository.save(transaction);
     }
@@ -59,33 +61,59 @@ public class LeaveBalanceTransactionServiceImpl implements LeaveBalanceTransacti
                 .effectiveDate(LocalDate.of(leaveBalance.getYear(), 1, 1))
                 .reason(reason != null && !reason.isBlank() ? reason : "Tích lũy ngày phép")
                 .amount(days)
+                .transactionKey(generateAccrualKey(leaveBalance.getId(), leaveBalance.getYear()))
                 .build();
         return leaveBalanceTransactionRepository.save(transaction);
     }
 
     @Override
-    public LeaveBalanceTransaction createAdjustmentTransaction(LeaveBalance leaveBalance, BigDecimal days, String reason) {
+    public LeaveBalanceTransaction createAdjustmentTransaction(LeaveBalance leaveBalance, BigDecimal days,
+            String reason) {
         LeaveBalanceTransaction transaction = LeaveBalanceTransaction.builder()
                 .leaveBalance(leaveBalance)
                 .type(Enums.LeaveBalanceTransactionType.ADJUSTMENT)
                 .effectiveDate(LocalDate.now())
                 .reason(reason != null && !reason.isBlank() ? reason : "Điều chỉnh ngày phép")
                 .amount(days)
+                .transactionKey(generateAdjustmentKey(leaveBalance.getId()))
                 .build();
         return leaveBalanceTransactionRepository.save(transaction);
     }
 
     @Override
-    public LeaveBalanceTransaction createExpirationTransaction(LeaveBalance leaveBalance, BigDecimal days, String reason) {
+    public LeaveBalanceTransaction createExpirationTransaction(LeaveBalance leaveBalance, BigDecimal days,
+            String reason) {
         LeaveBalanceTransaction transaction = LeaveBalanceTransaction.builder()
                 .leaveBalance(leaveBalance)
                 .type(Enums.LeaveBalanceTransactionType.EXPIRATION)
                 .effectiveDate(LocalDate.of(leaveBalance.getYear(), 12, 31))
                 .reason(reason != null && !reason.isBlank() ? reason : "Hết hạn ngày phép")
                 .amount(days.negate())
+                .transactionKey(generateExpirationKey(leaveBalance.getId(), leaveBalance.getYear()))
                 .build();
         return leaveBalanceTransactionRepository.save(transaction);
     }
 
-}
+    public static String generateExpirationKey(
+            Long balanceId,
+            int year) {
+        return "EXPIRATION:" + balanceId + ":" + year;
+    }
 
+    public static String generateLeaveKey(
+            Long leaveRequestId) {
+        return "LEAVE:" + leaveRequestId;
+    }
+
+    public static String generateAccrualKey(
+            Long balanceId,
+            int year) {
+        return "ACCRUAL:" + balanceId + ":" + year;
+    }
+
+    public static String generateAdjustmentKey(
+            Long balanceId) {
+        return "ADJUSTMENT:" + balanceId;
+    }
+
+}

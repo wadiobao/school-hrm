@@ -46,7 +46,14 @@ public class LeaveBalance extends BaseEntity {
 	@Column(name = "pending_days", nullable = false)
 	private BigDecimal pendingDays;
 
+	@Column(name = "expired_days", nullable = false)
+	private BigDecimal expiredDays;
+
 	public BigDecimal getRemainingDays() {
-		return totalDays.subtract(usedDays).subtract(pendingDays);
+		return totalDays.subtract(usedDays).subtract(pendingDays).subtract(expiredDays);
+	}
+
+	public void expire(BigDecimal days) {
+		this.expiredDays = this.expiredDays.add(days);
 	}
 }

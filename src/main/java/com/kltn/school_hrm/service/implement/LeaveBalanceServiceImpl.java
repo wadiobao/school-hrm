@@ -129,7 +129,7 @@ public class LeaveBalanceServiceImpl implements LeaveBalanceService {
             BigDecimal remainingDays = balance.getRemainingDays();
             // Nếu còn ngày phép khả dụng lớn hơn 0
             if (remainingDays != null && remainingDays.compareTo(BigDecimal.ZERO) > 0) {
-                balance.setTotalDays(balance.getTotalDays().subtract(remainingDays));
+                balance.expire(remainingDays);
                 leaveBalanceTransactionService.createExpirationTransaction(
                         balance,
                         remainingDays,
