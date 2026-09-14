@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -333,6 +334,20 @@ public class ApprovalEngineServiceImpl implements ApprovalEngineService {
     public ApprovalRequestStep getCurrentPendingStep(String businessType, Long businessId) {
         ApprovalRequest request = getPendingRequest(businessType, businessId);
         return getCurrentStep(request);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Employee> getCurrentApprovers(String businessType, Long businessId) {
+        ApprovalRequest request = getPendingRequest(businessType, businessId);
+        return approvalRequestStepRepository
+                .findByApprovalRequestIdOrderByLevelOrderAsc(request.getId())
+                .stream()
+                .filter(s -> s.getLevelOrder().equals(request.getCurrentLevel())
+                        && s.getStatus() == com.kltn.school_hrm.enums.Enums.ApprovalStatus.PENDING
+                        && s.getAssignedApprover() != null)
+                .map(ApprovalRequestStep::getAssignedApprover)
+                .collect(Collectors.toList());
     }
 
     private ApprovalRequest getPendingRequest(String businessType, Long businessId) {

@@ -26,7 +26,6 @@ import lombok.experimental.SuperBuilder;
  * Lịch sử vết từng hành động phê duyệt, từ chối, chuyển tiếp, hoặc hủy (Audit Trail).
  */
 @Entity
-@Table(name = "approval_action")
 @Getter
 @Setter
 @NoArgsConstructor

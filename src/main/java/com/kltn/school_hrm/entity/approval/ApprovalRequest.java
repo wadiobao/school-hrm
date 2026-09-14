@@ -32,7 +32,6 @@ import lombok.experimental.SuperBuilder;
  * Có Optimistic Locking (@Version) để bảo vệ tính nhất quán khi duyệt đồng thời.
  */
 @Entity
-@Table(name = "approval_request")
 @Getter
 @Setter
 @NoArgsConstructor

@@ -1,5 +1,6 @@
 package com.kltn.school_hrm.service.approval;
 
+import java.util.List;
 import java.util.Map;
 
 import com.kltn.school_hrm.dto.response.ApprovalResult;
@@ -46,4 +47,10 @@ public interface ApprovalEngineService {
      * Lấy step hiện tại đang chờ duyệt của request.
      */
     ApprovalRequestStep getCurrentPendingStep(String businessType, Long businessId);
+
+    /**
+     * Lấy danh sách người đang được assign duyệt ở tất cả các step hiện tại PENDING.
+     * Thường chỉ có 1 người (vì duyệt tuần tự), nhưng hỗ trợ trả về list để mở rộng.
+     */
+    List<Employee> getCurrentApprovers(String businessType, Long businessId);
 }
