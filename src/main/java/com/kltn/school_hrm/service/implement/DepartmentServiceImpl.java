@@ -24,6 +24,7 @@ import com.kltn.school_hrm.exception.custom.ResourceNotFoundException;
 import com.kltn.school_hrm.repository.LeaveApprovalRepository;
 import com.kltn.school_hrm.repository.RoleRepository;
 import com.kltn.school_hrm.repository.UserRepository;
+import com.kltn.school_hrm.service.approval.ApprovalEngineService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -38,6 +39,7 @@ public class DepartmentServiceImpl implements DepartmentService {
     private final UserRepository userRepository;
     private final LeaveApprovalRepository leaveApprovalRepository;
     private final DepartmentChartValidationService departmentChartValidationService;
+    private final ApprovalEngineService approvalEngineService;
 
     @Override
     @Transactional
@@ -133,6 +135,11 @@ public class DepartmentServiceImpl implements DepartmentService {
             // Chuyển giao các đơn nghỉ phép PENDING từ sếp cũ sang sếp mới
             if (oldManager != null) {
                 leaveApprovalRepository.transferPendingApprovals(oldManager.getId(), newManager.getId());
+                approvalEngineService.forwardPendingApprovals(
+                        oldManager.getId(),
+                        newManager.getId(),
+                        oldManager.getId(),
+                        "Bổ nhiệm quản lý phòng ban mới: " + newManager.getFullName());
             }
         }
 

@@ -26,5 +26,8 @@ public class LeaveResponse {
     private Long substituteTeacherId;
     private List<Long> approverId;
     private RequestStatus status;
+    private List<ApprovalStepResponse> approvalSteps;
+    private List<ApprovalActionResponse> approvalActions;
 }
+
 

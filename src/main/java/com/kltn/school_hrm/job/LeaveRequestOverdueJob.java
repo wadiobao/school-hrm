@@ -6,7 +6,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import com.kltn.school_hrm.dto.response.LeaveResponse;
-import com.kltn.school_hrm.service.LeaveService;
+import com.kltn.school_hrm.service.LeaveRequestService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -16,7 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class LeaveRequestOverdueJob {
 
-    private final LeaveService leaveService;
+    private final LeaveRequestService leaveService;
 
     /**
      * Tự động chạy mỗi giờ (cron = "0 0 * * * ?")

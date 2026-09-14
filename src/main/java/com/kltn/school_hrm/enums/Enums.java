@@ -274,7 +274,9 @@ public class Enums {
     public enum ApprovalStatus {
         PENDING("Chờ phê duyệt"),
         APPROVED("Đã phê duyệt"),
-        REJECTED("Từ chối");
+        REJECTED("Từ chối"),
+        CANCELLED("Đã hủy"),
+        SKIPPED("Bỏ qua");
 
         private final String label;
 
@@ -287,6 +289,48 @@ public class Enums {
             return name();
         }
     }
+
+    @Getter
+    public enum ApproverType {
+        DIRECT_MANAGER("Quản lý trực tiếp"),
+        PARENT_DEPARTMENT_MANAGER("Quản lý cấp trên / Ban Giám hiệu"),
+        SPECIFIC_ROLE("Theo chức vụ / Vai trò"),
+        SPECIFIC_EMPLOYEE("Chỉ định nhân sự cụ thể");
+
+        private final String label;
+
+        ApproverType(String label) {
+            this.label = label;
+        }
+    }
+
+    @Getter
+    public enum ApprovalActionType {
+        SUBMIT("Nộp yêu cầu"),
+        APPROVE("Phê duyệt"),
+        REJECT("Từ chối"),
+        CANCEL("Hủy yêu cầu"),
+        FORWARD("Chuyển tiếp / Ủy quyền");
+
+        private final String label;
+
+        ApprovalActionType(String label) {
+            this.label = label;
+        }
+    }
+
+    @Getter
+    public enum ApprovalConditionType {
+        NONE("Không có điều kiện"),
+        MIN_LEAVE_DAYS("Số ngày nghỉ tối thiểu");
+
+        private final String label;
+
+        ApprovalConditionType(String label) {
+            this.label = label;
+        }
+    }
+
 
     @Getter
     public enum LeaveBalanceTransactionType {

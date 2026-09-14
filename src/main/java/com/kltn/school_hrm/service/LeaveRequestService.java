@@ -6,7 +6,7 @@ import com.kltn.school_hrm.dto.request.LeaveCreateRequest;
 import com.kltn.school_hrm.dto.request.LeaveDecisionRequest;
 import com.kltn.school_hrm.dto.response.LeaveResponse;
 
-public interface LeaveService {
+public interface LeaveRequestService {
     LeaveResponse createLeaveRequest(LeaveCreateRequest request);
 
     LeaveResponse updateLeaveRequest(Long id, LeaveCreateRequest request);

@@ -31,5 +31,9 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
 	boolean existsByCitizenId(String citizenId);
 
 	java.util.List<Employee> findByStatusIn(java.util.List<com.kltn.school_hrm.enums.Enums.EmployeeStatus> statuses);
+
+	@Query("SELECT e FROM Employee e WHERE e.user.role.code = :roleCode")
+	java.util.List<Employee> findByRoleCode(@Param("roleCode") com.kltn.school_hrm.enums.Enums.RoleCode roleCode);
 }
+
 

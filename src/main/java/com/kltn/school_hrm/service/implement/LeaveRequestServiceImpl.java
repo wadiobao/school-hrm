@@ -420,10 +420,13 @@ public class LeaveRequestServiceImpl implements LeaveRequestService {
 
         // 2. Fallback sang legacy approvers nếu approverIds rỗng
         if (approverIds.isEmpty() && leaveRequest.getApprovals() != null) {
-            approverIds = leaveRequest.getApprovals().stream()
+            List<Long> currentApproverIds = new ArrayList<>();
+            currentApproverIds = leaveRequest.getApprovals().stream()
                     .map(LeaveApproval::getApprover)
                     .map(Employee::getId)
                     .collect(Collectors.toList());
+
+            approverIds.addAll(currentApproverIds);
         }
 
         return LeaveResponse.builder()

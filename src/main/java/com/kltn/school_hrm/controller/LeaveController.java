@@ -19,7 +19,7 @@ import com.kltn.school_hrm.dto.common.ApiResponse;
 import com.kltn.school_hrm.dto.request.LeaveCreateRequest;
 import com.kltn.school_hrm.dto.request.LeaveDecisionRequest;
 import com.kltn.school_hrm.dto.response.LeaveResponse;
-import com.kltn.school_hrm.service.LeaveService;
+import com.kltn.school_hrm.service.LeaveRequestService;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -29,7 +29,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class LeaveController {
 
-    private final LeaveService leaveService;
+    private final LeaveRequestService leaveService;
 
     @PostMapping
     public ResponseEntity<ApiResponse<LeaveResponse>> createLeaveRequest(@Valid @RequestBody LeaveCreateRequest request) {
