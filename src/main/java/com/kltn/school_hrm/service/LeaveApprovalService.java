@@ -4,6 +4,10 @@ import com.kltn.school_hrm.entity.attendance.LeaveApproval;
 import com.kltn.school_hrm.entity.attendance.LeaveRequest;
 import com.kltn.school_hrm.entity.employee.Employee;
 
+/**
+ * @deprecated Thay thế bằng {@link com.kltn.school_hrm.service.approval.ApprovalEngineService}.
+ */
+@Deprecated
 public interface LeaveApprovalService {
 
     void createApprovalSteps(LeaveRequest request);

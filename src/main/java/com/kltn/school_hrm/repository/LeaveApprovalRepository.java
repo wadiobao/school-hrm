@@ -10,6 +10,10 @@ import org.springframework.stereotype.Repository;
 import com.kltn.school_hrm.entity.attendance.LeaveApproval;
 import com.kltn.school_hrm.enums.Enums.ApprovalStatus;
 
+/**
+ * @deprecated Thay thế bằng {@link com.kltn.school_hrm.repository.ApprovalRequestStepRepository}.
+ */
+@Deprecated
 @Repository
 public interface LeaveApprovalRepository extends JpaRepository<LeaveApproval, Long> {
 

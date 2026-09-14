@@ -17,6 +17,10 @@ import com.kltn.school_hrm.service.LeaveApprovalService;
 
 import lombok.RequiredArgsConstructor;
 
+/**
+ * @deprecated Thay thế bằng {@link com.kltn.school_hrm.service.approval.implement.ApprovalEngineServiceImpl}.
+ */
+@Deprecated
 @Service
 @RequiredArgsConstructor
 @Transactional(rollbackFor = Exception.class)
