@@ -6,10 +6,10 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.kltn.school_hrm.entity.attendance.LeaveBalance;
 import com.kltn.school_hrm.entity.employee.Employee;
+import com.kltn.school_hrm.entity.leave.LeaveBalance;
+import com.kltn.school_hrm.entity.leave.LeaveRequest;
 import com.kltn.school_hrm.enums.Enums.EmployeeStatus;
-import com.kltn.school_hrm.entity.attendance.LeaveRequest;
 import com.kltn.school_hrm.exception.custom.BusinessException;
 import com.kltn.school_hrm.repository.EmployeeRepository;
 import com.kltn.school_hrm.repository.LeaveBalanceRepository;

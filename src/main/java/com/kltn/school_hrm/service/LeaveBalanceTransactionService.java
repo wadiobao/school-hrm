@@ -2,9 +2,9 @@ package com.kltn.school_hrm.service;
 
 import java.math.BigDecimal;
 
-import com.kltn.school_hrm.entity.attendance.LeaveBalance;
-import com.kltn.school_hrm.entity.attendance.LeaveBalanceTransaction;
-import com.kltn.school_hrm.entity.attendance.LeaveRequest;
+import com.kltn.school_hrm.entity.leave.LeaveBalance;
+import com.kltn.school_hrm.entity.leave.LeaveBalanceTransaction;
+import com.kltn.school_hrm.entity.leave.LeaveRequest;
 
 public interface LeaveBalanceTransactionService {
 

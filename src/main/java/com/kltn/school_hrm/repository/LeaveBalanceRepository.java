@@ -7,7 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 
-import com.kltn.school_hrm.entity.attendance.LeaveBalance;
+import com.kltn.school_hrm.entity.leave.LeaveBalance;
 
 @Repository
 public interface LeaveBalanceRepository extends JpaRepository<LeaveBalance, Long>,

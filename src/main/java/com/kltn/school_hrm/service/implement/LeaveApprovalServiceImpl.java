@@ -7,9 +7,9 @@ import java.util.Comparator;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.kltn.school_hrm.entity.attendance.LeaveApproval;
-import com.kltn.school_hrm.entity.attendance.LeaveRequest;
 import com.kltn.school_hrm.entity.employee.Employee;
+import com.kltn.school_hrm.entity.leave.LeaveApproval;
+import com.kltn.school_hrm.entity.leave.LeaveRequest;
 import com.kltn.school_hrm.enums.Enums.ApprovalStatus;
 import com.kltn.school_hrm.exception.custom.BusinessException;
 import com.kltn.school_hrm.repository.LeaveApprovalRepository;

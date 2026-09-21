@@ -6,7 +6,7 @@ import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import com.kltn.school_hrm.entity.attendance.Holiday;
+import com.kltn.school_hrm.entity.leave.Holiday;
 
 @Repository
 public interface HolidayRepository extends JpaRepository<Holiday, Long> {

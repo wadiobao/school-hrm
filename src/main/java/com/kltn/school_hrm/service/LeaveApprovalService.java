@@ -1,8 +1,8 @@
 package com.kltn.school_hrm.service;
 
-import com.kltn.school_hrm.entity.attendance.LeaveApproval;
-import com.kltn.school_hrm.entity.attendance.LeaveRequest;
 import com.kltn.school_hrm.entity.employee.Employee;
+import com.kltn.school_hrm.entity.leave.LeaveApproval;
+import com.kltn.school_hrm.entity.leave.LeaveRequest;
 
 /**
  * @deprecated Thay thế bằng {@link com.kltn.school_hrm.service.approval.ApprovalEngineService}.
