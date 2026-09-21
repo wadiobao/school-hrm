@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng nhập - School HRM</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link href="/css/style.css" rel="stylesheet">
+    <style>
+        .login-page {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        }
+        .login-card {
+            border: none;
+            border-radius: var(--radius-lg);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            width: 100%;
+            max-width: 900px;
+        }
+        .login-image {
+            background: linear-gradient(135deg, var(--primary) 0%, #3a0ca3 100%);
+            color: white;
+            padding: 3rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+        .login-image i {
+            font-size: 5rem;
+            margin-bottom: 1rem;
+        }
+        .login-form-container {
+            padding: 3rem;
+            background: white;
+        }
+        .form-control {
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+        }
+        .btn-login {
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-page">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-12 col-xl-10">
+                    <div class="card login-card flex-row flex-wrap flex-md-nowrap">
+                        <div class="col-md-5 login-image d-none d-md-flex">
+                            <i class="bi bi-mortarboard-fill"></i>
+                            <h3 class="fw-bold mb-3">School HRM</h3>
+                            <p class="text-white-50">Hệ thống Quản lý Nhân sự & Giảng dạy dành cho Trường học.</p>
+                        </div>
+                        <div class="col-12 col-md-7 login-form-container">
+                            <div class="mb-4 text-center text-md-start">
+                                <h3 class="fw-bold text-dark mb-1">Đăng nhập</h3>
+                                <p class="text-muted">Dành cho Giáo viên & Cán bộ nhân viên</p>
+                            </div>
+
+                            <div id="login-alert" class="alert alert-danger d-none" role="alert">
+                                <!-- Error messages will be displayed here -->
+                            </div>
+
+                            <form id="loginForm">
+                                <div class="mb-3">
+                                    <label for="email" class="form-label fw-semibold">Email hoặc Mã NV</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light"><i class="bi bi-person"></i></span>
+                                        <input type="text" class="form-control" id="email" name="email" placeholder="Nhập email..." required>
+                                    </div>
+                                </div>
+                                <div class="mb-4">
+                                    <div class="d-flex justify-content-between">
+                                        <label for="password" class="form-label fw-semibold">Mật khẩu</label>
+                                        <a href="#" class="text-decoration-none text-primary small">Quên mật khẩu?</a>
+                                    </div>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light"><i class="bi bi-lock"></i></span>
+                                        <input type="password" class="form-control" id="password" name="password" placeholder="Nhập mật khẩu..." required>
+                                    </div>
+                                </div>
+                                <div class="mb-4 form-check">
+                                    <input type="checkbox" class="form-check-input" id="rememberMe">
+                                    <label class="form-check-label text-muted" for="rememberMe">Ghi nhớ đăng nhập</label>
+                                </div>
+                                <div class="d-grid">
+                                    <button type="submit" class="btn btn-primary btn-login" id="btnLogin">
+                                        Đăng nhập
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const btn = document.getElementById('btnLogin');
+            const alertBox = document.getElementById('login-alert');
+            
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Đang xử lý...';
+            btn.disabled = true;
+            alertBox.classList.add('d-none');
+            
+            // TODO: Implement actual API call here
+            // Currently mocking the login success
+            setTimeout(() => {
+                const email = document.getElementById('email').value;
+                if (email) {
+                    // Simulate success
+                    window.location.href = '/';
+                } else {
+                    // Simulate error
+                    alertBox.textContent = 'Vui lòng nhập thông tin đăng nhập.';
+                    alertBox.classList.remove('d-none');
+                    btn.innerHTML = 'Đăng nhập';
+                    btn.disabled = false;
+                }
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

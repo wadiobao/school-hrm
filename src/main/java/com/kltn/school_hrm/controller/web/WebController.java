@@ -13,6 +13,11 @@ public class WebController {
         return "index";
     }
 
+    @GetMapping("/login")
+    public String login() {
+        return "auth/login";
+    }
+
     @GetMapping("/employees")
     public String employees() {
         return "employees/list";
