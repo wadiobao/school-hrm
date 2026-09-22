@@ -1,5 +1,6 @@
 package com.kltn.school_hrm.repository;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
@@ -10,6 +11,8 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.kltn.school_hrm.entity.employee.Employee;
+import com.kltn.school_hrm.enums.Enums.EmployeeStatus;
+import com.kltn.school_hrm.enums.Enums.RoleCode;
 
 @Repository
 public interface EmployeeRepository extends JpaRepository<Employee, Long> {
@@ -30,10 +33,8 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
 
 	boolean existsByCitizenId(String citizenId);
 
-	java.util.List<Employee> findByStatusIn(java.util.List<com.kltn.school_hrm.enums.Enums.EmployeeStatus> statuses);
+	List<Employee> findByStatusIn(List<EmployeeStatus> statuses);
 
-	@Query("SELECT e FROM Employee e WHERE e.user.role.code = :roleCode")
-	java.util.List<Employee> findByRoleCode(@Param("roleCode") com.kltn.school_hrm.enums.Enums.RoleCode roleCode);
+	@Query("SELECT e FROM Employee e WHERE e.user.role.roleCode = :roleCode")
+	List<Employee> findByRoleCode(@Param("roleCode") RoleCode roleCode);
 }
-
-

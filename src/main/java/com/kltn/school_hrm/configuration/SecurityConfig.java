@@ -15,7 +15,7 @@ public class SecurityConfig {
 	        .authorizeHttpRequests(auth -> auth
 	            // Cho phép truy cập không cần token cho các endpoint này và web frontend
 	            .requestMatchers("/api/v1/users/register", "/api/v1/auth/login", 
-	                             "/", "/employees/**", "/departments/**", "/positions/**", 
+	                             "/", "/login", "/employees/**", "/departments/**", "/positions/**", 
 	                             "/attendance/**", "/leaves/**",
 	                             "/api/v1/**",
 	                             "/css/**", "/js/**", "/images/**", "/webjars/**").permitAll()
