@@ -1,6 +1,5 @@
-package com.kltn.school_hrm.dto.response;
+package com.kltn.school_hrm.dto.request;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import com.kltn.school_hrm.enums.Enums.AttendanceStatus;
@@ -14,17 +13,17 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class AttendanceResponse {
-    private Long id;
-    private Long employeeId;
-    private String employeeCode;
-    private String employeeName;
-    private LocalDate workDate;
-    private LocalDateTime checkIn;
-    private LocalDateTime checkOut;
-    private String deviceId;
-    private AttendanceStatus status;
-    private Integer lateMinutes;
-    private Integer earlyLeaveMinutes;
-}
+public class AttendanceCorrectionRequest {
 
+    private LocalDateTime checkIn;
+
+    private LocalDateTime checkOut;
+
+    private AttendanceStatus status;
+
+    private Integer lateMinutes;
+
+    private Integer earlyLeaveMinutes;
+
+    private String reason;
+}

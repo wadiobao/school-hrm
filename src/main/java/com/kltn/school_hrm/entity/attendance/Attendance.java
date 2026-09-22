@@ -1,6 +1,7 @@
 package com.kltn.school_hrm.entity.attendance;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 
 import com.kltn.school_hrm.entity.base.BaseEntity;
@@ -42,10 +43,10 @@ public class Attendance extends BaseEntity {
 	private LocalDate workDate;
 
 	@Column(name = "check_in")
-	private LocalTime checkIn;
+	private LocalDateTime checkIn;
 
 	@Column(name = "check_out")
-	private LocalTime checkOut;
+	private LocalDateTime checkOut;
 
 	@Column(name = "device_id", length = 50)
 	private String deviceId;
@@ -53,4 +54,10 @@ public class Attendance extends BaseEntity {
 	@Enumerated(EnumType.STRING)
 	@Column(length = 20)
 	private AttendanceStatus status;
+
+	@Column(name = "late_minutes")
+	private Integer lateMinutes;
+
+	@Column(name = "early_leave_minutes")
+	private Integer earlyLeaveMinutes;
 }
