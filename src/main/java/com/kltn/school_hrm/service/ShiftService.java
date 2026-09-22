@@ -22,8 +22,14 @@ public interface ShiftService {
     /** Lấy danh sách ca đang hoạt động. */
     List<ShiftResponse> getActiveShifts();
 
-    /** Xóa ca làm việc (hard delete). */
+    /** Xóa ca làm việc (hard delete - chỉ khi chưa có ai được phân ca). */
     void deleteShift(Long id);
+
+    /** Kích hoạt ca làm việc. */
+    void activateShift(Long id);
+
+    /** Tạm ngưng / hủy kích hoạt ca làm việc. */
+    void deactivateShift(Long id);
 
     /** Thay đổi trạng thái hoạt động của ca. */
     ShiftResponse toggleActive(Long id);

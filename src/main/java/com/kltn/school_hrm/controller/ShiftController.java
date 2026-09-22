@@ -80,4 +80,18 @@ public class ShiftController {
         return ResponseEntity.ok(
                 ApiResponse.success(shiftService.toggleActive(id), "Cập nhật trạng thái ca làm việc thành công"));
     }
+
+    /** PUT /api/v1/shifts/{id}/activate — Kích hoạt ca làm việc */
+    @PutMapping("/{id}/activate")
+    public ResponseEntity<ApiResponse<Void>> activateShift(@PathVariable Long id) {
+        shiftService.activateShift(id);
+        return ResponseEntity.ok(ApiResponse.success(null, "Kích hoạt ca làm việc thành công"));
+    }
+
+    /** PUT /api/v1/shifts/{id}/deactivate — Tạm ngưng ca làm việc */
+    @PutMapping("/{id}/deactivate")
+    public ResponseEntity<ApiResponse<Void>> deactivateShift(@PathVariable Long id) {
+        shiftService.deactivateShift(id);
+        return ResponseEntity.ok(ApiResponse.success(null, "Tạm ngưng ca làm việc thành công"));
+    }
 }
