@@ -2,12 +2,12 @@ package com.kltn.school_hrm.service.implement;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 
 import org.springframework.stereotype.Service;
 
 import com.kltn.school_hrm.dto.response.AttendanceCalculationResult;
 import com.kltn.school_hrm.entity.attendance.Attendance;
+import com.kltn.school_hrm.entity.attendance.AttendanceRecord;
 import com.kltn.school_hrm.entity.attendance.Shift;
 import com.kltn.school_hrm.enums.Enums.AttendanceStatus;
 import com.kltn.school_hrm.service.AttendanceCalculationService;
@@ -16,73 +16,78 @@ import com.kltn.school_hrm.service.AttendanceCalculationService;
 public class AttendanceCalculationServiceImpl implements AttendanceCalculationService {
 
     @Override
+    public AttendanceCalculationResult calculateFromRecord(AttendanceRecord record, Shift shift) {
+        if (record == null || shift == null) {
+            return absent();
+        }
+
+        LocalDateTime checkIn = record.getFirstCheckIn();
+        LocalDateTime checkOut = record.getLastCheckOut();
+
+        if (checkIn == null) {
+            return absent();
+        }
+
+        return doCalculate(checkIn, checkOut, record.getWorkDate().atTime(shift.getStartTime()),
+                buildExpectedEnd(record.getWorkDate(), shift),
+                shift.getGraceMinutes(), shift.getBreakMinutes());
+    }
+
+    @Override
+    @Deprecated
     public AttendanceCalculationResult calculate(Attendance attendance, Shift shift) {
         if (attendance == null || shift == null) {
-            return AttendanceCalculationResult.builder()
-                    .lateMinutes(0)
-                    .earlyLeaveMinutes(0)
-                    .workedMinutes(0)
-                    .status(AttendanceStatus.ABSENT)
-                    .build();
+            return absent();
         }
 
         LocalDateTime checkIn = attendance.getCheckIn();
         LocalDateTime checkOut = attendance.getCheckOut();
 
-        // 1. Nếu không có checkIn -> ABSENT
         if (checkIn == null) {
-            return AttendanceCalculationResult.builder()
-                    .lateMinutes(0)
-                    .earlyLeaveMinutes(0)
-                    .workedMinutes(0)
-                    .status(AttendanceStatus.ABSENT)
-                    .build();
+            return absent();
         }
 
-        // 2. Xác định thời điểm bắt đầu và kết thúc chuẩn theo ca
-        LocalDateTime expectedStart = attendance.getWorkDate().atTime(shift.getStartTime());
-        LocalDateTime expectedEnd;
+        return doCalculate(checkIn, checkOut,
+                attendance.getWorkDate().atTime(shift.getStartTime()),
+                buildExpectedEnd(attendance.getWorkDate(), shift),
+                shift.getGraceMinutes(), shift.getBreakMinutes());
+    }
 
-        if (Boolean.TRUE.equals(shift.getOverNight())) {
-            // Ca qua đêm -> kết thúc vào ngày hôm sau
-            expectedEnd = attendance.getWorkDate().plusDays(1).atTime(shift.getEndTime());
-        } else {
-            expectedEnd = attendance.getWorkDate().atTime(shift.getEndTime());
-        }
+    // ─── private helpers ────────────────────────────────────────────────────
 
-        // 3. Tính lateMinutes
-        // Mốc ân hạn cho phép
-        int graceMinutes = shift.getGraceMinutes() != null ? shift.getGraceMinutes() : 0;
+    private AttendanceCalculationResult doCalculate(
+            LocalDateTime checkIn,
+            LocalDateTime checkOut,
+            LocalDateTime expectedStart,
+            LocalDateTime expectedEnd,
+            Integer graceMinutesCfg,
+            Integer breakMinutesCfg) {
+
+        int graceMinutes = graceMinutesCfg != null ? graceMinutesCfg : 0;
         LocalDateTime graceLimit = expectedStart.plusMinutes(graceMinutes);
 
+        // Tính lateMinutes
         int lateMinutes = 0;
         if (checkIn.isAfter(graceLimit)) {
-            // Tính số phút muộn so với mốc bắt đầu chuẩn (trừ số phút ân hạn)
             long diff = Duration.between(expectedStart, checkIn).toMinutes();
             lateMinutes = (int) Math.max(0, diff - graceMinutes);
         }
 
-        // 4. Tính earlyLeaveMinutes & workedMinutes
+        // Tính earlyLeaveMinutes & workedMinutes
         int earlyLeaveMinutes = 0;
         int workedMinutes = 0;
 
         if (checkOut != null) {
-            // Nếu check-out trước giờ kết thúc chuẩn của ca -> Tính về sớm
             if (checkOut.isBefore(expectedEnd)) {
                 earlyLeaveMinutes = (int) Math.max(0, Duration.between(checkOut, expectedEnd).toMinutes());
             }
-
-            // Tổng thời gian làm việc thực tế
-            long totalMinutes = Duration.between(checkIn, checkOut).toMinutes();
-            int breakMinutes = shift.getBreakMinutes() != null ? shift.getBreakMinutes() : 0;
-            workedMinutes = (int) Math.max(0, totalMinutes - breakMinutes);
+            int breakMinutes = breakMinutesCfg != null ? breakMinutesCfg : 0;
+            workedMinutes = (int) Math.max(0, Duration.between(checkIn, checkOut).toMinutes() - breakMinutes);
         }
 
-        // 5. Xác định AttendanceStatus
+        // Xác định AttendanceStatus
         AttendanceStatus status;
-        if (lateMinutes > 0 && earlyLeaveMinutes > 0) {
-            status = AttendanceStatus.LATE; // Ưu tiên đánh dấu LATE hoặc kết hợp
-        } else if (lateMinutes > 0) {
+        if (lateMinutes > 0) {
             status = AttendanceStatus.LATE;
         } else if (earlyLeaveMinutes > 0) {
             status = AttendanceStatus.EARLY_LEAVE;
@@ -95,6 +100,22 @@ public class AttendanceCalculationServiceImpl implements AttendanceCalculationSe
                 .earlyLeaveMinutes(earlyLeaveMinutes)
                 .workedMinutes(workedMinutes)
                 .status(status)
+                .build();
+    }
+
+    private java.time.LocalDateTime buildExpectedEnd(java.time.LocalDate workDate, Shift shift) {
+        if (Boolean.TRUE.equals(shift.getOverNight())) {
+            return workDate.plusDays(1).atTime(shift.getEndTime());
+        }
+        return workDate.atTime(shift.getEndTime());
+    }
+
+    private AttendanceCalculationResult absent() {
+        return AttendanceCalculationResult.builder()
+                .lateMinutes(0)
+                .earlyLeaveMinutes(0)
+                .workedMinutes(0)
+                .status(AttendanceStatus.ABSENT)
                 .build();
     }
 }
