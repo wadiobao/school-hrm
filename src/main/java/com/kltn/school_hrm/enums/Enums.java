@@ -172,6 +172,36 @@ public class Enums {
     }
 
     @Getter
+    public enum AttendanceSource {
+        FINGERPRINT("Máy vân tay"),
+        FACE("Nhận diện khuôn mặt"),
+        RFID("Thẻ RFID/NFC"),
+        QR_CODE("Quét mã QR"),
+        MOBILE("Mobile app"),
+        WEB("Web"),
+        IMPORT("Import từ hệ thống khác"),
+        MANUAL("HR nhập thủ công");
+
+        private final String label;
+
+        AttendanceSource(String label) {
+            this.label = label;
+        }
+    }
+
+    @Getter
+    public enum AttendanceEventType {
+        IN("Chấm công vào"),
+        OUT("Chấm công ra");
+
+        private final String label;
+
+        AttendanceEventType(String label) {
+            this.label = label;
+        }
+    }
+
+    @Getter
     public enum AttendanceStatus {
         PRESENT("Có mặt"),
         LATE("Đi trễ"),
