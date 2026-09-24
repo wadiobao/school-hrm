@@ -27,7 +27,7 @@ import lombok.experimental.SuperBuilder;
  * hệ thống sẽ sinh version mới và đặt version mới nhất là active.
  */
 @Entity
-@Table(uniqueConstraints = {
+@Table(name = "approval_policies", uniqueConstraints = {
     @UniqueConstraint(columnNames = {"code", "version"})
 })
 @Getter

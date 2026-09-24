@@ -28,8 +28,12 @@ import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
 @Entity
-@Table(indexes = {
-		@Index(name = "idx_payroll_emp_month_year", columnList = "employee_id, month, year") })
+@Table(
+		name = "payrolls",
+		indexes = {
+				@Index(name = "idx_payroll_emp_month_year", columnList = "employee_id, month, year")
+		}
+)
 @Getter
 @Setter
 @NoArgsConstructor

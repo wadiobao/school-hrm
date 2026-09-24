@@ -26,6 +26,7 @@ import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
 @Entity
+@Table(name = "salary_histories")
 @Getter
 @Setter
 @NoArgsConstructor

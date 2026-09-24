@@ -18,6 +18,7 @@ import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
 @Entity
+@Table(name = "shifts")
 @Getter
 @Setter
 @NoArgsConstructor

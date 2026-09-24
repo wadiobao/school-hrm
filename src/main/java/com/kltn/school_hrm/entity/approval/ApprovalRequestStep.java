@@ -28,6 +28,7 @@ import lombok.experimental.SuperBuilder;
  * Lưu người duyệt đã resolve cụ thể tại thời điểm submit đơn để đảm bảo snapshot tính toán không bị thay đổi.
  */
 @Entity
+@Table(name = "approval_request_steps")
 @Getter
 @Setter
 @NoArgsConstructor

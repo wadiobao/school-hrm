@@ -23,6 +23,7 @@ import lombok.experimental.SuperBuilder;
  * Định nghĩa cấu hình cho từng cấp duyệt trong ApprovalPolicy (Configuration).
  */
 @Entity
+@Table(name = "approval_levels")
 @Getter
 @Setter
 @NoArgsConstructor
