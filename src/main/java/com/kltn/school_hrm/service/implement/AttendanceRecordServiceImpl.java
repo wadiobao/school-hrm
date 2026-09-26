@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.kltn.school_hrm.dto.response.AttendanceRecordResponse;
+import com.kltn.school_hrm.dto.response.AttendanceSessionResponse;
 import com.kltn.school_hrm.entity.attendance.AttendanceRecord;
 import com.kltn.school_hrm.exception.custom.BusinessException;
 import com.kltn.school_hrm.exception.custom.ResourceNotFoundException;
@@ -82,6 +83,18 @@ public class AttendanceRecordServiceImpl implements AttendanceRecordService {
     // ─── mapper ────────────────────────────────────────────────────────────
 
     private AttendanceRecordResponse mapToResponse(AttendanceRecord record) {
+        List<AttendanceSessionResponse> sessionResponses = null;
+        if (record.getSessions() != null) {
+            sessionResponses = record.getSessions().stream()
+                    .map(s -> AttendanceSessionResponse.builder()
+                            .id(s.getId())
+                            .checkIn(s.getCheckIn())
+                            .checkOut(s.getCheckOut())
+                            .workedMinutes(s.getWorkedMinutes())
+                            .build())
+                    .collect(Collectors.toList());
+        }
+
         return AttendanceRecordResponse.builder()
                 .id(record.getId())
                 .employeeId(record.getEmployee().getId())
@@ -95,6 +108,7 @@ public class AttendanceRecordServiceImpl implements AttendanceRecordService {
                 .workedMinutes(record.getWorkedMinutes())
                 .status(record.getStatus())
                 .note(record.getNote())
+                .sessions(sessionResponses)
                 .build();
     }
 

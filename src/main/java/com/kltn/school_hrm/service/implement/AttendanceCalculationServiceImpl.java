@@ -17,20 +17,65 @@ public class AttendanceCalculationServiceImpl implements AttendanceCalculationSe
 
     @Override
     public AttendanceCalculationResult calculateFromRecord(AttendanceRecord record, Shift shift) {
-        if (record == null || shift == null) {
+        if (record == null || shift == null || record.getSessions() == null || record.getSessions().isEmpty()) {
             return absent();
         }
 
-        LocalDateTime checkIn = record.getFirstCheckIn();
-        LocalDateTime checkOut = record.getLastCheckOut();
+        LocalDateTime expectedStart = record.getWorkDate().atTime(shift.getStartTime());
+        LocalDateTime expectedEnd = buildExpectedEnd(record.getWorkDate(), shift);
+        int graceMinutes = shift.getGraceMinutes() != null ? shift.getGraceMinutes() : 0;
+        LocalDateTime graceLimit = expectedStart.plusMinutes(graceMinutes);
 
-        if (checkIn == null) {
+        LocalDateTime firstCheckIn = record.getFirstCheckIn();
+        LocalDateTime lastCheckOut = record.getLastCheckOut();
+
+        if (firstCheckIn == null) {
             return absent();
         }
 
-        return doCalculate(checkIn, checkOut, record.getWorkDate().atTime(shift.getStartTime()),
-                buildExpectedEnd(record.getWorkDate(), shift),
-                shift.getGraceMinutes(), shift.getBreakMinutes());
+        // Tính lateMinutes
+        int lateMinutes = 0;
+        if (firstCheckIn.isAfter(graceLimit)) {
+            long diff = Duration.between(expectedStart, firstCheckIn).toMinutes();
+            lateMinutes = (int) Math.max(0, diff - graceMinutes);
+        }
+
+        // Tính earlyLeaveMinutes
+        int earlyLeaveMinutes = 0;
+        if (lastCheckOut != null && lastCheckOut.isBefore(expectedEnd)) {
+            earlyLeaveMinutes = (int) Math.max(0, Duration.between(lastCheckOut, expectedEnd).toMinutes());
+        }
+
+        // Tính workedMinutes tổng hợp từ các sessions
+        int totalWorkedMinutes = 0;
+        for (com.kltn.school_hrm.entity.attendance.AttendanceSession session : record.getSessions()) {
+            if (session.getWorkedMinutes() != null) {
+                totalWorkedMinutes += session.getWorkedMinutes();
+            }
+        }
+
+        // Nếu chỉ có 1 session (không quẹt thẻ ra/vào giữa giờ), tự động trừ giờ nghỉ trưa (nếu có)
+        if (record.getSessions().size() == 1) {
+            int breakMinutes = shift.getBreakMinutes() != null ? shift.getBreakMinutes() : 0;
+            totalWorkedMinutes = Math.max(0, totalWorkedMinutes - breakMinutes);
+        }
+
+        // Xác định AttendanceStatus
+        AttendanceStatus status;
+        if (lateMinutes > 0) {
+            status = AttendanceStatus.LATE;
+        } else if (earlyLeaveMinutes > 0) {
+            status = AttendanceStatus.EARLY_LEAVE;
+        } else {
+            status = AttendanceStatus.PRESENT;
+        }
+
+        return AttendanceCalculationResult.builder()
+                .lateMinutes(lateMinutes)
+                .earlyLeaveMinutes(earlyLeaveMinutes)
+                .workedMinutes(totalWorkedMinutes)
+                .status(status)
+                .build();
     }
 
     @Override

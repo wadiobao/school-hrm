@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.kltn.school_hrm.dto.response.AttendanceCalculationResult;
 import com.kltn.school_hrm.entity.attendance.AttendanceRawLog;
 import com.kltn.school_hrm.entity.attendance.AttendanceRecord;
+import com.kltn.school_hrm.entity.attendance.AttendanceSession;
 import com.kltn.school_hrm.entity.attendance.EmployeeShiftAssignment;
 import com.kltn.school_hrm.entity.attendance.Shift;
 import com.kltn.school_hrm.entity.employee.Employee;
@@ -24,16 +25,19 @@ import com.kltn.school_hrm.service.AttendanceCalculationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Comparator;
+
 /**
  * Gom raw logs của một ngày thành AttendanceRecord.
  * Internal processing - không cần Controller.
  *
  * Logic:
  *   1. Lấy tất cả raw logs của nhân viên trong ngày
- *   2. firstCheckIn = IN event đầu tiên
- *   3. lastCheckOut = OUT event cuối cùng
- *   4. Tạo/cập nhật AttendanceRecord
- *   5. Gọi AttendanceCalculationService để tính late/early/worked/status
+ *   2. Loại bỏ event dư thừa, ghép cặp IN-OUT tạo các AttendanceSession
+ *   3. Gắn sessions vào AttendanceRecord
+ *   4. Gọi AttendanceCalculationService để tính toán
  */
 @Slf4j
 @Service
@@ -48,7 +52,6 @@ public class AttendanceAggregationServiceImpl implements AttendanceAggregationSe
 
     @Override
     public AttendanceRecord aggregate(Long employeeId, LocalDate workDate) {
-        // 1. Lấy toàn bộ raw logs trong ngày (00:00 → 23:59:59)
         LocalDateTime dayStart = workDate.atStartOfDay();
         LocalDateTime dayEnd = workDate.plusDays(1).atStartOfDay();
 
@@ -60,34 +63,73 @@ public class AttendanceAggregationServiceImpl implements AttendanceAggregationSe
             return null;
         }
 
-        // 2. firstCheckIn = IN event có eventTime nhỏ nhất
-        LocalDateTime firstCheckIn = logs.stream()
-                .filter(l -> l.getEventType() == AttendanceEventType.IN)
-                .map(AttendanceRawLog::getEventTime)
-                .min(LocalDateTime::compareTo)
-                .orElse(null);
+        // Sắp xếp logs theo thời gian
+        logs.sort(Comparator.comparing(AttendanceRawLog::getEventTime));
 
-        // 3. lastCheckOut = OUT event có eventTime lớn nhất
-        LocalDateTime lastCheckOut = logs.stream()
-                .filter(l -> l.getEventType() == AttendanceEventType.OUT)
-                .map(AttendanceRawLog::getEventTime)
-                .max(LocalDateTime::compareTo)
-                .orElse(null);
-
-        // 4. Tạo hoặc cập nhật AttendanceRecord (idempotent - có thể gọi lại nhiều lần)
+        // Lấy record hiện tại hoặc tạo mới
         AttendanceRecord record = recordRepository.findByEmployeeIdAndWorkDate(employeeId, workDate)
                 .orElseGet(() -> {
                     Employee emp = logs.get(0).getEmployee();
                     return AttendanceRecord.builder()
                             .employee(emp)
                             .workDate(workDate)
+                            .sessions(new ArrayList<>())
                             .build();
                 });
 
-        record.setFirstCheckIn(firstCheckIn);
-        record.setLastCheckOut(lastCheckOut);
+        // Xóa sessions cũ (nếu có) để tính lại từ đầu
+        if (record.getSessions() != null) {
+            record.getSessions().clear();
+        } else {
+            record.setSessions(new ArrayList<>());
+        }
 
-        // 5. Tính toán qua AttendanceCalculationService
+        LocalDateTime currentIn = null;
+        LocalDateTime currentOut = null;
+        List<AttendanceSession> sessions = new ArrayList<>();
+
+        for (AttendanceRawLog log : logs) {
+            if (log.getEventType() == AttendanceEventType.IN) {
+                if (currentIn == null) {
+                    currentIn = log.getEventTime();
+                    currentOut = null;
+                } else {
+                    if (currentOut != null) {
+                        // Đã có 1 cặp IN-OUT hoàn chỉnh, lưu lại trước khi bắt đầu cặp mới
+                        sessions.add(createSession(record, currentIn, currentOut));
+                        currentIn = log.getEventTime();
+                        currentOut = null;
+                    }
+                    // Nếu currentOut == null -> Duplicate IN -> bỏ qua theo policy "chỉ giữ IN đầu tiên"
+                }
+            } else if (log.getEventType() == AttendanceEventType.OUT) {
+                if (currentIn != null) {
+                    // Cập nhật OUT mới nhất (nếu có duplicate OUT, sẽ giữ OUT cuối cùng)
+                    currentOut = log.getEventTime();
+                }
+                // Nếu currentIn == null -> OUT mồ côi -> bỏ qua
+            }
+        }
+
+        // Lưu phiên làm việc cuối cùng (nếu có)
+        if (currentIn != null) {
+            sessions.add(createSession(record, currentIn, currentOut));
+        }
+
+        record.getSessions().addAll(sessions);
+
+        // Cập nhật firstCheckIn và lastCheckOut tổng của ngày
+        record.setFirstCheckIn(sessions.isEmpty() ? null : sessions.get(0).getCheckIn());
+        
+        LocalDateTime lastCheckOutTotal = null;
+        for (AttendanceSession s : sessions) {
+            if (s.getCheckOut() != null) {
+                lastCheckOutTotal = s.getCheckOut();
+            }
+        }
+        record.setLastCheckOut(lastCheckOutTotal);
+
+        // Tính toán
         EmployeeShiftAssignment assignment = assignmentRepository.findApplicableAssignment(
                 employeeId, workDate.getDayOfWeek(), workDate).orElse(null);
 
@@ -99,11 +141,29 @@ public class AttendanceAggregationServiceImpl implements AttendanceAggregationSe
             record.setWorkedMinutes(result.getWorkedMinutes());
             record.setStatus(result.getStatus());
         } else {
-            // Không tìm thấy ca - vẫn lưu record nhưng status = PRESENT, không tính late/early
-            log.warn("Không tìm thấy ca làm việc cho employee={} ngày={}", employeeId, workDate);
+            // Không có lịch -> status là PRESENT vì họ có quẹt thẻ
             record.setStatus(AttendanceStatus.PRESENT);
+            record.setWorkedMinutes(sessions.stream()
+                .mapToInt(s -> s.getWorkedMinutes() != null ? s.getWorkedMinutes() : 0)
+                .sum());
         }
 
         return recordRepository.save(record);
+    }
+
+    private AttendanceSession createSession(
+            AttendanceRecord record, LocalDateTime checkIn, LocalDateTime checkOut) {
+        
+        Integer workedMinutes = 0;
+        if (checkIn != null && checkOut != null) {
+            workedMinutes = (int) Duration.between(checkIn, checkOut).toMinutes();
+        }
+
+        return AttendanceSession.builder()
+                .attendanceRecord(record)
+                .checkIn(checkIn)
+                .checkOut(checkOut)
+                .workedMinutes(workedMinutes)
+                .build();
     }
 }

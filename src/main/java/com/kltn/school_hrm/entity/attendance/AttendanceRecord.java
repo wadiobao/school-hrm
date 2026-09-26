@@ -7,6 +7,10 @@ import com.kltn.school_hrm.entity.base.BaseEntity;
 import com.kltn.school_hrm.entity.employee.Employee;
 import com.kltn.school_hrm.enums.Enums.AttendanceStatus;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -15,9 +19,11 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -30,7 +36,7 @@ import lombok.experimental.SuperBuilder;
  */
 @Entity
 @Table(
-    name = "attendance_record",
+    name = "attendance_records",
     indexes = {
         @Index(name = "idx_att_record_emp_date", columnList = "employee_id, work_date")
     },
@@ -44,6 +50,10 @@ import lombok.experimental.SuperBuilder;
 @AllArgsConstructor
 @SuperBuilder
 public class AttendanceRecord extends BaseEntity {
+
+    @Builder.Default
+    @OneToMany(mappedBy = "attendanceRecord", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<AttendanceSession> sessions = new ArrayList<>();
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "employee_id", nullable = false)

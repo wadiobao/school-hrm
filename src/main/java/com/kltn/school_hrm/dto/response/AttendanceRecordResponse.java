@@ -2,6 +2,7 @@ package com.kltn.school_hrm.dto.response;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 import com.kltn.school_hrm.enums.Enums.AttendanceStatus;
 
@@ -27,4 +28,5 @@ public class AttendanceRecordResponse {
     private Integer workedMinutes;
     private AttendanceStatus status;
     private String note;
+    private List<AttendanceSessionResponse> sessions;
 }
