@@ -51,28 +51,51 @@ public class AttendanceAggregationServiceImpl implements AttendanceAggregationSe
     private final AttendanceCalculationService calculationService;
 
     @Override
-    public AttendanceRecord aggregate(Long employeeId, LocalDate workDate) {
-        LocalDateTime dayStart = workDate.atStartOfDay();
-        LocalDateTime dayEnd = workDate.plusDays(1).atStartOfDay();
+    public AttendanceRecord aggregate(Long employeeId, LocalDate businessDate) {
 
+        // ── 1. Xác định Shift trước để biết time window cần query ───────────
+        EmployeeShiftAssignment assignment = assignmentRepository.findApplicableAssignment(
+                employeeId, businessDate.getDayOfWeek(), businessDate).orElse(null);
+
+        // Xác định window query raw logs
+        final LocalDateTime windowStart;
+        final LocalDateTime windowEnd;
+
+        if (assignment != null && assignment.getShift() != null) {
+            Shift shift = assignment.getShift();
+            windowStart = businessDate.atTime(shift.getStartTime());
+            if (Boolean.TRUE.equals(shift.getOverNight())) {
+                // Overnight: window kéo dài đến endTime của ngày hôm sau
+                windowEnd = businessDate.plusDays(1).atTime(shift.getEndTime());
+            } else {
+                // Ca bình thường: đến endTime cùng ngày (cộng thêm buffer 30 phút đề phòng OUT trễ)
+                windowEnd = businessDate.atTime(shift.getEndTime()).plusMinutes(30);
+            }
+        } else {
+            // Không có shift → fallback: query cả ngày calendar
+            windowStart = businessDate.atStartOfDay();
+            windowEnd   = businessDate.plusDays(1).atStartOfDay();
+        }
+
+        // ── 2. Query raw logs trong window ──────────────────────────────────
         List<AttendanceRawLog> logs = rawLogRepository.findByEmployeeIdAndEventTimeBetween(
-                employeeId, dayStart, dayEnd);
+                employeeId, windowStart, windowEnd);
 
         if (logs.isEmpty()) {
-            log.debug("Không có raw log nào cho employee={} ngày={}", employeeId, workDate);
+            log.debug("Không có raw log nào cho employee={} businessDate={}", employeeId, businessDate);
             return null;
         }
 
         // Sắp xếp logs theo thời gian
         logs.sort(Comparator.comparing(AttendanceRawLog::getEventTime));
 
-        // Lấy record hiện tại hoặc tạo mới
-        AttendanceRecord record = recordRepository.findByEmployeeIdAndWorkDate(employeeId, workDate)
+        // ── 3. Lấy AttendanceRecord hiện tại hoặc tạo mới ──────────────────
+        AttendanceRecord record = recordRepository.findByEmployeeIdAndWorkDate(employeeId, businessDate)
                 .orElseGet(() -> {
                     Employee emp = logs.get(0).getEmployee();
                     return AttendanceRecord.builder()
                             .employee(emp)
-                            .workDate(workDate)
+                            .workDate(businessDate) // workDate = businessDate
                             .sessions(new ArrayList<>())
                             .build();
                 });
@@ -129,10 +152,7 @@ public class AttendanceAggregationServiceImpl implements AttendanceAggregationSe
         }
         record.setLastCheckOut(lastCheckOutTotal);
 
-        // Tính toán
-        EmployeeShiftAssignment assignment = assignmentRepository.findApplicableAssignment(
-                employeeId, workDate.getDayOfWeek(), workDate).orElse(null);
-
+        // ── 5. Calculation (reuse assignment từ bước 1) ─────────────────────
         if (assignment != null && assignment.getShift() != null) {
             Shift shift = assignment.getShift();
             AttendanceCalculationResult result = calculationService.calculateFromRecord(record, shift);
@@ -141,7 +161,7 @@ public class AttendanceAggregationServiceImpl implements AttendanceAggregationSe
             record.setWorkedMinutes(result.getWorkedMinutes());
             record.setStatus(result.getStatus());
         } else {
-            // Không có lịch -> status là PRESENT vì họ có quẹt thẻ
+            // Không có lịch → cộng dồn workedMinutes từ sessions, status = PRESENT
             record.setStatus(AttendanceStatus.PRESENT);
             record.setWorkedMinutes(sessions.stream()
                 .mapToInt(s -> s.getWorkedMinutes() != null ? s.getWorkedMinutes() : 0)

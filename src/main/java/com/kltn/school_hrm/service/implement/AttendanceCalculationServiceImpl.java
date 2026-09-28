@@ -33,17 +33,29 @@ public class AttendanceCalculationServiceImpl implements AttendanceCalculationSe
             return absent();
         }
 
-        // Tính lateMinutes
+        // Tính lateMinutes (Cách 2: tính từ giờ bắt đầu ca, không trừ grace period)
+        // Ví dụ: ca 08:00, grace=5 phút, check-in 08:06 → lateMinutes = 6 phút
         int lateMinutes = 0;
         if (firstCheckIn.isAfter(graceLimit)) {
-            long diff = Duration.between(expectedStart, firstCheckIn).toMinutes();
-            lateMinutes = (int) Math.max(0, diff - graceMinutes);
+            lateMinutes = (int) Duration.between(expectedStart, firstCheckIn).toMinutes();
         }
 
-        // Tính earlyLeaveMinutes
+        // INCOMPLETE: có IN nhưng không có OUT → không thể tính thời gian làm việc
+        if (lastCheckOut == null) {
+            return AttendanceCalculationResult.builder()
+                    .lateMinutes(lateMinutes)
+                    .earlyLeaveMinutes(0)
+                    .workedMinutes(0)
+                    .status(AttendanceStatus.INCOMPLETE)
+                    .build();
+        }
+
+        // Tính earlyLeaveMinutes (dùng chung graceMinutes)
+        // Ví dụ: endTime=17:00, grace=5 → về trước 16:55 mới bị tính
+        LocalDateTime earlyLeaveLimit = expectedEnd.minusMinutes(graceMinutes);
         int earlyLeaveMinutes = 0;
-        if (lastCheckOut != null && lastCheckOut.isBefore(expectedEnd)) {
-            earlyLeaveMinutes = (int) Math.max(0, Duration.between(lastCheckOut, expectedEnd).toMinutes());
+        if (lastCheckOut.isBefore(earlyLeaveLimit)) {
+            earlyLeaveMinutes = (int) Duration.between(lastCheckOut, expectedEnd).toMinutes();
         }
 
         // Tính workedMinutes tổng hợp từ các sessions
@@ -62,7 +74,9 @@ public class AttendanceCalculationServiceImpl implements AttendanceCalculationSe
 
         // Xác định AttendanceStatus
         AttendanceStatus status;
-        if (lateMinutes > 0) {
+        if (lateMinutes > 0 && earlyLeaveMinutes > 0) {
+            status = AttendanceStatus.LATE; // muộn được ưu tiên hiển thị
+        } else if (lateMinutes > 0) {
             status = AttendanceStatus.LATE;
         } else if (earlyLeaveMinutes > 0) {
             status = AttendanceStatus.EARLY_LEAVE;

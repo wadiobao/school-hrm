@@ -206,7 +206,8 @@ public class Enums {
         PRESENT("Có mặt"),
         LATE("Đi trễ"),
         EARLY_LEAVE("Về sớm"),
-        ABSENT("Vắng mặt");
+        ABSENT("Vắng mặt"),
+        INCOMPLETE("Thiếu dữ liệu chấm công");
 
         private final String label;
 
