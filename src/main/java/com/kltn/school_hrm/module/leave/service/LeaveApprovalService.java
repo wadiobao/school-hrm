@@ -5,7 +5,7 @@ import com.kltn.school_hrm.module.leave.entity.LeaveApproval;
 import com.kltn.school_hrm.module.leave.entity.LeaveRequest;
 
 /**
- * @deprecated Thay thế bằng {@link com.kltn.school_hrm.service.approval.ApprovalEngineService}.
+ * @deprecated Thay thế bằng {@link com.kltn.school_hrm.module.approval.service.ApprovalEngineService}.
  */
 @Deprecated
 public interface LeaveApprovalService {

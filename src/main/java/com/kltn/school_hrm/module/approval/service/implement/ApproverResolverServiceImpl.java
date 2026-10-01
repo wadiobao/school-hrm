@@ -1,16 +1,16 @@
-﻿package com.kltn.school_hrm.service.approval.implement;
+﻿package com.kltn.school_hrm.module.approval.service.implement;
 
 import java.util.List;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.kltn.school_hrm.entity.approval.ApprovalLevel;
+import com.kltn.school_hrm.module.approval.entity.ApprovalLevel;
 import com.kltn.school_hrm.module.employee.entity.Employee;
 import com.kltn.school_hrm.shared.enums.Enums.RoleCode;
 import com.kltn.school_hrm.shared.exception.custom.BusinessException;
 import com.kltn.school_hrm.module.employee.repository.EmployeeRepository;
-import com.kltn.school_hrm.service.approval.ApproverResolverService;
+import com.kltn.school_hrm.module.approval.service.ApproverResolverService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

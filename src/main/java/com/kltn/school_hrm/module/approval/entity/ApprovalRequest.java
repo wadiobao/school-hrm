@@ -1,4 +1,4 @@
-﻿package com.kltn.school_hrm.entity.approval;
+﻿package com.kltn.school_hrm.module.approval.entity;
 
 import java.util.ArrayList;
 import java.util.List;

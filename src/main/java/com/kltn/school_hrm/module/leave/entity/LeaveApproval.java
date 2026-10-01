@@ -25,8 +25,8 @@ import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
 /**
- * @deprecated Thay thế bằng {@link com.kltn.school_hrm.entity.approval.ApprovalRequestStep}
- *             và {@link com.kltn.school_hrm.service.approval.ApprovalEngineService}.
+ * @deprecated Thay thế bằng {@link com.kltn.school_hrm.module.approval.entity.ApprovalRequestStep}
+ *             và {@link com.kltn.school_hrm.module.approval.service.ApprovalEngineService}.
  */
 @Deprecated
 @Entity

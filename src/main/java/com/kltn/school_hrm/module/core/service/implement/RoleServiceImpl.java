@@ -1,4 +1,4 @@
-﻿package com.kltn.school_hrm.service.implement;
+﻿package com.kltn.school_hrm.module.core.service.implement;
 
 import java.util.List;
 import java.util.stream.Collectors;

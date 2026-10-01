@@ -1,4 +1,4 @@
-﻿package com.kltn.school_hrm.service.approval.implement;
+﻿package com.kltn.school_hrm.module.approval.service.implement;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -10,25 +10,25 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.kltn.school_hrm.dto.response.ApprovalResult;
-import com.kltn.school_hrm.entity.approval.ApprovalAction;
-import com.kltn.school_hrm.entity.approval.ApprovalLevel;
-import com.kltn.school_hrm.entity.approval.ApprovalPolicy;
-import com.kltn.school_hrm.entity.approval.ApprovalRequest;
-import com.kltn.school_hrm.entity.approval.ApprovalRequestStep;
+import com.kltn.school_hrm.module.approval.dto.responseResult;
+import com.kltn.school_hrm.module.approval.entity.ApprovalAction;
+import com.kltn.school_hrm.module.approval.entity.ApprovalLevel;
+import com.kltn.school_hrm.module.approval.entity.ApprovalPolicy;
+import com.kltn.school_hrm.module.approval.entity.ApprovalRequest;
+import com.kltn.school_hrm.module.approval.entity.ApprovalRequestStep;
 import com.kltn.school_hrm.module.employee.entity.Employee;
 import com.kltn.school_hrm.shared.enums.Enums.ApprovalActionType;
 import com.kltn.school_hrm.shared.enums.Enums.ApprovalConditionType;
 import com.kltn.school_hrm.shared.enums.Enums.ApprovalStatus;
 import com.kltn.school_hrm.shared.exception.custom.BusinessException;
-import com.kltn.school_hrm.repository.ApprovalActionRepository;
-import com.kltn.school_hrm.repository.ApprovalLevelRepository;
-import com.kltn.school_hrm.repository.ApprovalPolicyRepository;
-import com.kltn.school_hrm.repository.ApprovalRequestRepository;
-import com.kltn.school_hrm.repository.ApprovalRequestStepRepository;
+import com.kltn.school_hrm.module.approval.repository.ApprovalActionRepository;
+import com.kltn.school_hrm.module.approval.repository.ApprovalLevelRepository;
+import com.kltn.school_hrm.module.approval.repository.ApprovalPolicyRepository;
+import com.kltn.school_hrm.module.approval.repository.ApprovalRequestRepository;
+import com.kltn.school_hrm.module.approval.repository.ApprovalRequestStepRepository;
 import com.kltn.school_hrm.module.employee.repository.EmployeeRepository;
-import com.kltn.school_hrm.service.approval.ApprovalEngineService;
-import com.kltn.school_hrm.service.approval.ApproverResolverService;
+import com.kltn.school_hrm.module.approval.service.ApprovalEngineService;
+import com.kltn.school_hrm.module.approval.service.ApproverResolverService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

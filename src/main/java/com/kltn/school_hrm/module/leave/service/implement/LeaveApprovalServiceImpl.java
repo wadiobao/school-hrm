@@ -18,7 +18,7 @@ import com.kltn.school_hrm.module.leave.service.LeaveApprovalService;
 import lombok.RequiredArgsConstructor;
 
 /**
- * @deprecated Thay thế bằng {@link com.kltn.school_hrm.service.approval.implement.ApprovalEngineServiceImpl}.
+ * @deprecated Thay thế bằng {@link com.kltn.school_hrm.module.approval.service.implement.ApprovalEngineServiceImpl}.
  */
 @Deprecated
 @Service

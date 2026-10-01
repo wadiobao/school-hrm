@@ -1,4 +1,4 @@
-﻿package com.kltn.school_hrm.entity.approval;
+﻿package com.kltn.school_hrm.module.approval.entity;
 
 import com.kltn.school_hrm.shared.entity.base.BaseEntity;
 import com.kltn.school_hrm.shared.enums.Enums.ApprovalConditionType;

@@ -1,11 +1,11 @@
-﻿package com.kltn.school_hrm.service.approval;
+﻿package com.kltn.school_hrm.module.approval.service;
 
 import java.util.List;
 import java.util.Map;
 
-import com.kltn.school_hrm.dto.response.ApprovalResult;
-import com.kltn.school_hrm.entity.approval.ApprovalRequest;
-import com.kltn.school_hrm.entity.approval.ApprovalRequestStep;
+import com.kltn.school_hrm.module.approval.dto.responseResult;
+import com.kltn.school_hrm.module.approval.entity.ApprovalRequest;
+import com.kltn.school_hrm.module.approval.entity.ApprovalRequestStep;
 import com.kltn.school_hrm.module.employee.entity.Employee;
 
 public interface ApprovalEngineService {

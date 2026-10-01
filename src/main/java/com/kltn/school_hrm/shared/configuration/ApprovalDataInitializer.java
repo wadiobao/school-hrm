@@ -6,11 +6,11 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import com.kltn.school_hrm.entity.approval.ApprovalLevel;
-import com.kltn.school_hrm.entity.approval.ApprovalPolicy;
+import com.kltn.school_hrm.module.approval.entity.ApprovalLevel;
+import com.kltn.school_hrm.module.approval.entity.ApprovalPolicy;
 import com.kltn.school_hrm.shared.enums.Enums.ApprovalConditionType;
 import com.kltn.school_hrm.shared.enums.Enums.ApproverType;
-import com.kltn.school_hrm.repository.ApprovalPolicyRepository;
+import com.kltn.school_hrm.module.approval.repository.ApprovalPolicyRepository;
 
 import lombok.extern.slf4j.Slf4j;
 

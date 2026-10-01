@@ -24,7 +24,7 @@ import com.kltn.school_hrm.shared.exception.custom.ResourceNotFoundException;
 import com.kltn.school_hrm.module.leave.repository.LeaveApprovalRepository;
 import com.kltn.school_hrm.module.core.repository.RoleRepository;
 import com.kltn.school_hrm.module.core.repository.UserRepository;
-import com.kltn.school_hrm.service.approval.ApprovalEngineService;
+import com.kltn.school_hrm.module.approval.service.ApprovalEngineService;
 
 import lombok.RequiredArgsConstructor;
 

@@ -11,7 +11,7 @@ import com.kltn.school_hrm.module.leave.entity.LeaveApproval;
 import com.kltn.school_hrm.shared.enums.Enums.ApprovalStatus;
 
 /**
- * @deprecated Thay thế bằng {@link com.kltn.school_hrm.repository.ApprovalRequestStepRepository}.
+ * @deprecated Thay thế bằng {@link com.kltn.school_hrm.module.approval.repository.ApprovalRequestStepRepository}.
  */
 @Deprecated
 @Repository
