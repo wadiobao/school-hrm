@@ -9,12 +9,12 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.kltn.school_hrm.dto.request.PayrollCreateRequest;
 import com.kltn.school_hrm.dto.response.PayrollResponse;
-import com.kltn.school_hrm.entity.employee.Employee;
+import com.kltn.school_hrm.module.employee.entity.Employee;
 import com.kltn.school_hrm.entity.payroll.Payroll;
 import com.kltn.school_hrm.entity.payroll.PayrollDetail;
 import com.kltn.school_hrm.entity.payroll.SalaryComponent;
 import com.kltn.school_hrm.shared.enums.Enums.PayrollStatus;
-import com.kltn.school_hrm.repository.EmployeeRepository;
+import com.kltn.school_hrm.module.employee.repository.EmployeeRepository;
 import com.kltn.school_hrm.repository.PayrollDetailRepository;
 import com.kltn.school_hrm.repository.PayrollRepository;
 import com.kltn.school_hrm.repository.SalaryComponentRepository;

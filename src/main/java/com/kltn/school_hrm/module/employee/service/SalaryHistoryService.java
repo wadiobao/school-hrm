@@ -1,10 +1,10 @@
-﻿package com.kltn.school_hrm.service;
+﻿package com.kltn.school_hrm.module.employee.service;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
-import com.kltn.school_hrm.entity.history.SalaryHistory;
+import com.kltn.school_hrm.module.employee.entity.SalaryHistory;
 import com.kltn.school_hrm.shared.enums.Enums.Currency;
 import com.kltn.school_hrm.shared.enums.Enums.SalaryChangeReason;
 

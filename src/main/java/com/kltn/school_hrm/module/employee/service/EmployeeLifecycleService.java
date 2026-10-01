@@ -1,4 +1,4 @@
-package com.kltn.school_hrm.service;
+﻿package com.kltn.school_hrm.module.employee.service;
 
 public interface EmployeeLifecycleService {
     void completeProbation(Long employeeId, String reason);

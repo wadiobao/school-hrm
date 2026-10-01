@@ -13,7 +13,7 @@ import com.kltn.school_hrm.entity.attendance.AttendanceRecord;
 import com.kltn.school_hrm.shared.exception.custom.BusinessException;
 import com.kltn.school_hrm.shared.exception.custom.ResourceNotFoundException;
 import com.kltn.school_hrm.repository.AttendanceRecordRepository;
-import com.kltn.school_hrm.repository.EmployeeRepository;
+import com.kltn.school_hrm.module.employee.repository.EmployeeRepository;
 import com.kltn.school_hrm.service.AttendanceAggregationService;
 import com.kltn.school_hrm.service.AttendanceRecordService;
 

@@ -1,7 +1,7 @@
-﻿package com.kltn.school_hrm.entity.history;
+﻿package com.kltn.school_hrm.module.employee.entity;
 
 import com.kltn.school_hrm.shared.entity.base.BaseEntity;
-import com.kltn.school_hrm.entity.employee.Employee;
+import com.kltn.school_hrm.module.employee.entity.Employee;
 import com.kltn.school_hrm.shared.enums.Enums.EmployeeStatus;
 
 import jakarta.persistence.Column;

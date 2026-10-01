@@ -1,4 +1,4 @@
-package com.kltn.school_hrm.repository;
+﻿package com.kltn.school_hrm.module.employee.repository;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -9,7 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import com.kltn.school_hrm.entity.employee.WorkPermitAndVisa;
+import com.kltn.school_hrm.module.employee.entity.WorkPermitAndVisa;
 
 @Repository
 public interface WorkPermitAndVisaRepository extends JpaRepository<WorkPermitAndVisa, Long> {

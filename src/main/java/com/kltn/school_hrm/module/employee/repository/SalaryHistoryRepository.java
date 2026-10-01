@@ -1,4 +1,4 @@
-package com.kltn.school_hrm.repository;
+﻿package com.kltn.school_hrm.module.employee.repository;
 
 import java.util.List;
 import java.util.Optional;
@@ -6,7 +6,7 @@ import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import com.kltn.school_hrm.entity.history.SalaryHistory;
+import com.kltn.school_hrm.module.employee.entity.SalaryHistory;
 
 @Repository
 public interface SalaryHistoryRepository extends JpaRepository<SalaryHistory, Long> {

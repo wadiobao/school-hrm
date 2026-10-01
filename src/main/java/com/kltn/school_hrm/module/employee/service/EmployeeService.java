@@ -1,14 +1,14 @@
-package com.kltn.school_hrm.service;
+﻿package com.kltn.school_hrm.module.employee.service;
 
 import java.util.List;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
-import com.kltn.school_hrm.dto.request.EmployeeCreateRequest;
-import com.kltn.school_hrm.dto.request.WorkPermitRequest;
-import com.kltn.school_hrm.dto.response.EmployeeResponse;
-import com.kltn.school_hrm.dto.response.WorkPermitResponse;
+import com.kltn.school_hrm.module.employee.dto.request.EmployeeCreateRequest;
+import com.kltn.school_hrm.module.employee.dto.request.WorkPermitRequest;
+import com.kltn.school_hrm.module.employee.dto.response.EmployeeResponse;
+import com.kltn.school_hrm.module.employee.dto.response.WorkPermitResponse;
 
 public interface EmployeeService {
 	EmployeeResponse createEmployee(EmployeeCreateRequest request);

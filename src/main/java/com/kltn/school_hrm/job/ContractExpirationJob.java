@@ -6,10 +6,10 @@ import java.util.List;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import com.kltn.school_hrm.entity.employee.Contract;
+import com.kltn.school_hrm.module.employee.entity.Contract;
 import com.kltn.school_hrm.shared.enums.Enums.ContractStatus;
-import com.kltn.school_hrm.repository.ContractRepository;
-import com.kltn.school_hrm.service.ContractService;
+import com.kltn.school_hrm.module.employee.repository.ContractRepository;
+import com.kltn.school_hrm.module.employee.service.ContractService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

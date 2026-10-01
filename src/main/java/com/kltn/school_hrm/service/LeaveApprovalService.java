@@ -1,6 +1,6 @@
-package com.kltn.school_hrm.service;
+﻿package com.kltn.school_hrm.service;
 
-import com.kltn.school_hrm.entity.employee.Employee;
+import com.kltn.school_hrm.module.employee.entity.Employee;
 import com.kltn.school_hrm.entity.leave.LeaveApproval;
 import com.kltn.school_hrm.entity.leave.LeaveRequest;
 

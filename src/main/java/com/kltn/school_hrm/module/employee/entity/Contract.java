@@ -1,4 +1,4 @@
-﻿package com.kltn.school_hrm.entity.employee;
+﻿package com.kltn.school_hrm.module.employee.entity;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;

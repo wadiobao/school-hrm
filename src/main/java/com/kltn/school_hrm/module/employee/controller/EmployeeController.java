@@ -1,4 +1,4 @@
-package com.kltn.school_hrm.controller;
+﻿package com.kltn.school_hrm.module.employee.controller;
 
 import java.util.List;
 
@@ -18,12 +18,12 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.kltn.school_hrm.dto.common.ApiResponse;
-import com.kltn.school_hrm.dto.request.EmployeeCreateRequest;
-import com.kltn.school_hrm.dto.request.WorkPermitRequest;
-import com.kltn.school_hrm.dto.response.EmployeeResponse;
-import com.kltn.school_hrm.dto.response.WorkPermitResponse;
-import com.kltn.school_hrm.service.EmployeeLifecycleService;
-import com.kltn.school_hrm.service.EmployeeService;
+import com.kltn.school_hrm.module.employee.dto.request.EmployeeCreateRequest;
+import com.kltn.school_hrm.module.employee.dto.request.WorkPermitRequest;
+import com.kltn.school_hrm.module.employee.dto.response.EmployeeResponse;
+import com.kltn.school_hrm.module.employee.dto.response.WorkPermitResponse;
+import com.kltn.school_hrm.module.employee.service.EmployeeLifecycleService;
+import com.kltn.school_hrm.module.employee.service.EmployeeService;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

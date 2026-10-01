@@ -1,4 +1,4 @@
-﻿package com.kltn.school_hrm.service.implement;
+﻿package com.kltn.school_hrm.module.employee.service.implement;
 
 import java.util.Currency;
 import java.util.List;
@@ -7,20 +7,20 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.kltn.school_hrm.dto.request.ContractRequest;
-import com.kltn.school_hrm.dto.response.ContractResponse;
+import com.kltn.school_hrm.module.employee.dto.request.ContractRequest;
+import com.kltn.school_hrm.module.employee.dto.response.ContractResponse;
 import com.kltn.school_hrm.module.core.entity.Position;
-import com.kltn.school_hrm.entity.employee.Contract;
-import com.kltn.school_hrm.entity.employee.Employee;
+import com.kltn.school_hrm.module.employee.entity.Contract;
+import com.kltn.school_hrm.module.employee.entity.Employee;
 import com.kltn.school_hrm.shared.enums.Enums.ContractStatus;
 import com.kltn.school_hrm.shared.enums.Enums.ContractType;
 import com.kltn.school_hrm.shared.enums.Enums.EmployeeStatus;
 import com.kltn.school_hrm.shared.exception.custom.BusinessException;
 import com.kltn.school_hrm.shared.exception.custom.NotFoundException;
-import com.kltn.school_hrm.repository.ContractRepository;
-import com.kltn.school_hrm.repository.EmployeeRepository;
+import com.kltn.school_hrm.module.employee.repository.ContractRepository;
+import com.kltn.school_hrm.module.employee.repository.EmployeeRepository;
 import com.kltn.school_hrm.module.core.repository.PositionRepository;
-import com.kltn.school_hrm.service.ContractService;
+import com.kltn.school_hrm.module.employee.service.ContractService;
 
 import lombok.RequiredArgsConstructor;
 

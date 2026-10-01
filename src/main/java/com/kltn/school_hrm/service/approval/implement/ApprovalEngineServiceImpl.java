@@ -16,7 +16,7 @@ import com.kltn.school_hrm.entity.approval.ApprovalLevel;
 import com.kltn.school_hrm.entity.approval.ApprovalPolicy;
 import com.kltn.school_hrm.entity.approval.ApprovalRequest;
 import com.kltn.school_hrm.entity.approval.ApprovalRequestStep;
-import com.kltn.school_hrm.entity.employee.Employee;
+import com.kltn.school_hrm.module.employee.entity.Employee;
 import com.kltn.school_hrm.shared.enums.Enums.ApprovalActionType;
 import com.kltn.school_hrm.shared.enums.Enums.ApprovalConditionType;
 import com.kltn.school_hrm.shared.enums.Enums.ApprovalStatus;
@@ -26,7 +26,7 @@ import com.kltn.school_hrm.repository.ApprovalLevelRepository;
 import com.kltn.school_hrm.repository.ApprovalPolicyRepository;
 import com.kltn.school_hrm.repository.ApprovalRequestRepository;
 import com.kltn.school_hrm.repository.ApprovalRequestStepRepository;
-import com.kltn.school_hrm.repository.EmployeeRepository;
+import com.kltn.school_hrm.module.employee.repository.EmployeeRepository;
 import com.kltn.school_hrm.service.approval.ApprovalEngineService;
 import com.kltn.school_hrm.service.approval.ApproverResolverService;
 

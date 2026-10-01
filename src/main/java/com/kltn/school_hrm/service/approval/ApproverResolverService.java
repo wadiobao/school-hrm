@@ -1,7 +1,7 @@
-package com.kltn.school_hrm.service.approval;
+﻿package com.kltn.school_hrm.service.approval;
 
 import com.kltn.school_hrm.entity.approval.ApprovalLevel;
-import com.kltn.school_hrm.entity.employee.Employee;
+import com.kltn.school_hrm.module.employee.entity.Employee;
 
 public interface ApproverResolverService {
 

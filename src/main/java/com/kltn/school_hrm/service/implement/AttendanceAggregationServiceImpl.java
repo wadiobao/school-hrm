@@ -13,7 +13,7 @@ import com.kltn.school_hrm.entity.attendance.AttendanceRecord;
 import com.kltn.school_hrm.entity.attendance.AttendanceSession;
 import com.kltn.school_hrm.entity.attendance.EmployeeShiftAssignment;
 import com.kltn.school_hrm.entity.attendance.Shift;
-import com.kltn.school_hrm.entity.employee.Employee;
+import com.kltn.school_hrm.module.employee.entity.Employee;
 import com.kltn.school_hrm.shared.enums.Enums.AttendanceEventType;
 import com.kltn.school_hrm.shared.enums.Enums.AttendanceStatus;
 import com.kltn.school_hrm.repository.AttendanceRawLogRepository;

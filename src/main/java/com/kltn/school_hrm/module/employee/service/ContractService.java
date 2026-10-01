@@ -1,9 +1,9 @@
-package com.kltn.school_hrm.service;
+﻿package com.kltn.school_hrm.module.employee.service;
 
 import java.util.List;
 
-import com.kltn.school_hrm.dto.request.ContractRequest;
-import com.kltn.school_hrm.dto.response.ContractResponse;
+import com.kltn.school_hrm.module.employee.dto.request.ContractRequest;
+import com.kltn.school_hrm.module.employee.dto.response.ContractResponse;
 
 public interface ContractService {
     ContractResponse createInitialContract(ContractRequest request);

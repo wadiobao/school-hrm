@@ -9,9 +9,9 @@ import org.springframework.transaction.annotation.Transactional;
 import com.kltn.school_hrm.module.core.dto.request.DepartmentCreateRequest;
 import com.kltn.school_hrm.module.core.dto.response.DepartmentResponse;
 import com.kltn.school_hrm.module.core.entity.Department;
-import com.kltn.school_hrm.entity.employee.Employee;
+import com.kltn.school_hrm.module.employee.entity.Employee;
 import com.kltn.school_hrm.module.core.repository.DepartmentRepository;
-import com.kltn.school_hrm.repository.EmployeeRepository;
+import com.kltn.school_hrm.module.employee.repository.EmployeeRepository;
 import com.kltn.school_hrm.module.core.service.DepartmentService;
 import com.kltn.school_hrm.shared.utils.DepartmentChartValidationService;
 

@@ -1,4 +1,4 @@
-﻿package com.kltn.school_hrm.dto.request;
+﻿package com.kltn.school_hrm.module.employee.dto.request;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
