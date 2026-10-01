@@ -1,11 +1,11 @@
-﻿package com.kltn.school_hrm.repository;
+﻿package com.kltn.school_hrm.module.leave.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import com.kltn.school_hrm.entity.leave.LeaveRequest;
+import com.kltn.school_hrm.module.leave.entity.LeaveRequest;
 import com.kltn.school_hrm.shared.enums.Enums.RequestStatus;
 
 import java.time.LocalDate;

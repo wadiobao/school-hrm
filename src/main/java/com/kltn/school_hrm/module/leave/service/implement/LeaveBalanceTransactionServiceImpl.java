@@ -1,4 +1,4 @@
-﻿package com.kltn.school_hrm.service.implement;
+﻿package com.kltn.school_hrm.module.leave.service.implement;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -6,12 +6,12 @@ import java.time.LocalDate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.kltn.school_hrm.entity.leave.LeaveBalance;
-import com.kltn.school_hrm.entity.leave.LeaveBalanceTransaction;
-import com.kltn.school_hrm.entity.leave.LeaveRequest;
+import com.kltn.school_hrm.module.leave.entity.LeaveBalance;
+import com.kltn.school_hrm.module.leave.entity.LeaveBalanceTransaction;
+import com.kltn.school_hrm.module.leave.entity.LeaveRequest;
 import com.kltn.school_hrm.shared.enums.Enums;
-import com.kltn.school_hrm.repository.LeaveBalanceTransactionRepository;
-import com.kltn.school_hrm.service.LeaveBalanceTransactionService;
+import com.kltn.school_hrm.module.leave.repository.LeaveBalanceTransactionRepository;
+import com.kltn.school_hrm.module.leave.service.LeaveBalanceTransactionService;
 
 import lombok.RequiredArgsConstructor;
 

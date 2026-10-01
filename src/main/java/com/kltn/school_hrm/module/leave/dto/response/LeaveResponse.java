@@ -1,4 +1,4 @@
-﻿package com.kltn.school_hrm.dto.response;
+﻿package com.kltn.school_hrm.module.leave.dto.response;
 
 import java.time.LocalDate;
 import java.util.List;

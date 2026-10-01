@@ -1,4 +1,4 @@
-﻿package com.kltn.school_hrm.service.implement;
+﻿package com.kltn.school_hrm.module.leave.service.implement;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
@@ -8,12 +8,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.kltn.school_hrm.module.employee.entity.Employee;
-import com.kltn.school_hrm.entity.leave.LeaveApproval;
-import com.kltn.school_hrm.entity.leave.LeaveRequest;
+import com.kltn.school_hrm.module.leave.entity.LeaveApproval;
+import com.kltn.school_hrm.module.leave.entity.LeaveRequest;
 import com.kltn.school_hrm.shared.enums.Enums.ApprovalStatus;
 import com.kltn.school_hrm.shared.exception.custom.BusinessException;
-import com.kltn.school_hrm.repository.LeaveApprovalRepository;
-import com.kltn.school_hrm.service.LeaveApprovalService;
+import com.kltn.school_hrm.module.leave.repository.LeaveApprovalRepository;
+import com.kltn.school_hrm.module.leave.service.LeaveApprovalService;
 
 import lombok.RequiredArgsConstructor;
 

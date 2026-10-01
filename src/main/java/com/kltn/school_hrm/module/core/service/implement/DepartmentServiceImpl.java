@@ -21,7 +21,7 @@ import com.kltn.school_hrm.shared.enums.Enums.EmployeeStatus;
 import com.kltn.school_hrm.shared.enums.Enums.RoleCode;
 import com.kltn.school_hrm.shared.exception.custom.BusinessException;
 import com.kltn.school_hrm.shared.exception.custom.ResourceNotFoundException;
-import com.kltn.school_hrm.repository.LeaveApprovalRepository;
+import com.kltn.school_hrm.module.leave.repository.LeaveApprovalRepository;
 import com.kltn.school_hrm.module.core.repository.RoleRepository;
 import com.kltn.school_hrm.module.core.repository.UserRepository;
 import com.kltn.school_hrm.service.approval.ApprovalEngineService;

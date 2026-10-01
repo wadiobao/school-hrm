@@ -1,4 +1,4 @@
-package com.kltn.school_hrm.repository;
+﻿package com.kltn.school_hrm.module.leave.repository;
 
 import java.util.List;
 import java.util.Optional;
@@ -7,7 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 
-import com.kltn.school_hrm.entity.leave.LeaveBalance;
+import com.kltn.school_hrm.module.leave.entity.LeaveBalance;
 
 @Repository
 public interface LeaveBalanceRepository extends JpaRepository<LeaveBalance, Long>,

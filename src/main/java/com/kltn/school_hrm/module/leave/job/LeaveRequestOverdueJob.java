@@ -1,12 +1,12 @@
-package com.kltn.school_hrm.job;
+﻿package com.kltn.school_hrm.module.leave.job;
 
 import java.util.List;
 
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import com.kltn.school_hrm.dto.response.LeaveResponse;
-import com.kltn.school_hrm.service.LeaveRequestService;
+import com.kltn.school_hrm.module.leave.dto.response.LeaveResponse;
+import com.kltn.school_hrm.module.leave.service.LeaveRequestService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

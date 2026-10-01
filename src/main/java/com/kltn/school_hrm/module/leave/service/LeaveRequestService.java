@@ -1,10 +1,10 @@
-package com.kltn.school_hrm.service;
+﻿package com.kltn.school_hrm.module.leave.service;
 
 import java.util.List;
 
-import com.kltn.school_hrm.dto.request.LeaveCreateRequest;
-import com.kltn.school_hrm.dto.request.LeaveDecisionRequest;
-import com.kltn.school_hrm.dto.response.LeaveResponse;
+import com.kltn.school_hrm.module.leave.dto.request.LeaveCreateRequest;
+import com.kltn.school_hrm.module.leave.dto.request.LeaveDecisionRequest;
+import com.kltn.school_hrm.module.leave.dto.response.LeaveResponse;
 
 public interface LeaveRequestService {
     LeaveResponse createLeaveRequest(LeaveCreateRequest request);

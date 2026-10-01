@@ -1,4 +1,4 @@
-﻿package com.kltn.school_hrm.entity.leave;
+﻿package com.kltn.school_hrm.module.leave.entity;
 
 import java.math.BigDecimal;
 

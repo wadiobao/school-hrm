@@ -1,4 +1,4 @@
-package com.kltn.school_hrm.controller;
+﻿package com.kltn.school_hrm.module.leave.controller;
 
 import java.util.List;
 
@@ -16,10 +16,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.kltn.school_hrm.dto.common.ApiResponse;
-import com.kltn.school_hrm.dto.request.LeaveCreateRequest;
-import com.kltn.school_hrm.dto.request.LeaveDecisionRequest;
-import com.kltn.school_hrm.dto.response.LeaveResponse;
-import com.kltn.school_hrm.service.LeaveRequestService;
+import com.kltn.school_hrm.module.leave.dto.request.LeaveCreateRequest;
+import com.kltn.school_hrm.module.leave.dto.request.LeaveDecisionRequest;
+import com.kltn.school_hrm.module.leave.dto.response.LeaveResponse;
+import com.kltn.school_hrm.module.leave.service.LeaveRequestService;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

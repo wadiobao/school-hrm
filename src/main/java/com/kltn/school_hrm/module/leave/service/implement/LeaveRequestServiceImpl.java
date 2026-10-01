@@ -1,4 +1,4 @@
-﻿package com.kltn.school_hrm.service.implement;
+﻿package com.kltn.school_hrm.module.leave.service.implement;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -10,18 +10,18 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.kltn.school_hrm.dto.request.LeaveCreateRequest;
-import com.kltn.school_hrm.dto.request.LeaveDecisionRequest;
+import com.kltn.school_hrm.module.leave.dto.request.LeaveCreateRequest;
+import com.kltn.school_hrm.module.leave.dto.request.LeaveDecisionRequest;
 import com.kltn.school_hrm.dto.response.ApprovalActionResponse;
 import com.kltn.school_hrm.dto.response.ApprovalResult;
 import com.kltn.school_hrm.dto.response.ApprovalStepResponse;
-import com.kltn.school_hrm.dto.response.LeaveResponse;
+import com.kltn.school_hrm.module.leave.dto.response.LeaveResponse;
 import com.kltn.school_hrm.entity.approval.ApprovalAction;
 import com.kltn.school_hrm.entity.approval.ApprovalRequest;
 import com.kltn.school_hrm.entity.approval.ApprovalRequestStep;
 import com.kltn.school_hrm.module.employee.entity.Employee;
-import com.kltn.school_hrm.entity.leave.LeaveApproval;
-import com.kltn.school_hrm.entity.leave.LeaveRequest;
+import com.kltn.school_hrm.module.leave.entity.LeaveApproval;
+import com.kltn.school_hrm.module.leave.entity.LeaveRequest;
 import com.kltn.school_hrm.shared.enums.Enums.ApprovalStatus;
 import com.kltn.school_hrm.shared.enums.Enums.EmployeeStatus;
 import com.kltn.school_hrm.shared.enums.Enums.RequestStatus;
@@ -30,10 +30,10 @@ import com.kltn.school_hrm.repository.ApprovalActionRepository;
 import com.kltn.school_hrm.repository.ApprovalRequestRepository;
 import com.kltn.school_hrm.repository.ApprovalRequestStepRepository;
 import com.kltn.school_hrm.module.employee.repository.EmployeeRepository;
-import com.kltn.school_hrm.repository.LeaveRequestRepository;
-import com.kltn.school_hrm.service.LeaveApprovalService;
-import com.kltn.school_hrm.service.LeaveBalanceService;
-import com.kltn.school_hrm.service.LeaveRequestService;
+import com.kltn.school_hrm.module.leave.repository.LeaveRequestRepository;
+import com.kltn.school_hrm.module.leave.service.LeaveApprovalService;
+import com.kltn.school_hrm.module.leave.service.LeaveBalanceService;
+import com.kltn.school_hrm.module.leave.service.LeaveRequestService;
 import com.kltn.school_hrm.service.approval.ApprovalEngineService;
 import com.kltn.school_hrm.shared.utils.LeaveDayCalculator;
 

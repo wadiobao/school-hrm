@@ -1,11 +1,11 @@
-package com.kltn.school_hrm.job;
+﻿package com.kltn.school_hrm.module.leave.job;
 
 import java.time.LocalDate;
 
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import com.kltn.school_hrm.service.LeaveBalanceService;
+import com.kltn.school_hrm.module.leave.service.LeaveBalanceService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
