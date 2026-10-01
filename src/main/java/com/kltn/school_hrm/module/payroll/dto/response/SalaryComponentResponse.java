@@ -1,4 +1,4 @@
-﻿package com.kltn.school_hrm.dto.response;
+﻿package com.kltn.school_hrm.module.payroll.dto.response;
 
 import com.kltn.school_hrm.shared.enums.Enums.ComponentType;
 

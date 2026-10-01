@@ -1,11 +1,11 @@
-package com.kltn.school_hrm.repository;
+﻿package com.kltn.school_hrm.module.payroll.repository;
 
 import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import com.kltn.school_hrm.entity.payroll.PayrollDetail;
+import com.kltn.school_hrm.module.payroll.entity.PayrollDetail;
 
 @Repository
 public interface PayrollDetailRepository extends JpaRepository<PayrollDetail, Long>{

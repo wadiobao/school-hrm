@@ -1,9 +1,9 @@
-package com.kltn.school_hrm.service;
+﻿package com.kltn.school_hrm.module.payroll.service;
 
 import java.util.List;
 
-import com.kltn.school_hrm.dto.request.SalaryComponentRequest;
-import com.kltn.school_hrm.dto.response.SalaryComponentResponse;
+import com.kltn.school_hrm.module.payroll.dto.request.SalaryComponentRequest;
+import com.kltn.school_hrm.module.payroll.dto.response.SalaryComponentResponse;
 
 public interface SalaryComponentService {
     SalaryComponentResponse create(SalaryComponentRequest request);

@@ -1,4 +1,4 @@
-﻿package com.kltn.school_hrm.entity.payroll;
+﻿package com.kltn.school_hrm.module.payroll.entity;
 
 import java.math.BigDecimal;
 

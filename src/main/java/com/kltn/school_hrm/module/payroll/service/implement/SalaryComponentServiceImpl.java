@@ -1,4 +1,4 @@
-package com.kltn.school_hrm.service.implement;
+﻿package com.kltn.school_hrm.module.payroll.service.implement;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -6,11 +6,11 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.kltn.school_hrm.dto.request.SalaryComponentRequest;
-import com.kltn.school_hrm.dto.response.SalaryComponentResponse;
-import com.kltn.school_hrm.entity.payroll.SalaryComponent;
-import com.kltn.school_hrm.repository.SalaryComponentRepository;
-import com.kltn.school_hrm.service.SalaryComponentService;
+import com.kltn.school_hrm.module.payroll.dto.request.SalaryComponentRequest;
+import com.kltn.school_hrm.module.payroll.dto.response.SalaryComponentResponse;
+import com.kltn.school_hrm.module.payroll.entity.SalaryComponent;
+import com.kltn.school_hrm.module.payroll.repository.SalaryComponentRepository;
+import com.kltn.school_hrm.module.payroll.service.SalaryComponentService;
 
 import lombok.RequiredArgsConstructor;
 

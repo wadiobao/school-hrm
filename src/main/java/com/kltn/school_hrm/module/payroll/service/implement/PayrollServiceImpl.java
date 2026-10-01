@@ -1,4 +1,4 @@
-﻿package com.kltn.school_hrm.service.implement;
+﻿package com.kltn.school_hrm.module.payroll.service.implement;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -7,18 +7,18 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.kltn.school_hrm.dto.request.PayrollCreateRequest;
-import com.kltn.school_hrm.dto.response.PayrollResponse;
+import com.kltn.school_hrm.module.payroll.dto.request.PayrollCreateRequest;
+import com.kltn.school_hrm.module.payroll.dto.response.PayrollResponse;
 import com.kltn.school_hrm.module.employee.entity.Employee;
-import com.kltn.school_hrm.entity.payroll.Payroll;
-import com.kltn.school_hrm.entity.payroll.PayrollDetail;
-import com.kltn.school_hrm.entity.payroll.SalaryComponent;
+import com.kltn.school_hrm.module.payroll.entity.Payroll;
+import com.kltn.school_hrm.module.payroll.entity.PayrollDetail;
+import com.kltn.school_hrm.module.payroll.entity.SalaryComponent;
 import com.kltn.school_hrm.shared.enums.Enums.PayrollStatus;
 import com.kltn.school_hrm.module.employee.repository.EmployeeRepository;
-import com.kltn.school_hrm.repository.PayrollDetailRepository;
-import com.kltn.school_hrm.repository.PayrollRepository;
-import com.kltn.school_hrm.repository.SalaryComponentRepository;
-import com.kltn.school_hrm.service.PayrollService;
+import com.kltn.school_hrm.module.payroll.repository.PayrollDetailRepository;
+import com.kltn.school_hrm.module.payroll.repository.PayrollRepository;
+import com.kltn.school_hrm.module.payroll.repository.SalaryComponentRepository;
+import com.kltn.school_hrm.module.payroll.service.PayrollService;
 
 import lombok.RequiredArgsConstructor;
 

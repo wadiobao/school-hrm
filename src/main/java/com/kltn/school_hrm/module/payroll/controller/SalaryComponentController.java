@@ -1,4 +1,4 @@
-package com.kltn.school_hrm.controller;
+﻿package com.kltn.school_hrm.module.payroll.controller;
 
 import java.util.List;
 
@@ -14,9 +14,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.kltn.school_hrm.dto.common.ApiResponse;
-import com.kltn.school_hrm.dto.request.SalaryComponentRequest;
-import com.kltn.school_hrm.dto.response.SalaryComponentResponse;
-import com.kltn.school_hrm.service.SalaryComponentService;
+import com.kltn.school_hrm.module.payroll.dto.request.SalaryComponentRequest;
+import com.kltn.school_hrm.module.payroll.dto.response.SalaryComponentResponse;
+import com.kltn.school_hrm.module.payroll.service.SalaryComponentService;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
