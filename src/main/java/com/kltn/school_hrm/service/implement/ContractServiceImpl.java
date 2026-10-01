@@ -9,7 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.kltn.school_hrm.dto.request.ContractRequest;
 import com.kltn.school_hrm.dto.response.ContractResponse;
-import com.kltn.school_hrm.entity.core.Position;
+import com.kltn.school_hrm.module.core.entity.Position;
 import com.kltn.school_hrm.entity.employee.Contract;
 import com.kltn.school_hrm.entity.employee.Employee;
 import com.kltn.school_hrm.shared.enums.Enums.ContractStatus;
@@ -19,7 +19,7 @@ import com.kltn.school_hrm.shared.exception.custom.BusinessException;
 import com.kltn.school_hrm.shared.exception.custom.NotFoundException;
 import com.kltn.school_hrm.repository.ContractRepository;
 import com.kltn.school_hrm.repository.EmployeeRepository;
-import com.kltn.school_hrm.repository.PositionRepository;
+import com.kltn.school_hrm.module.core.repository.PositionRepository;
 import com.kltn.school_hrm.service.ContractService;
 
 import lombok.RequiredArgsConstructor;

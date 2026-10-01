@@ -1,4 +1,4 @@
-package com.kltn.school_hrm.service.implement;
+﻿package com.kltn.school_hrm.service.implement;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -6,11 +6,11 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.kltn.school_hrm.dto.request.RoleCreateRequest;
-import com.kltn.school_hrm.dto.response.RoleResponse;
-import com.kltn.school_hrm.entity.core.Role;
-import com.kltn.school_hrm.repository.RoleRepository;
-import com.kltn.school_hrm.service.RoleService;
+import com.kltn.school_hrm.module.core.dto.request.RoleCreateRequest;
+import com.kltn.school_hrm.module.core.dto.response.RoleResponse;
+import com.kltn.school_hrm.module.core.entity.Role;
+import com.kltn.school_hrm.module.core.repository.RoleRepository;
+import com.kltn.school_hrm.module.core.service.RoleService;
 
 import lombok.RequiredArgsConstructor;
 

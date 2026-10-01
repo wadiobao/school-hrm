@@ -4,9 +4,9 @@ import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.stereotype.Component;
 
-import com.kltn.school_hrm.entity.core.Role;
+import com.kltn.school_hrm.module.core.entity.Role;
 import com.kltn.school_hrm.shared.enums.Enums.RoleCode;
-import com.kltn.school_hrm.repository.RoleRepository;
+import com.kltn.school_hrm.module.core.repository.RoleRepository;
 
 import lombok.RequiredArgsConstructor;
 

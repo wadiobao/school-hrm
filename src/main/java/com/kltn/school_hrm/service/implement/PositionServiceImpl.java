@@ -1,4 +1,4 @@
-package com.kltn.school_hrm.service.implement;
+﻿package com.kltn.school_hrm.service.implement;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -6,11 +6,11 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.kltn.school_hrm.dto.request.PositionCreateRequest;
-import com.kltn.school_hrm.dto.response.PositionResponse;
-import com.kltn.school_hrm.entity.core.Position;
-import com.kltn.school_hrm.repository.PositionRepository;
-import com.kltn.school_hrm.service.PositionService;
+import com.kltn.school_hrm.module.core.dto.request.PositionCreateRequest;
+import com.kltn.school_hrm.module.core.dto.response.PositionResponse;
+import com.kltn.school_hrm.module.core.entity.Position;
+import com.kltn.school_hrm.module.core.repository.PositionRepository;
+import com.kltn.school_hrm.module.core.service.PositionService;
 
 import lombok.RequiredArgsConstructor;
 

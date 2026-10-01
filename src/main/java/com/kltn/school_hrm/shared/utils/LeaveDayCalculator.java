@@ -9,7 +9,7 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Component;
 
 import com.kltn.school_hrm.entity.leave.Holiday;
-import com.kltn.school_hrm.repository.HolidayRepository;
+import com.kltn.school_hrm.module.core.repository.HolidayRepository;
 
 import lombok.RequiredArgsConstructor;
 

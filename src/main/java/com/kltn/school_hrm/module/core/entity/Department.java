@@ -1,9 +1,7 @@
-﻿package com.kltn.school_hrm.entity.teaching;
-
-import java.math.BigDecimal;
+﻿package com.kltn.school_hrm.module.core.entity;
 
 import com.kltn.school_hrm.shared.entity.base.BaseEntity;
-import com.kltn.school_hrm.module.core.entity.Position;
+import com.kltn.school_hrm.entity.employee.Employee;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -21,24 +19,25 @@ import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
 @Entity
-@Table(name = "teaching_norms")
+@Table(name = "departments")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @SuperBuilder
-public class TeachingNorm extends BaseEntity {
+public class Department extends BaseEntity {
 
-	@Column(name = "academic_year", length = 20)
-	private String academicYear;
+	@Column(nullable = false, unique = true, length = 20)
+	private String code;
+
+	@Column(nullable = false, length = 150)
+	private String name;
 
 	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "position_id", nullable = false)
-	private Position position;
+	@JoinColumn(name = "parent_id")
+	private Department parentDepartment;
 
-	@Column(name = "standard_hours")
-	private Integer standardHours;
-
-	@Column(name = "reduction_percentage", precision = 5, scale = 2)
-	private BigDecimal reductionPercentage;
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "manager_id")
+	private Employee manager;
 }

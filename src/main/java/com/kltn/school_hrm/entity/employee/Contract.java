@@ -4,7 +4,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 import com.kltn.school_hrm.shared.entity.base.BaseEntity;
-import com.kltn.school_hrm.entity.core.Position;
+import com.kltn.school_hrm.module.core.entity.Position;
 import com.kltn.school_hrm.shared.enums.Enums.ContractStatus;
 import com.kltn.school_hrm.shared.enums.Enums.ContractType;
 import com.kltn.school_hrm.shared.enums.Enums.Currency;

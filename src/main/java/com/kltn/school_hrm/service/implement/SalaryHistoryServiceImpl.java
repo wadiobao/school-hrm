@@ -7,7 +7,7 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.kltn.school_hrm.entity.core.User;
+import com.kltn.school_hrm.module.core.entity.User;
 import com.kltn.school_hrm.entity.employee.Contract;
 import com.kltn.school_hrm.entity.history.SalaryHistory;
 import com.kltn.school_hrm.shared.enums.Enums.ContractStatus;
@@ -17,7 +17,7 @@ import com.kltn.school_hrm.shared.exception.custom.BusinessException;
 import com.kltn.school_hrm.shared.exception.custom.NotFoundException;
 import com.kltn.school_hrm.repository.ContractRepository;
 import com.kltn.school_hrm.repository.SalaryHistoryRepository;
-import com.kltn.school_hrm.repository.UserRepository;
+import com.kltn.school_hrm.module.core.repository.UserRepository;
 import com.kltn.school_hrm.service.SalaryHistoryService;
 
 import lombok.RequiredArgsConstructor;
