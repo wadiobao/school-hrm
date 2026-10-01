@@ -1,13 +1,13 @@
-﻿package com.kltn.school_hrm.service.implement;
+﻿package com.kltn.school_hrm.module.teaching.service.implement;
 
 import java.util.List;
 
 import org.springframework.stereotype.Service;
 
-import com.kltn.school_hrm.dto.request.TeachingAssignmentRequest;
-import com.kltn.school_hrm.dto.response.TeachingAssignmentResponse;
+import com.kltn.school_hrm.module.teaching.dto.request.TeachingAssignmentRequest;
+import com.kltn.school_hrm.module.teaching.dto.response.TeachingAssignmentResponse;
 import com.kltn.school_hrm.shared.enums.Enums.Curriculum;
-import com.kltn.school_hrm.service.TeachingAssignmentService;
+import com.kltn.school_hrm.module.teaching.service.TeachingAssignmentService;
 
 @Service
 public class TeachingAssignmentServiceImpl implements TeachingAssignmentService {

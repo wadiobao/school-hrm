@@ -1,4 +1,4 @@
-﻿package com.kltn.school_hrm.service.implement;
+﻿package com.kltn.school_hrm.module.teaching.service.implement;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -6,23 +6,23 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.kltn.school_hrm.dto.request.TeachingLogRequest;
-import com.kltn.school_hrm.dto.request.TeachingNormRequest;
-import com.kltn.school_hrm.dto.response.TeachingLogResponse;
-import com.kltn.school_hrm.dto.response.TeachingNormResponse;
+import com.kltn.school_hrm.module.teaching.dto.request.TeachingLogRequest;
+import com.kltn.school_hrm.module.teaching.dto.request.TeachingNormRequest;
+import com.kltn.school_hrm.module.teaching.dto.response.TeachingLogResponse;
+import com.kltn.school_hrm.module.teaching.dto.response.TeachingNormResponse;
 import com.kltn.school_hrm.module.core.entity.Position;
 import com.kltn.school_hrm.module.employee.entity.Employee;
-import com.kltn.school_hrm.entity.teaching.TeachingAssignment;
-import com.kltn.school_hrm.entity.teaching.TeachingLog;
-import com.kltn.school_hrm.entity.teaching.TeachingNorm;
+import com.kltn.school_hrm.module.teaching.entity.TeachingAssignment;
+import com.kltn.school_hrm.module.teaching.entity.TeachingLog;
+import com.kltn.school_hrm.module.teaching.entity.TeachingNorm;
 import com.kltn.school_hrm.shared.enums.Enums.RequestStatus;
 import com.kltn.school_hrm.shared.exception.custom.ResourceNotFoundException;
 import com.kltn.school_hrm.module.employee.repository.EmployeeRepository;
 import com.kltn.school_hrm.module.core.repository.PositionRepository;
-import com.kltn.school_hrm.repository.TeachingAssignmentRepository;
-import com.kltn.school_hrm.repository.TeachingLogRepository;
-import com.kltn.school_hrm.repository.TeachingNormRepository;
-import com.kltn.school_hrm.service.TeachingService;
+import com.kltn.school_hrm.module.teaching.repository.TeachingAssignmentRepository;
+import com.kltn.school_hrm.module.teaching.repository.TeachingLogRepository;
+import com.kltn.school_hrm.module.teaching.repository.TeachingNormRepository;
+import com.kltn.school_hrm.module.teaching.service.TeachingService;
 
 import lombok.RequiredArgsConstructor;
 

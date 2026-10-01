@@ -1,4 +1,4 @@
-package com.kltn.school_hrm.dto.response;
+﻿package com.kltn.school_hrm.module.teaching.dto.response;
 
 import java.math.BigDecimal;
 

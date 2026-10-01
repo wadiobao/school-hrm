@@ -1,11 +1,11 @@
-﻿package com.kltn.school_hrm.service;
+﻿package com.kltn.school_hrm.module.teaching.service;
 
 import java.util.List;
 
-import com.kltn.school_hrm.dto.request.TeachingLogRequest;
-import com.kltn.school_hrm.dto.request.TeachingNormRequest;
-import com.kltn.school_hrm.dto.response.TeachingLogResponse;
-import com.kltn.school_hrm.dto.response.TeachingNormResponse;
+import com.kltn.school_hrm.module.teaching.dto.request.TeachingLogRequest;
+import com.kltn.school_hrm.module.teaching.dto.request.TeachingNormRequest;
+import com.kltn.school_hrm.module.teaching.dto.response.TeachingLogResponse;
+import com.kltn.school_hrm.module.teaching.dto.response.TeachingNormResponse;
 import com.kltn.school_hrm.shared.enums.Enums.RequestStatus;
 
 public interface TeachingService {

@@ -1,11 +1,11 @@
-﻿package com.kltn.school_hrm.repository;
+﻿package com.kltn.school_hrm.module.teaching.repository;
 
 import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import com.kltn.school_hrm.entity.teaching.TeachingAssignment;
+import com.kltn.school_hrm.module.teaching.entity.TeachingAssignment;
 import com.kltn.school_hrm.shared.enums.Enums.Curriculum;
 
 @Repository

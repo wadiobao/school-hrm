@@ -1,11 +1,8 @@
-﻿package com.kltn.school_hrm.entity.teaching;
-
-import java.time.LocalDate;
+﻿package com.kltn.school_hrm.module.teaching.entity;
 
 import com.kltn.school_hrm.shared.entity.base.BaseEntity;
 import com.kltn.school_hrm.module.employee.entity.Employee;
-import com.kltn.school_hrm.shared.enums.Enums.TeachingLogType;
-import com.kltn.school_hrm.shared.enums.Enums.RequestStatus;
+import com.kltn.school_hrm.shared.enums.Enums.Curriculum;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -25,33 +22,28 @@ import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
 @Entity
-@Table(name = "teaching_logs")
+@Table(name = "teaching_assignments")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @SuperBuilder
-public class TeachingLog extends BaseEntity {
+public class TeachingAssignment extends BaseEntity {
 
 	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "assignment_id", nullable = false)
-	private TeachingAssignment assignment;
-
-	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "actual_teacher_id", nullable = false)
-	private Employee actualTeacher;
-
-	@Column(name = "teaching_date", nullable = false)
-	private LocalDate teachingDate;
-
-	@Column(name = "periods_taught", nullable = false)
-	private Integer periodsTaught;
+	@JoinColumn(name = "employee_id", nullable = false)
+	private Employee teacher;
 
 	@Enumerated(EnumType.STRING)
 	@Column(length = 30)
-	private TeachingLogType type;
+	private Curriculum curriculum; // IB, CAMBRIDGE, AP...
 
-	@Enumerated(EnumType.STRING)
-	@Column(length = 20)
-	private RequestStatus status;
+	@Column(name = "subject_name", length = 150)
+	private String subjectName;
+
+	@Column(name = "grade_level", length = 20)
+	private String gradeLevel;
+
+	@Column(name = "weekly_contact_hours")
+	private Double weeklyContactHours;
 }

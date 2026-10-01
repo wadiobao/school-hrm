@@ -1,4 +1,4 @@
-﻿package com.kltn.school_hrm.controller;
+﻿package com.kltn.school_hrm.module.teaching.controller;
 
 import java.util.List;
 
@@ -15,12 +15,12 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.kltn.school_hrm.dto.common.ApiResponse;
-import com.kltn.school_hrm.dto.request.TeachingLogRequest;
-import com.kltn.school_hrm.dto.request.TeachingNormRequest;
-import com.kltn.school_hrm.dto.response.TeachingLogResponse;
-import com.kltn.school_hrm.dto.response.TeachingNormResponse;
+import com.kltn.school_hrm.module.teaching.dto.request.TeachingLogRequest;
+import com.kltn.school_hrm.module.teaching.dto.request.TeachingNormRequest;
+import com.kltn.school_hrm.module.teaching.dto.response.TeachingLogResponse;
+import com.kltn.school_hrm.module.teaching.dto.response.TeachingNormResponse;
 import com.kltn.school_hrm.shared.enums.Enums.RequestStatus;
-import com.kltn.school_hrm.service.TeachingService;
+import com.kltn.school_hrm.module.teaching.service.TeachingService;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
