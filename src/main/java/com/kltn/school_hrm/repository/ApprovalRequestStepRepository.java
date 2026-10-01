@@ -1,4 +1,4 @@
-package com.kltn.school_hrm.repository;
+﻿package com.kltn.school_hrm.repository;
 
 import java.util.List;
 import java.util.Optional;
@@ -9,7 +9,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.kltn.school_hrm.entity.approval.ApprovalRequestStep;
-import com.kltn.school_hrm.enums.Enums.ApprovalStatus;
+import com.kltn.school_hrm.shared.enums.Enums.ApprovalStatus;
 
 @Repository
 public interface ApprovalRequestStepRepository extends JpaRepository<ApprovalRequestStep, Long> {

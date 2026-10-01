@@ -1,11 +1,11 @@
-package com.kltn.school_hrm.configuration;
+﻿package com.kltn.school_hrm.shared.configuration;
 
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.stereotype.Component;
 
 import com.kltn.school_hrm.entity.core.Role;
-import com.kltn.school_hrm.enums.Enums.RoleCode;
+import com.kltn.school_hrm.shared.enums.Enums.RoleCode;
 import com.kltn.school_hrm.repository.RoleRepository;
 
 import lombok.RequiredArgsConstructor;

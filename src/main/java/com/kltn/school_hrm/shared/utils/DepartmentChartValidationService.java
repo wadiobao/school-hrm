@@ -1,9 +1,9 @@
-package com.kltn.school_hrm.utils;
+﻿package com.kltn.school_hrm.shared.utils;
 
 import java.util.List;
 
 import com.kltn.school_hrm.entity.employee.Employee;
-import com.kltn.school_hrm.exception.custom.ResourceNotFoundException;
+import com.kltn.school_hrm.shared.exception.custom.ResourceNotFoundException;
 import com.kltn.school_hrm.repository.EmployeeRepository;
 
 import org.springframework.stereotype.Service;

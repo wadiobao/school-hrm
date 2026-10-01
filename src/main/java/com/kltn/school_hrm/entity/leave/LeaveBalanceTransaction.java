@@ -1,10 +1,10 @@
-package com.kltn.school_hrm.entity.leave;
+﻿package com.kltn.school_hrm.entity.leave;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
-import com.kltn.school_hrm.entity.base.BaseEntity;
-import com.kltn.school_hrm.enums.Enums.LeaveBalanceTransactionType;
+import com.kltn.school_hrm.shared.entity.base.BaseEntity;
+import com.kltn.school_hrm.shared.enums.Enums.LeaveBalanceTransactionType;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

@@ -1,14 +1,14 @@
-package com.kltn.school_hrm.entity.leave;
+﻿package com.kltn.school_hrm.entity.leave;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
-import com.kltn.school_hrm.entity.base.BaseEntity;
+import com.kltn.school_hrm.shared.entity.base.BaseEntity;
 import com.kltn.school_hrm.entity.core.User;
 import com.kltn.school_hrm.entity.employee.Employee;
-import com.kltn.school_hrm.enums.Enums.RequestStatus;
-import com.kltn.school_hrm.enums.Enums.LeaveType;
+import com.kltn.school_hrm.shared.enums.Enums.RequestStatus;
+import com.kltn.school_hrm.shared.enums.Enums.LeaveType;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;

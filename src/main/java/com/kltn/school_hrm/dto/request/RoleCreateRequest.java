@@ -1,6 +1,6 @@
-package com.kltn.school_hrm.dto.request;
+﻿package com.kltn.school_hrm.dto.request;
 
-import com.kltn.school_hrm.enums.Enums.RoleCode;
+import com.kltn.school_hrm.shared.enums.Enums.RoleCode;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;

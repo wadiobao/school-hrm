@@ -1,10 +1,10 @@
-package com.kltn.school_hrm.service;
+﻿package com.kltn.school_hrm.service;
 
 import java.util.List;
 
 import com.kltn.school_hrm.dto.request.PayrollCreateRequest;
 import com.kltn.school_hrm.dto.response.PayrollResponse;
-import com.kltn.school_hrm.enums.Enums.PayrollStatus;
+import com.kltn.school_hrm.shared.enums.Enums.PayrollStatus;
 
 public interface PayrollService {
     PayrollResponse createPayroll(PayrollCreateRequest request);

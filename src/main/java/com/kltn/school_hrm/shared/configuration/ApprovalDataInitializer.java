@@ -1,4 +1,4 @@
-package com.kltn.school_hrm.configuration;
+﻿package com.kltn.school_hrm.shared.configuration;
 
 import java.util.ArrayList;
 
@@ -8,8 +8,8 @@ import org.springframework.context.annotation.Configuration;
 
 import com.kltn.school_hrm.entity.approval.ApprovalLevel;
 import com.kltn.school_hrm.entity.approval.ApprovalPolicy;
-import com.kltn.school_hrm.enums.Enums.ApprovalConditionType;
-import com.kltn.school_hrm.enums.Enums.ApproverType;
+import com.kltn.school_hrm.shared.enums.Enums.ApprovalConditionType;
+import com.kltn.school_hrm.shared.enums.Enums.ApproverType;
 import com.kltn.school_hrm.repository.ApprovalPolicyRepository;
 
 import lombok.extern.slf4j.Slf4j;

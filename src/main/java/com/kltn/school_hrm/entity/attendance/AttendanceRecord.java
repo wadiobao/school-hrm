@@ -1,11 +1,11 @@
-package com.kltn.school_hrm.entity.attendance;
+﻿package com.kltn.school_hrm.entity.attendance;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-import com.kltn.school_hrm.entity.base.BaseEntity;
+import com.kltn.school_hrm.shared.entity.base.BaseEntity;
 import com.kltn.school_hrm.entity.employee.Employee;
-import com.kltn.school_hrm.enums.Enums.AttendanceStatus;
+import com.kltn.school_hrm.shared.enums.Enums.AttendanceStatus;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -1,9 +1,9 @@
-package com.kltn.school_hrm.entity.core;
+﻿package com.kltn.school_hrm.entity.core;
 
 import java.time.LocalDateTime;
 
-import com.kltn.school_hrm.entity.base.BaseEntity;
-import com.kltn.school_hrm.enums.Enums.UserStatus;
+import com.kltn.school_hrm.shared.entity.base.BaseEntity;
+import com.kltn.school_hrm.shared.enums.Enums.UserStatus;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

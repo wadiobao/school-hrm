@@ -1,10 +1,10 @@
-package com.kltn.school_hrm.service;
+﻿package com.kltn.school_hrm.service;
 
 import java.util.List;
 
 import com.kltn.school_hrm.dto.request.TeachingAssignmentRequest;
 import com.kltn.school_hrm.dto.response.TeachingAssignmentResponse;
-import com.kltn.school_hrm.enums.Enums.Curriculum;
+import com.kltn.school_hrm.shared.enums.Enums.Curriculum;
 
 public interface TeachingAssignmentService {
     TeachingAssignmentResponse create(TeachingAssignmentRequest request);

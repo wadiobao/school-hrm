@@ -1,4 +1,4 @@
-package com.kltn.school_hrm.configuration;
+﻿package com.kltn.school_hrm.shared.configuration;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

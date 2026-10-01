@@ -1,6 +1,6 @@
-package com.kltn.school_hrm.dto.request;
+﻿package com.kltn.school_hrm.dto.request;
 
-import com.kltn.school_hrm.enums.Enums.Curriculum;
+import com.kltn.school_hrm.shared.enums.Enums.Curriculum;
 
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;

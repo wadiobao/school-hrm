@@ -1,4 +1,4 @@
-package com.kltn.school_hrm.repository;
+﻿package com.kltn.school_hrm.repository;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -10,7 +10,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.kltn.school_hrm.entity.attendance.AttendanceRawLog;
-import com.kltn.school_hrm.enums.Enums.AttendanceEventType;
+import com.kltn.school_hrm.shared.enums.Enums.AttendanceEventType;
 
 @Repository
 public interface AttendanceRawLogRepository extends JpaRepository<AttendanceRawLog, Long> {

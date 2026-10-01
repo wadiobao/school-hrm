@@ -1,4 +1,4 @@
-package com.kltn.school_hrm.utils;
+﻿package com.kltn.school_hrm.shared.utils;
 
 import java.math.BigDecimal;
 import java.time.DayOfWeek;

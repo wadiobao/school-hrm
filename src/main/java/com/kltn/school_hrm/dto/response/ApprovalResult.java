@@ -1,8 +1,8 @@
-package com.kltn.school_hrm.dto.response;
+﻿package com.kltn.school_hrm.dto.response;
 
 import java.time.LocalDateTime;
 
-import com.kltn.school_hrm.enums.Enums.ApprovalStatus;
+import com.kltn.school_hrm.shared.enums.Enums.ApprovalStatus;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

@@ -1,11 +1,11 @@
-package com.kltn.school_hrm.entity.approval;
+﻿package com.kltn.school_hrm.entity.approval;
 
 import java.time.LocalDateTime;
 
-import com.kltn.school_hrm.entity.base.BaseEntity;
+import com.kltn.school_hrm.shared.entity.base.BaseEntity;
 import com.kltn.school_hrm.entity.employee.Employee;
-import com.kltn.school_hrm.enums.Enums.ApprovalStatus;
-import com.kltn.school_hrm.enums.Enums.ApproverType;
+import com.kltn.school_hrm.shared.enums.Enums.ApprovalStatus;
+import com.kltn.school_hrm.shared.enums.Enums.ApproverType;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

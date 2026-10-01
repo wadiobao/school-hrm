@@ -1,4 +1,4 @@
-package com.kltn.school_hrm.repository;
+﻿package com.kltn.school_hrm.repository;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -9,7 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import com.kltn.school_hrm.entity.employee.Contract;
-import com.kltn.school_hrm.enums.Enums.ContractStatus;
+import com.kltn.school_hrm.shared.enums.Enums.ContractStatus;
 
 @Repository
 public interface ContractRepository extends JpaRepository<Contract, Long> {

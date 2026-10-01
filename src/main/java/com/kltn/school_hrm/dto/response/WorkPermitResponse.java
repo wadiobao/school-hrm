@@ -1,8 +1,8 @@
-package com.kltn.school_hrm.dto.response;
+﻿package com.kltn.school_hrm.dto.response;
 
 import java.time.LocalDate;
 
-import com.kltn.school_hrm.enums.Enums.WorkPermitStatus;
+import com.kltn.school_hrm.shared.enums.Enums.WorkPermitStatus;
 
 import lombok.Builder;
 import lombok.Data;

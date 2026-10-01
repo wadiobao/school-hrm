@@ -1,6 +1,6 @@
-package com.kltn.school_hrm.entity.core;
+﻿package com.kltn.school_hrm.entity.core;
 
-import com.kltn.school_hrm.entity.base.BaseEntity;
+import com.kltn.school_hrm.shared.entity.base.BaseEntity;
 import com.kltn.school_hrm.entity.employee.Employee;
 
 import jakarta.persistence.Column;

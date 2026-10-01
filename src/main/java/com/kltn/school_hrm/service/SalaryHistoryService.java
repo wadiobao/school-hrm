@@ -1,12 +1,12 @@
-package com.kltn.school_hrm.service;
+﻿package com.kltn.school_hrm.service;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
 import com.kltn.school_hrm.entity.history.SalaryHistory;
-import com.kltn.school_hrm.enums.Enums.Currency;
-import com.kltn.school_hrm.enums.Enums.SalaryChangeReason;
+import com.kltn.school_hrm.shared.enums.Enums.Currency;
+import com.kltn.school_hrm.shared.enums.Enums.SalaryChangeReason;
 
 public interface SalaryHistoryService {
     SalaryHistory changeSalary(

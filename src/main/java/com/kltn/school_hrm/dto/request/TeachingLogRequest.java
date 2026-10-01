@@ -1,9 +1,9 @@
-package com.kltn.school_hrm.dto.request;
+﻿package com.kltn.school_hrm.dto.request;
 
 import java.time.LocalDate;
 
-import com.kltn.school_hrm.enums.Enums.TeachingLogType;
-import com.kltn.school_hrm.enums.Enums.RequestStatus;
+import com.kltn.school_hrm.shared.enums.Enums.TeachingLogType;
+import com.kltn.school_hrm.shared.enums.Enums.RequestStatus;
 
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;

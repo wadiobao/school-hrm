@@ -1,4 +1,4 @@
-package com.kltn.school_hrm.repository;
+﻿package com.kltn.school_hrm.repository;
 
 import java.util.List;
 import java.util.Optional;
@@ -11,8 +11,8 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.kltn.school_hrm.entity.employee.Employee;
-import com.kltn.school_hrm.enums.Enums.EmployeeStatus;
-import com.kltn.school_hrm.enums.Enums.RoleCode;
+import com.kltn.school_hrm.shared.enums.Enums.EmployeeStatus;
+import com.kltn.school_hrm.shared.enums.Enums.RoleCode;
 
 @Repository
 public interface EmployeeRepository extends JpaRepository<Employee, Long> {

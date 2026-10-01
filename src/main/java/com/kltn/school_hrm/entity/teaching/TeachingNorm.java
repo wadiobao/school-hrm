@@ -1,8 +1,8 @@
-package com.kltn.school_hrm.entity.teaching;
+﻿package com.kltn.school_hrm.entity.teaching;
 
 import java.math.BigDecimal;
 
-import com.kltn.school_hrm.entity.base.BaseEntity;
+import com.kltn.school_hrm.shared.entity.base.BaseEntity;
 import com.kltn.school_hrm.entity.core.Position;
 
 import jakarta.persistence.Column;

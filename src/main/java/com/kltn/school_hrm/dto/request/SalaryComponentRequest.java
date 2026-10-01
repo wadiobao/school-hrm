@@ -1,8 +1,8 @@
-package com.kltn.school_hrm.dto.request;
+﻿package com.kltn.school_hrm.dto.request;
 
 import java.math.BigDecimal;
 
-import com.kltn.school_hrm.enums.Enums.ComponentType;
+import com.kltn.school_hrm.shared.enums.Enums.ComponentType;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;

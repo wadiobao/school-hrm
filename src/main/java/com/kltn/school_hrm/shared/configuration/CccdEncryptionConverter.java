@@ -1,9 +1,9 @@
-package com.kltn.school_hrm.configuration;
+﻿package com.kltn.school_hrm.shared.configuration;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import com.kltn.school_hrm.utils.AesEncryptor;
+import com.kltn.school_hrm.shared.utils.AesEncryptor;
 
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;

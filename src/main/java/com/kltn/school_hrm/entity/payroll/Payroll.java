@@ -1,11 +1,11 @@
-package com.kltn.school_hrm.entity.payroll;
+﻿package com.kltn.school_hrm.entity.payroll;
 
 import java.math.BigDecimal;
 import java.util.List;
 
-import com.kltn.school_hrm.entity.base.BaseEntity;
+import com.kltn.school_hrm.shared.entity.base.BaseEntity;
 import com.kltn.school_hrm.entity.employee.Employee;
-import com.kltn.school_hrm.enums.Enums.PayrollStatus;
+import com.kltn.school_hrm.shared.enums.Enums.PayrollStatus;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;

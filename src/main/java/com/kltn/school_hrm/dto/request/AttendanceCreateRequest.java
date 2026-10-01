@@ -1,9 +1,9 @@
-package com.kltn.school_hrm.dto.request;
+﻿package com.kltn.school_hrm.dto.request;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
 
-import com.kltn.school_hrm.enums.Enums.AttendanceStatus;
+import com.kltn.school_hrm.shared.enums.Enums.AttendanceStatus;
 
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;

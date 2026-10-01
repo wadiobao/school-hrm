@@ -1,11 +1,11 @@
-package com.kltn.school_hrm.dto.request;
+﻿package com.kltn.school_hrm.dto.request;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
-import com.kltn.school_hrm.enums.Enums.ContractStatus;
-import com.kltn.school_hrm.enums.Enums.ContractType;
-import com.kltn.school_hrm.enums.Enums.Currency;
+import com.kltn.school_hrm.shared.enums.Enums.ContractStatus;
+import com.kltn.school_hrm.shared.enums.Enums.ContractType;
+import com.kltn.school_hrm.shared.enums.Enums.Currency;
 
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;

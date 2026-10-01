@@ -1,4 +1,4 @@
-package com.kltn.school_hrm.service.implement;
+﻿package com.kltn.school_hrm.service.implement;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -9,7 +9,7 @@ import com.kltn.school_hrm.dto.response.AttendanceCalculationResult;
 import com.kltn.school_hrm.entity.attendance.Attendance;
 import com.kltn.school_hrm.entity.attendance.AttendanceRecord;
 import com.kltn.school_hrm.entity.attendance.Shift;
-import com.kltn.school_hrm.enums.Enums.AttendanceStatus;
+import com.kltn.school_hrm.shared.enums.Enums.AttendanceStatus;
 import com.kltn.school_hrm.service.AttendanceCalculationService;
 
 @Service

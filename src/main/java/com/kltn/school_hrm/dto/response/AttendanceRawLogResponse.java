@@ -1,9 +1,9 @@
-package com.kltn.school_hrm.dto.response;
+﻿package com.kltn.school_hrm.dto.response;
 
 import java.time.LocalDateTime;
 
-import com.kltn.school_hrm.enums.Enums.AttendanceEventType;
-import com.kltn.school_hrm.enums.Enums.AttendanceSource;
+import com.kltn.school_hrm.shared.enums.Enums.AttendanceEventType;
+import com.kltn.school_hrm.shared.enums.Enums.AttendanceSource;
 
 import lombok.Builder;
 import lombok.Data;

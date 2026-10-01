@@ -1,9 +1,9 @@
-package com.kltn.school_hrm.entity.approval;
+﻿package com.kltn.school_hrm.entity.approval;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import com.kltn.school_hrm.entity.base.BaseEntity;
+import com.kltn.school_hrm.shared.entity.base.BaseEntity;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;

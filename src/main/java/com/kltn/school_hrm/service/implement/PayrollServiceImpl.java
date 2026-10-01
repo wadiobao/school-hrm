@@ -1,4 +1,4 @@
-package com.kltn.school_hrm.service.implement;
+﻿package com.kltn.school_hrm.service.implement;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -13,7 +13,7 @@ import com.kltn.school_hrm.entity.employee.Employee;
 import com.kltn.school_hrm.entity.payroll.Payroll;
 import com.kltn.school_hrm.entity.payroll.PayrollDetail;
 import com.kltn.school_hrm.entity.payroll.SalaryComponent;
-import com.kltn.school_hrm.enums.Enums.PayrollStatus;
+import com.kltn.school_hrm.shared.enums.Enums.PayrollStatus;
 import com.kltn.school_hrm.repository.EmployeeRepository;
 import com.kltn.school_hrm.repository.PayrollDetailRepository;
 import com.kltn.school_hrm.repository.PayrollRepository;

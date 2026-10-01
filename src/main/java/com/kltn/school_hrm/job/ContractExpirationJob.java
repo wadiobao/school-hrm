@@ -1,4 +1,4 @@
-package com.kltn.school_hrm.job;
+﻿package com.kltn.school_hrm.job;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -7,7 +7,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import com.kltn.school_hrm.entity.employee.Contract;
-import com.kltn.school_hrm.enums.Enums.ContractStatus;
+import com.kltn.school_hrm.shared.enums.Enums.ContractStatus;
 import com.kltn.school_hrm.repository.ContractRepository;
 import com.kltn.school_hrm.service.ContractService;
 

@@ -1,9 +1,9 @@
-package com.kltn.school_hrm.dto.request;
+﻿package com.kltn.school_hrm.dto.request;
 
 import java.math.BigDecimal;
 import java.util.List;
 
-import com.kltn.school_hrm.enums.Enums.PayrollStatus;
+import com.kltn.school_hrm.shared.enums.Enums.PayrollStatus;
 
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;

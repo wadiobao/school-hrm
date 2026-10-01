@@ -1,4 +1,4 @@
-package com.kltn.school_hrm.exception;
+﻿package com.kltn.school_hrm.shared.exception;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -11,9 +11,9 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import com.kltn.school_hrm.dto.common.ApiResponse;
-import com.kltn.school_hrm.exception.custom.BusinessException;
-import com.kltn.school_hrm.exception.custom.NotFoundException;
-import com.kltn.school_hrm.exception.custom.ResourceNotFoundException;
+import com.kltn.school_hrm.shared.exception.custom.BusinessException;
+import com.kltn.school_hrm.shared.exception.custom.NotFoundException;
+import com.kltn.school_hrm.shared.exception.custom.ResourceNotFoundException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {

@@ -1,8 +1,8 @@
-package com.kltn.school_hrm.entity.payroll;
+﻿package com.kltn.school_hrm.entity.payroll;
 
 
-import com.kltn.school_hrm.entity.base.BaseEntity;
-import com.kltn.school_hrm.enums.Enums.ComponentType;
+import com.kltn.school_hrm.shared.entity.base.BaseEntity;
+import com.kltn.school_hrm.shared.enums.Enums.ComponentType;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

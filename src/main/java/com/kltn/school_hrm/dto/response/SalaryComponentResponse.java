@@ -1,6 +1,6 @@
-package com.kltn.school_hrm.dto.response;
+﻿package com.kltn.school_hrm.dto.response;
 
-import com.kltn.school_hrm.enums.Enums.ComponentType;
+import com.kltn.school_hrm.shared.enums.Enums.ComponentType;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

@@ -1,13 +1,13 @@
-package com.kltn.school_hrm.dto.response;
+﻿package com.kltn.school_hrm.dto.response;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import com.fasterxml.jackson.annotation.JsonValue;
-import com.kltn.school_hrm.enums.Enums.ContractStatus;
-import com.kltn.school_hrm.enums.Enums.ContractType;
-import com.kltn.school_hrm.enums.Enums.Currency;
+import com.kltn.school_hrm.shared.enums.Enums.ContractStatus;
+import com.kltn.school_hrm.shared.enums.Enums.ContractType;
+import com.kltn.school_hrm.shared.enums.Enums.Currency;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

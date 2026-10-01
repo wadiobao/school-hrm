@@ -1,11 +1,11 @@
-package com.kltn.school_hrm.dto.response;
+﻿package com.kltn.school_hrm.dto.response;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import com.kltn.school_hrm.enums.Enums.ComponentType;
-import com.kltn.school_hrm.enums.Enums.PayrollStatus;
+import com.kltn.school_hrm.shared.enums.Enums.ComponentType;
+import com.kltn.school_hrm.shared.enums.Enums.PayrollStatus;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

@@ -1,4 +1,4 @@
-package com.kltn.school_hrm.entity.base;
+﻿package com.kltn.school_hrm.shared.entity.base;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;

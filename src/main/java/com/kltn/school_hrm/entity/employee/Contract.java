@@ -1,14 +1,14 @@
-package com.kltn.school_hrm.entity.employee;
+﻿package com.kltn.school_hrm.entity.employee;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
-import com.kltn.school_hrm.entity.base.BaseEntity;
+import com.kltn.school_hrm.shared.entity.base.BaseEntity;
 import com.kltn.school_hrm.entity.core.Position;
-import com.kltn.school_hrm.enums.Enums.ContractStatus;
-import com.kltn.school_hrm.enums.Enums.ContractType;
-import com.kltn.school_hrm.enums.Enums.Currency;
-import com.kltn.school_hrm.exception.custom.BusinessException;
+import com.kltn.school_hrm.shared.enums.Enums.ContractStatus;
+import com.kltn.school_hrm.shared.enums.Enums.ContractType;
+import com.kltn.school_hrm.shared.enums.Enums.Currency;
+import com.kltn.school_hrm.shared.exception.custom.BusinessException;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

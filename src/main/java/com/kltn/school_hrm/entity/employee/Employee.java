@@ -1,15 +1,15 @@
-package com.kltn.school_hrm.entity.employee;
+﻿package com.kltn.school_hrm.entity.employee;
 
 import java.time.LocalDate;
 
-import com.kltn.school_hrm.configuration.CccdEncryptionConverter;
-import com.kltn.school_hrm.entity.base.BaseEntity;
+import com.kltn.school_hrm.shared.configuration.CccdEncryptionConverter;
+import com.kltn.school_hrm.shared.entity.base.BaseEntity;
 import com.kltn.school_hrm.entity.core.Department;
 import com.kltn.school_hrm.entity.core.Position;
 import com.kltn.school_hrm.entity.core.User;
-import com.kltn.school_hrm.enums.Enums.EmployeeStatus;
-import com.kltn.school_hrm.enums.Enums.TeacherType;
-import com.kltn.school_hrm.exception.custom.BusinessException;
+import com.kltn.school_hrm.shared.enums.Enums.EmployeeStatus;
+import com.kltn.school_hrm.shared.enums.Enums.TeacherType;
+import com.kltn.school_hrm.shared.exception.custom.BusinessException;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;

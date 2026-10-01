@@ -1,4 +1,4 @@
-package com.kltn.school_hrm.enums;
+﻿package com.kltn.school_hrm.shared.enums;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;

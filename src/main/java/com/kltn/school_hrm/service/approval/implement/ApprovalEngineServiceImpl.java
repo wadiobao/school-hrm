@@ -1,4 +1,4 @@
-package com.kltn.school_hrm.service.approval.implement;
+﻿package com.kltn.school_hrm.service.approval.implement;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -17,10 +17,10 @@ import com.kltn.school_hrm.entity.approval.ApprovalPolicy;
 import com.kltn.school_hrm.entity.approval.ApprovalRequest;
 import com.kltn.school_hrm.entity.approval.ApprovalRequestStep;
 import com.kltn.school_hrm.entity.employee.Employee;
-import com.kltn.school_hrm.enums.Enums.ApprovalActionType;
-import com.kltn.school_hrm.enums.Enums.ApprovalConditionType;
-import com.kltn.school_hrm.enums.Enums.ApprovalStatus;
-import com.kltn.school_hrm.exception.custom.BusinessException;
+import com.kltn.school_hrm.shared.enums.Enums.ApprovalActionType;
+import com.kltn.school_hrm.shared.enums.Enums.ApprovalConditionType;
+import com.kltn.school_hrm.shared.enums.Enums.ApprovalStatus;
+import com.kltn.school_hrm.shared.exception.custom.BusinessException;
 import com.kltn.school_hrm.repository.ApprovalActionRepository;
 import com.kltn.school_hrm.repository.ApprovalLevelRepository;
 import com.kltn.school_hrm.repository.ApprovalPolicyRepository;
@@ -344,7 +344,7 @@ public class ApprovalEngineServiceImpl implements ApprovalEngineService {
                 .findByApprovalRequestIdOrderByLevelOrderAsc(request.getId())
                 .stream()
                 .filter(s -> s.getLevelOrder().equals(request.getCurrentLevel())
-                        && s.getStatus() == com.kltn.school_hrm.enums.Enums.ApprovalStatus.PENDING
+                        && s.getStatus() == com.kltn.school_hrm.shared.enums.Enums.ApprovalStatus.PENDING
                         && s.getAssignedApprover() != null)
                 .map(ApprovalRequestStep::getAssignedApprover)
                 .collect(Collectors.toList());

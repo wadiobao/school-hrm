@@ -1,9 +1,9 @@
-package com.kltn.school_hrm.dto.response;
+﻿package com.kltn.school_hrm.dto.response;
 
 import java.time.LocalDate;
 
-import com.kltn.school_hrm.enums.Enums.TeachingLogType;
-import com.kltn.school_hrm.enums.Enums.RequestStatus;
+import com.kltn.school_hrm.shared.enums.Enums.TeachingLogType;
+import com.kltn.school_hrm.shared.enums.Enums.RequestStatus;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
