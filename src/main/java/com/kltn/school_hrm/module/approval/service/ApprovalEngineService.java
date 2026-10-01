@@ -3,7 +3,7 @@
 import java.util.List;
 import java.util.Map;
 
-import com.kltn.school_hrm.module.approval.dto.responseResult;
+import com.kltn.school_hrm.module.approval.dto.response.ApprovalResult;
 import com.kltn.school_hrm.module.approval.entity.ApprovalRequest;
 import com.kltn.school_hrm.module.approval.entity.ApprovalRequestStep;
 import com.kltn.school_hrm.module.employee.entity.Employee;
@@ -11,8 +11,9 @@ import com.kltn.school_hrm.module.employee.entity.Employee;
 public interface ApprovalEngineService {
 
     /**
-     * Khởi tạo workflow phê duyệt cho đối tượng nghiệp vụ.
-     * Tự động tìm Policy active, đánh giá condition, resolve và lưu các ApprovalRequestStep, ghi nhận action SUBMIT.
+     * Khởi tạo workflow phê duyệt cho đối tượng nghiệp vụ. Tự động tìm Policy
+     * active, đánh giá condition, resolve và lưu các ApprovalRequestStep, ghi nhận
+     * action SUBMIT.
      */
     ApprovalRequest initiateRequest(
             String businessType,
@@ -22,14 +23,14 @@ public interface ApprovalEngineService {
             Map<String, Object> contextVariables);
 
     /**
-     * Xử lý phê duyệt ở cấp hiện tại.
-     * Chuyển cấp duyệt tiếp theo nếu còn; đánh giá hoàn tất (APPROVED) nếu đã duyệt hết các cấp.
+     * Xử lý phê duyệt ở cấp hiện tại. Chuyển cấp duyệt tiếp theo nếu còn; đánh giá
+     * hoàn tất (APPROVED) nếu đã duyệt hết các cấp.
      */
     ApprovalResult approve(String businessType, Long businessId, Long approverId, String comment);
 
     /**
-     * Xử lý từ chối ở cấp hiện tại.
-     * Ngay lập tức chuyển trạng thái request thành REJECTED.
+     * Xử lý từ chối ở cấp hiện tại. Ngay lập tức chuyển trạng thái request thành
+     * REJECTED.
      */
     ApprovalResult reject(String businessType, Long businessId, Long approverId, String comment);
 
@@ -49,8 +50,9 @@ public interface ApprovalEngineService {
     ApprovalRequestStep getCurrentPendingStep(String businessType, Long businessId);
 
     /**
-     * Lấy danh sách người đang được assign duyệt ở tất cả các step hiện tại PENDING.
-     * Thường chỉ có 1 người (vì duyệt tuần tự), nhưng hỗ trợ trả về list để mở rộng.
+     * Lấy danh sách người đang được assign duyệt ở tất cả các step hiện tại
+     * PENDING. Thường chỉ có 1 người (vì duyệt tuần tự), nhưng hỗ trợ trả về list
+     * để mở rộng.
      */
     List<Employee> getCurrentApprovers(String businessType, Long businessId);
 }

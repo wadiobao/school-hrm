@@ -12,9 +12,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.kltn.school_hrm.module.leave.dto.request.LeaveCreateRequest;
 import com.kltn.school_hrm.module.leave.dto.request.LeaveDecisionRequest;
-import com.kltn.school_hrm.module.approval.dto.responseActionResponse;
-import com.kltn.school_hrm.module.approval.dto.responseResult;
-import com.kltn.school_hrm.module.approval.dto.responseStepResponse;
+import com.kltn.school_hrm.module.approval.dto.response.ApprovalActionResponse;
+import com.kltn.school_hrm.module.approval.dto.response.ApprovalResult;
+import com.kltn.school_hrm.module.approval.dto.response.ApprovalStepResponse;
 import com.kltn.school_hrm.module.leave.dto.response.LeaveResponse;
 import com.kltn.school_hrm.module.approval.entity.ApprovalAction;
 import com.kltn.school_hrm.module.approval.entity.ApprovalRequest;

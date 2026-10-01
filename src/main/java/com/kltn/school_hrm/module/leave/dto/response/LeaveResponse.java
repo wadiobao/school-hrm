@@ -11,6 +11,9 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import com.kltn.school_hrm.module.approval.dto.response.ApprovalActionResponse;
+import com.kltn.school_hrm.module.approval.dto.response.ApprovalStepResponse;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

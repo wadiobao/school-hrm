@@ -10,7 +10,7 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.kltn.school_hrm.module.approval.dto.responseResult;
+import com.kltn.school_hrm.module.approval.dto.response.ApprovalResult;
 import com.kltn.school_hrm.module.approval.entity.ApprovalAction;
 import com.kltn.school_hrm.module.approval.entity.ApprovalLevel;
 import com.kltn.school_hrm.module.approval.entity.ApprovalPolicy;
