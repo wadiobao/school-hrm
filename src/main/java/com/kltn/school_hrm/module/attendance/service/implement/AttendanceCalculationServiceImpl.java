@@ -1,4 +1,4 @@
-﻿package com.kltn.school_hrm.module.attendance.service.implement;
+package com.kltn.school_hrm.module.attendance.service.implement;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -29,8 +29,19 @@ public class AttendanceCalculationServiceImpl implements AttendanceCalculationSe
         LocalDateTime firstCheckIn = record.getFirstCheckIn();
         LocalDateTime lastCheckOut = record.getLastCheckOut();
 
-        if (firstCheckIn == null) {
+        // Edge case: Cả IN và OUT đều không có -> ABSENT
+        if (firstCheckIn == null && lastCheckOut == null) {
             return absent();
+        }
+
+        // Edge case: Thiếu IN (chỉ có OUT) -> INCOMPLETE (không tự đoán giờ IN, chờ HR điều chỉnh)
+        if (firstCheckIn == null) {
+            return AttendanceCalculationResult.builder()
+                    .lateMinutes(0)
+                    .earlyLeaveMinutes(0)
+                    .workedMinutes(0)
+                    .status(AttendanceStatus.INCOMPLETE)
+                    .build();
         }
 
         // Tính lateMinutes (Cách 2: tính từ giờ bắt đầu ca, không trừ grace period)
