@@ -1,0 +1,311 @@
+package com.kltn.school_hrm.shared.configuration;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.List;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.boot.ApplicationArguments;
+import org.springframework.boot.ApplicationRunner;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.kltn.school_hrm.module.core.entity.Department;
+import com.kltn.school_hrm.module.core.entity.Position;
+import com.kltn.school_hrm.module.core.entity.Role;
+import com.kltn.school_hrm.module.core.entity.User;
+import com.kltn.school_hrm.module.core.repository.DepartmentRepository;
+import com.kltn.school_hrm.module.core.repository.PositionRepository;
+import com.kltn.school_hrm.module.core.repository.RoleRepository;
+import com.kltn.school_hrm.module.core.repository.UserRepository;
+import com.kltn.school_hrm.module.employee.entity.Employee;
+import com.kltn.school_hrm.module.employee.repository.EmployeeRepository;
+import com.kltn.school_hrm.shared.enums.Enums.EmployeeStatus;
+import com.kltn.school_hrm.shared.enums.Enums.RoleCode;
+import com.kltn.school_hrm.shared.enums.Enums.UserStatus;
+
+import lombok.RequiredArgsConstructor;
+
+/**
+ * Khởi tạo dữ liệu mặc định khi ứng dụng lần đầu khởi động.
+ * <p>Chỉ seed khi chưa có dữ liệu (idempotent – an toàn khi chạy nhiều lần).</p>
+ *
+ * <b>Tài khoản mặc định:</b>
+ * <pre>
+ *   Admin  : username=admin      | password=Admin@123
+ *   HR     : username=hrmanager  | password=Hr@123456
+ *   Staff  : username=staff      | password=Staff@123
+ * </pre>
+ */
+@Component
+@RequiredArgsConstructor
+public class DataInitializer implements ApplicationRunner {
+
+    private static final Logger log = LoggerFactory.getLogger(DataInitializer.class);
+
+    private final RoleRepository        roleRepository;
+    private final UserRepository        userRepository;
+    private final DepartmentRepository  departmentRepository;
+    private final PositionRepository    positionRepository;
+    private final EmployeeRepository    employeeRepository;
+    private final PasswordEncoder       passwordEncoder;
+    private final com.kltn.school_hrm.module.leave.service.LeaveBalanceService leaveBalanceService;
+
+    @Override
+    @Transactional
+    public void run(ApplicationArguments args) {
+        log.info("=== DataInitializer: Kiểm tra & khởi tạo dữ liệu mẫu ===");
+
+        // ── 1. Roles ──────────────────────────────────────────────────────────
+        Role adminRole = seedRole(RoleCode.SUPER_ADMIN,   "Quản trị hệ thống",
+                "Toàn quyền quản trị hệ thống HRM");
+        Role hrRole    = seedRole(RoleCode.HR_MANAGER,    "Trưởng phòng Nhân sự",
+                "Quản lý hồ sơ nhân viên, bảng lương, chấm công");
+        Role staffRole   = seedRole(RoleCode.STAFF,         "Nhân viên Hành chính",
+                "Xem thông tin cá nhân và bảng công");
+        Role teacherRole = seedRole(RoleCode.TEACHER,       "Giáo viên",
+                "Giảng dạy và ghi nhật ký giờ dạy");
+        seedRole(RoleCode.HEAD_OF_DEPARTMENT,  "Trưởng Bộ môn",
+                "Phê duyệt đơn nghỉ phép và quản lý bộ môn");
+        seedRole(RoleCode.BOARD_OF_DIRECTORS,  "Ban Giám hiệu",
+                "Phê duyệt cấp cao và xem báo cáo tổng quan");
+
+        // ── 2. Departments ────────────────────────────────────────────────────
+        Department adminDept = seedDepartment("BAN-GIAM-HOC", "Ban Giám hiệu");
+        Department hrDept    = seedDepartment("PHONG-NS",     "Phòng Nhân sự");
+        Department itDept    = seedDepartment("PHONG-CNTT",   "Phòng Công nghệ Thông tin");
+        Department mathDept  = seedDepartment("BAN-TOAN",     "Bộ môn Toán");
+        seedDepartment("BAN-ANH",    "Bộ môn Tiếng Anh");
+        seedDepartment("BAN-LY",     "Bộ môn Vật lý");
+
+        // ── 3. Positions ──────────────────────────────────────────────────────
+        Position principalPos  = seedPosition("HIEU-TRUONG",  "Hiệu trưởng",        new BigDecimal("0.50"));
+        Position hrManagerPos  = seedPosition("TRUONG-NS",    "Trưởng phòng NS",    new BigDecimal("0.30"));
+        Position teacherPos    = seedPosition("GIAO-VIEN",    "Giáo viên",          new BigDecimal("0.20"));
+        Position staffPos      = seedPosition("NHAN-VIEN",    "Nhân viên",          new BigDecimal("0.10"));
+        Position itAdminPos    = seedPosition("IT-ADMIN",     "Quản trị hệ thống",  new BigDecimal("0.25"));
+
+        // ── 4. Users & Employees ──────────────────────────────────────────────
+        Employee adminEmp = seedAdminUser(adminRole, adminDept, itAdminPos);
+        Employee hrEmp    = seedHrUser(hrRole,    hrDept, hrManagerPos);
+        Employee staffEmp = seedStaffUser(staffRole, hrDept, staffPos);
+        Employee teacherEmp = seedTeacherUser(teacherRole, mathDept, teacherPos);
+
+        // ── 5. Khởi tạo quỹ nghỉ phép năm 2026 cho nhân viên mẫu (12 ngày/năm) ──
+        int currentYear = LocalDate.now().getYear();
+        List.of(adminEmp, hrEmp, staffEmp, teacherEmp).forEach(emp -> {
+            if (emp != null) {
+                try {
+                    leaveBalanceService.initializeBalanceForEmployee(emp, currentYear, BigDecimal.valueOf(12));
+                } catch (Exception e) {
+                    log.warn("Không thể khởi tạo quỹ phép cho nhân viên {}: {}", emp.getEmployeeCode(), e.getMessage());
+                }
+            }
+        });
+
+        log.info("=== DataInitializer: Hoàn tất ===");
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Private helper methods
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /** Tạo Role nếu chưa tồn tại. */
+    private Role seedRole(RoleCode code, String name, String description) {
+        return roleRepository.findByRoleCode(code).orElseGet(() -> {
+            Role role = Role.builder()
+                    .roleCode(code)
+                    .roleName(name)
+                    .description(description)
+                    .build();
+            Role saved = roleRepository.save(role);
+            log.info("  [+] Role tạo mới: {}", code);
+            return saved;
+        });
+    }
+
+    /** Tạo Department nếu chưa tồn tại (theo code). */
+    private Department seedDepartment(String code, String name) {
+        return departmentRepository.findByCode(code).orElseGet(() -> {
+            Department dept = Department.builder()
+                    .code(code)
+                    .name(name)
+                    .build();
+            Department saved = departmentRepository.save(dept);
+            log.info("  [+] Department tạo mới: {} - {}", code, name);
+            return saved;
+        });
+    }
+
+    /** Tạo Position nếu chưa tồn tại (theo code). */
+    private Position seedPosition(String code, String name, BigDecimal allowanceRate) {
+        return positionRepository.findByCode(code).orElseGet(() -> {
+            Position pos = Position.builder()
+                    .code(code)
+                    .name(name)
+                    .positionAllowanceRate(allowanceRate)
+                    .build();
+            Position saved = positionRepository.save(pos);
+            log.info("  [+] Position tạo mới: {} - {}", code, name);
+            return saved;
+        });
+    }
+
+    /**
+     * Seed tài khoản Admin (SUPER_ADMIN).
+     * username: admin | password: Admin@123
+     */
+    private Employee seedAdminUser(Role role, Department dept, Position pos) {
+        if (userRepository.existsByUsername("admin")) {
+            log.info("  [=] User 'admin' đã tồn tại, bỏ qua.");
+            return employeeRepository.findByEmployeeCode("EMP-ADMIN-001").orElse(null);
+        }
+
+        User adminUser = User.builder()
+                .username("admin")
+                .passwordHash(passwordEncoder.encode("Admin@123"))
+                .email("admin@school-hrm.local")
+                .phone("0900000001")
+                .status(UserStatus.ACTIVE)
+                .role(role)
+                .build();
+        adminUser = userRepository.save(adminUser);
+
+        Employee adminEmp = Employee.builder()
+                .user(adminUser)
+                .employeeCode("EMP-ADMIN-001")
+                .fullName("Quản trị viên Hệ thống")
+                .email("admin@school-hrm.local")
+                .phone("0900000001")
+                .citizenId("079000000001")
+                .gender("Nam")
+                .department(dept)
+                .position(pos)
+                .joinDate(LocalDate.of(2024, 1, 1))
+                .status(EmployeeStatus.WORKING)
+                .build();
+        adminEmp = employeeRepository.save(adminEmp);
+
+        log.info("  [+] Admin user tạo thành công: username=admin | password=Admin@123");
+        return adminEmp;
+    }
+
+    /**
+     * Seed tài khoản HR Manager.
+     * username: hrmanager | password: Hr@123456
+     */
+    private Employee seedHrUser(Role role, Department dept, Position pos) {
+        if (userRepository.existsByUsername("hrmanager")) {
+            log.info("  [=] User 'hrmanager' đã tồn tại, bỏ qua.");
+            return employeeRepository.findByEmployeeCode("EMP-HR-001").orElse(null);
+        }
+
+        User hrUser = User.builder()
+                .username("hrmanager")
+                .passwordHash(passwordEncoder.encode("Hr@123456"))
+                .email("hr@school-hrm.local")
+                .phone("0900000002")
+                .status(UserStatus.ACTIVE)
+                .role(role)
+                .build();
+        hrUser = userRepository.save(hrUser);
+
+        Employee hrEmp = Employee.builder()
+                .user(hrUser)
+                .employeeCode("EMP-HR-001")
+                .fullName("Nguyễn Thị Nhân Sự")
+                .email("hr@school-hrm.local")
+                .phone("0900000002")
+                .citizenId("079000000002")
+                .gender("Nữ")
+                .department(dept)
+                .position(pos)
+                .joinDate(LocalDate.of(2024, 1, 15))
+                .status(EmployeeStatus.WORKING)
+                .build();
+        hrEmp = employeeRepository.save(hrEmp);
+
+        log.info("  [+] HR Manager user tạo thành công: username=hrmanager | password=Hr@123456");
+        return hrEmp;
+    }
+
+    /**
+     * Seed tài khoản Staff mẫu.
+     * username: staff | password: Staff@123
+     */
+    private Employee seedStaffUser(Role role, Department dept, Position pos) {
+        if (userRepository.existsByUsername("staff")) {
+            log.info("  [=] User 'staff' đã tồn tại, bỏ qua.");
+            return employeeRepository.findByEmployeeCode("EMP-STAFF-001").orElse(null);
+        }
+
+        User staffUser = User.builder()
+                .username("staff")
+                .passwordHash(passwordEncoder.encode("Staff@123"))
+                .email("staff@school-hrm.local")
+                .phone("0900000003")
+                .status(UserStatus.ACTIVE)
+                .role(role)
+                .build();
+        staffUser = userRepository.save(staffUser);
+
+        Employee staffEmp = Employee.builder()
+                .user(staffUser)
+                .employeeCode("EMP-STAFF-001")
+                .fullName("Trần Văn Nhân Viên")
+                .email("staff@school-hrm.local")
+                .phone("0900000003")
+                .citizenId("079000000003")
+                .gender("Nam")
+                .department(dept)
+                .position(pos)
+                .joinDate(LocalDate.of(2024, 3, 1))
+                .status(EmployeeStatus.WORKING)
+                .build();
+        staffEmp = employeeRepository.save(staffEmp);
+
+        log.info("  [+] Staff user tạo thành công: username=staff | password=Staff@123");
+        return staffEmp;
+    }
+
+    /**
+     * Seed tài khoản Giáo viên mẫu.
+     * username: teacher | password: Teacher@123
+     */
+    private Employee seedTeacherUser(Role role, Department dept, Position pos) {
+        if (userRepository.existsByUsername("teacher")) {
+            log.info("  [=] User 'teacher' đã tồn tại, bỏ qua.");
+            return employeeRepository.findByEmployeeCode("EMP-GV-001").orElse(null);
+        }
+
+        User teacherUser = User.builder()
+                .username("teacher")
+                .passwordHash(passwordEncoder.encode("Teacher@123"))
+                .email("teacher@school-hrm.local")
+                .phone("0900000004")
+                .status(UserStatus.ACTIVE)
+                .role(role)
+                .build();
+        teacherUser = userRepository.save(teacherUser);
+
+        Employee teacherEmp = Employee.builder()
+                .user(teacherUser)
+                .employeeCode("EMP-GV-001")
+                .fullName("Thầy Hoàng Văn Giáo Viên")
+                .email("teacher@school-hrm.local")
+                .phone("0900000004")
+                .citizenId("079000000004")
+                .gender("Nam")
+                .department(dept)
+                .position(pos)
+                .joinDate(LocalDate.of(2023, 9, 1))
+                .status(EmployeeStatus.WORKING)
+                .build();
+        teacherEmp = employeeRepository.save(teacherEmp);
+
+        log.info("  [+] Teacher user tạo thành công: username=teacher | password=Teacher@123");
+        return teacherEmp;
+    }
+}
