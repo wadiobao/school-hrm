@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <title>School HRM - Quản lý Nghỉ phép</title>
@@ -6,6 +6,62 @@
 <html th:replace="~{layout/main-layout :: layout(~{::content}, ~{::scripts}, 'Quản lý Nghỉ phép')}">
 
     <div th:fragment="content">
+        <!-- Leave Balance Summary Cards (Quỹ nghỉ phép năm) -->
+        <div class="row g-3 mb-4" id="leave-balance-container">
+            <div class="col-sm-6 col-xl-3">
+                <div class="card border-0 shadow-sm bg-primary bg-opacity-10 h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="text-primary fw-semibold small text-uppercase">Tổng quỹ phép năm</div>
+                                <h3 class="fw-bold mt-2 mb-0 text-primary" id="balance-total-days">-- ngày</h3>
+                            </div>
+                            <div class="fs-1 text-primary opacity-50"><i class="bi bi-calendar2-heart"></i></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-xl-3">
+                <div class="card border-0 shadow-sm bg-danger bg-opacity-10 h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="text-danger fw-semibold small text-uppercase">Đã nghỉ (Used)</div>
+                                <h3 class="fw-bold mt-2 mb-0 text-danger" id="balance-used-days">-- ngày</h3>
+                            </div>
+                            <div class="fs-1 text-danger opacity-50"><i class="bi bi-calendar-x"></i></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-xl-3">
+                <div class="card border-0 shadow-sm bg-warning bg-opacity-10 h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="text-warning-emphasis fw-semibold small text-uppercase">Đang duyệt (Pending)</div>
+                                <h3 class="fw-bold mt-2 mb-0 text-warning-emphasis" id="balance-pending-days">-- ngày</h3>
+                            </div>
+                            <div class="fs-1 text-warning opacity-50"><i class="bi bi-hourglass-split"></i></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-xl-3">
+                <div class="card border-0 shadow-sm bg-success bg-opacity-10 h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="text-success fw-semibold small text-uppercase">Còn lại khả dụng</div>
+                                <h3 class="fw-bold mt-2 mb-0 text-success" id="balance-remaining-days">-- ngày</h3>
+                            </div>
+                            <div class="fs-1 text-success opacity-50"><i class="bi bi-check-circle"></i></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Action Toolbar -->
         <div class="card mb-4 border-0 shadow-sm">
             <div class="card-body d-flex justify-content-between align-items-center">
@@ -145,8 +201,48 @@
 
             document.addEventListener('DOMContentLoaded', async () => {
                 await loadEmployees();
+                loadLeaveBalance();
                 loadLeaveRequests();
             });
+
+            async function loadLeaveBalance() {
+                const user = getCurrentUser();
+                const currentYear = new Date().getFullYear();
+                
+                try {
+                    // Nếu là nhân viên/giáo viên thông thường và có employeeId gắn với user: hiển thị quỹ phép của chính mình
+                    // Nếu là quản trị viên/HR: hiển thị quỹ phép cá nhân nếu có, hoặc tổng quan quỹ phép toàn trường
+                    let endpoint = '/api/v1/leaves/balances';
+                    if (user && user.employeeId) {
+                        endpoint = `/api/v1/leaves/balances/employee/${user.employeeId}?year=${currentYear}`;
+                        const res = await fetchApi(endpoint);
+                        if (res && res.data) {
+                            const b = res.data;
+                            document.getElementById('balance-total-days').textContent = `${b.totalDays || 0} ngày`;
+                            document.getElementById('balance-remaining-days').textContent = `${b.remainingDays || 0} ngày`;
+                            document.getElementById('balance-pending-days').textContent = `${b.pendingDays || 0} ngày`;
+                            document.getElementById('balance-used-days').textContent = `${b.usedDays || 0} ngày`;
+                        }
+                    } else {
+                        // Cấp quản trị không gắn hồ sơ nhân viên: tổng hợp từ danh sách quỹ phép toàn trường
+                        const res = await fetchApi(`/api/v1/leaves/balances?year=${currentYear}`);
+                        if (res && res.data) {
+                            const list = res.data;
+                            const total = list.reduce((sum, item) => sum + (item.totalDays || 0), 0);
+                            const remaining = list.reduce((sum, item) => sum + (item.remainingDays || 0), 0);
+                            const pending = list.reduce((sum, item) => sum + (item.pendingDays || 0), 0);
+                            const used = list.reduce((sum, item) => sum + (item.usedDays || 0), 0);
+
+                            document.getElementById('balance-total-days').textContent = `${total} ngày`;
+                            document.getElementById('balance-remaining-days').textContent = `${remaining} ngày`;
+                            document.getElementById('balance-pending-days').textContent = `${pending} ngày`;
+                            document.getElementById('balance-used-days').textContent = `${used} ngày`;
+                        }
+                    }
+                } catch (e) {
+                    console.error('Error loading leave balance', e);
+                }
+            }
 
             async function loadEmployees() {
                 try {
@@ -201,17 +297,27 @@
                     ? allLeaveRequests 
                     : allLeaveRequests.filter(l => l.status === currentFilterStatus);
 
-                if (list.length === 0) {
+                // Nếu là TEACHER hoặc STAFF: chỉ xem các đơn nghỉ của chính bản thân (theo permission.md mục 1.5 & 1.6)
+                const user = getCurrentUser();
+                let filteredList = list;
+                if (hasRole('TEACHER', 'STAFF') && user && user.employeeId) {
+                    filteredList = list.filter(l => l.employeeId === user.employeeId);
+                }
+
+                if (filteredList.length === 0) {
                     tbody.innerHTML = '<tr><td colspan="7" class="text-center py-5 text-muted">Không có đơn nghỉ phép nào trong mục này</td></tr>';
                     return;
                 }
 
-                tbody.innerHTML = list.map(req => {
+                tbody.innerHTML = filteredList.map(req => {
+                    const isPending = req.status === 'PENDING';
                     let statusBadge = '<span class="badge bg-warning text-dark">Chờ duyệt</span>';
                     if (req.status === 'APPROVED') statusBadge = '<span class="badge bg-success">Đã duyệt</span>';
                     if (req.status === 'REJECTED') statusBadge = '<span class="badge bg-danger">Từ chối</span>';
 
-                    const isPending = req.status === 'PENDING';
+                    // Theo permission.md mục 1.1: Không mặc định cho SUPER_ADMIN duyệt nghỉ phép.
+                    // Chỉ BOARD_OF_DIRECTORS (cấp cao), HEAD_OF_DEPARTMENT (cấp đơn vị), HR_MANAGER (quản lý theo quy trình)
+                    const canApproveLeave = hasRole('BOARD_OF_DIRECTORS', 'HEAD_OF_DEPARTMENT', 'HR_MANAGER');
 
                     return `
                         <tr>
@@ -227,14 +333,14 @@
                             <td>${req.substituteTeacherName ? `<span class="badge bg-info bg-opacity-10 text-dark border">${req.substituteTeacherName}</span>` : '<span class="text-muted small">Không</span>'}</td>
                             <td>${statusBadge}</td>
                             <td class="text-end pe-4">
-                                ${isPending ? `
+                                ${isPending ? (canApproveLeave ? `
                                     <button class="btn btn-sm btn-success me-1" title="Phê duyệt" onclick="openDecisionModal(${req.id}, 'APPROVE')">
                                         <i class="bi bi-check-lg"></i> Duyệt
                                     </button>
                                     <button class="btn btn-sm btn-outline-danger" title="Từ chối" onclick="openDecisionModal(${req.id}, 'REJECT')">
                                         <i class="bi bi-x-lg"></i> Từ chối
                                     </button>
-                                ` : `
+                                ` : '<span class="badge bg-warning text-dark">Chờ cấp trên duyệt</span>') : `
                                     <span class="text-muted small">Đã hoàn tất</span>
                                 `}
                             </td>
@@ -245,6 +351,18 @@
 
             function openCreateLeaveModal() {
                 document.getElementById('leaveForm').reset();
+                const user = getCurrentUser();
+                const selEmp = document.getElementById('leave-employeeId');
+                if (user && user.employeeId) {
+                    selEmp.value = user.employeeId;
+                    if (hasRole('TEACHER', 'STAFF')) {
+                        selEmp.setAttribute('disabled', 'disabled');
+                    } else {
+                        selEmp.removeAttribute('disabled');
+                    }
+                } else {
+                    selEmp.removeAttribute('disabled');
+                }
                 openModal('leaveModal');
             }
 
@@ -271,6 +389,7 @@
                     });
                     showAlert('Đã gửi đơn xin nghỉ phép thành công!', 'success');
                     closeModal('leaveModal');
+                    loadLeaveBalance();
                     loadLeaveRequests();
                 } catch (e) {
                     console.error('Submit leave error', e);
@@ -318,6 +437,7 @@
                     });
                     showAlert(actionType === 'APPROVE' ? 'Đã phê duyệt đơn nghỉ phép!' : 'Đã từ chối đơn nghỉ phép!', 'success');
                     closeModal('decisionModal');
+                    loadLeaveBalance();
                     loadLeaveRequests();
                 } catch (e) {
                     console.error('Decision error', e);
