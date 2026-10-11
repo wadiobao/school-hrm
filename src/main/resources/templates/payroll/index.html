@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>School HRM - Quản lý Tiền lương</title>
+</head>
+<html th:replace="~{layout/main-layout :: layout(~{::content}, ~{::scripts}, 'Quản lý Tiền lương')}">
+
+    <div th:fragment="content">
+        <!-- Filter Toolbar -->
+        <div class="card mb-4 border-0 shadow-sm">
+            <div class="card-body">
+                <div class="row g-3 align-items-center">
+                    <div class="col-md-3">
+                        <label class="form-label small text-muted mb-1">Tháng trả lương</label>
+                        <select id="payroll-month" class="form-select form-select-sm">
+                            <option value="1">Tháng 1</option>
+                            <option value="2">Tháng 2</option>
+                            <option value="3">Tháng 3</option>
+                            <option value="4">Tháng 4</option>
+                            <option value="5">Tháng 5</option>
+                            <option value="6">Tháng 6</option>
+                            <option value="7">Tháng 7</option>
+                            <option value="8">Tháng 8</option>
+                            <option value="9">Tháng 9</option>
+                            <option value="10">Tháng 10</option>
+                            <option value="11">Tháng 11</option>
+                            <option value="12">Tháng 12</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small text-muted mb-1">Năm tài chính</label>
+                        <input type="number" id="payroll-year" class="form-control form-control-sm" value="2026">
+                    </div>
+                    <div class="col-md-6 d-flex align-items-end justify-content-end gap-2">
+                        <button class="btn btn-sm btn-outline-secondary" onclick="setPayrollCurrentMonth()">
+                            <i class="bi bi-calendar-month"></i> Tháng này
+                        </button>
+                        <button class="btn btn-sm btn-primary" onclick="loadPayrolls()">
+                            <i class="bi bi-search me-1"></i> Xem bảng lương
+                        </button>
+                        <button class="btn btn-sm btn-success" data-roles="HR_MANAGER" onclick="openAddPayrollModal()">
+                            <i class="bi bi-plus-lg me-1"></i> Lập phiếu lương
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Payroll Summary Cards -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm bg-primary bg-opacity-10">
+                    <div class="card-body">
+                        <div class="text-primary fw-semibold small text-uppercase">Tổng phiếu lương</div>
+                        <h3 class="fw-bold mt-1 mb-0" id="stat-payroll-count">0</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm bg-success bg-opacity-10">
+                    <div class="card-body">
+                        <div class="text-success fw-semibold small text-uppercase">Tổng chi lương thực nhận</div>
+                        <h3 class="fw-bold mt-1 mb-0" id="stat-payroll-total">0 ₫</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm bg-info bg-opacity-10">
+                    <div class="card-body">
+                        <div class="text-info fw-semibold small text-uppercase">Đã thanh toán (PAID)</div>
+                        <h3 class="fw-bold mt-1 mb-0" id="stat-payroll-paid">0</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Payroll Table Card -->
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Nhân viên</th>
+                                <th>Mã NV</th>
+                                <th>Kỳ lương</th>
+                                <th>Lương cơ bản</th>
+                                <th>Tổng phụ cấp</th>
+                                <th>Tổng khấu trừ</th>
+                                <th>Thực nhận (Net Salary)</th>
+                                <th>Trạng thái</th>
+                                <th class="text-end pe-4">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody id="payroll-table-body">
+                            <tr>
+                                <td colspan="9" class="text-center py-5 text-muted">Đang tải bảng lương...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL: LẬP / CẬP NHẬT PHIẾU LƯƠNG -->
+        <div class="modal fade" id="payrollModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title fw-bold" id="payrollModalTitle">Lập Phiếu Lương</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="payrollForm">
+                            <input type="hidden" id="payroll-id">
+                            <div class="mb-3">
+                                <label class="form-label required">Nhân viên *</label>
+                                <select id="payroll-emp-select" class="form-select" required>
+                                    <option value="">-- Chọn nhân sự --</option>
+                                </select>
+                            </div>
+                            <div class="row g-2 mb-3">
+                                <div class="col-6">
+                                    <label class="form-label required">Tháng *</label>
+                                    <input type="number" id="payroll-f-month" class="form-control" min="1" max="12" required>
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label required">Năm *</label>
+                                    <input type="number" id="payroll-f-year" class="form-control" required>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label required">Lương cơ bản (VND) *</label>
+                                <input type="number" id="payroll-f-base" class="form-control" placeholder="VD: 15000000" required>
+                            </div>
+                            <div class="row g-2 mb-3">
+                                <div class="col-6">
+                                    <label class="form-label">Phụ cấp (VND)</label>
+                                    <input type="number" id="payroll-f-allowance" class="form-control" value="0">
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label">Khấu trừ / BH (VND)</label>
+                                    <input type="number" id="payroll-f-deduction" class="form-control" value="0">
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Trạng thái chi trả</label>
+                                <select id="payroll-f-status" class="form-select">
+                                    <option value="DRAFT">Dự thảo (DRAFT)</option>
+                                    <option value="CONFIRMED">Đã duyệt (CONFIRMED)</option>
+                                    <option value="PAID">Đã thanh toán (PAID)</option>
+                                </select>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                        <button type="button" class="btn btn-primary" onclick="savePayroll()">Lưu phiếu lương</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Delete Modal -->
+        <div class="modal fade" id="deletePayrollModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-sm modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-body text-center p-4">
+                        <i class="bi bi-exclamation-triangle text-danger" style="font-size: 3rem;"></i>
+                        <h5 class="mt-3">Xác nhận xóa</h5>
+                        <p class="text-muted small">Bạn có chắc chắn muốn xóa phiếu lương này?</p>
+                        <div class="d-flex justify-content-center gap-2 mt-4">
+                            <button type="button" class="btn btn-light" data-bs-dismiss="modal">Hủy</button>
+                            <button type="button" class="btn btn-danger" id="confirm-delete-payroll-btn">Xóa</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div th:fragment="scripts">
+        <script>
+            let employeeList = [];
+
+            document.addEventListener('DOMContentLoaded', async () => {
+                setPayrollCurrentMonth();
+                await loadEmployees();
+                loadPayrolls();
+            });
+
+            function setPayrollCurrentMonth() {
+                const now = new Date();
+                document.getElementById('payroll-month').value = now.getMonth() + 1;
+                document.getElementById('payroll-year').value = now.getFullYear();
+            }
+
+            async function loadEmployees() {
+                try {
+                    const res = await fetchApi('/api/v1/employees?size=200');
+                    if (res && res.data && res.data.content) {
+                        employeeList = res.data.content;
+                        const sel = document.getElementById('payroll-emp-select');
+                        sel.innerHTML = '<option value="">-- Chọn nhân sự --</option>';
+                        employeeList.forEach(emp => {
+                            sel.innerHTML += `<option value="${emp.id}">${emp.fullName} (${emp.employeeCode})</option>`;
+                        });
+                    }
+                } catch (e) {
+                    console.error('Error loading employees', e);
+                }
+            }
+
+            async function loadPayrolls() {
+                const month = document.getElementById('payroll-month').value;
+                const year = document.getElementById('payroll-year').value;
+                const tbody = document.getElementById('payroll-table-body');
+                if (!month || !year) return;
+
+                tbody.innerHTML = '<tr><td colspan="9" class="text-center py-5 text-muted">Đang tải bảng lương...</td></tr>';
+
+                try {
+                    const res = await fetchApi(`/api/v1/payrolls/period?month=${month}&year=${year}`);
+                    const payrolls = res.data || [];
+
+                    // Thống kê cards
+                    document.getElementById('stat-payroll-count').textContent = payrolls.length;
+                    const totalNet = payrolls.reduce((acc, p) => acc + (p.netSalary || 0), 0);
+                    document.getElementById('stat-payroll-total').textContent = formatCurrency(totalNet);
+                    const paidCount = payrolls.filter(p => p.status === 'PAID').length;
+                    document.getElementById('stat-payroll-paid').textContent = paidCount;
+
+                    if (payrolls.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="9" class="text-center py-5 text-muted">Không có phiếu lương nào cho kỳ này</td></tr>';
+                        return;
+                    }
+
+                    const canApprovePayroll = hasRole('BOARD_OF_DIRECTORS');
+                    const canManagePayroll = hasRole('HR_MANAGER');
+
+                    tbody.innerHTML = payrolls.map(p => {
+                        let badgeClass = 'bg-secondary';
+                        let statusText = 'Dự thảo';
+                        if (p.status === 'CONFIRMED') {
+                            badgeClass = 'bg-primary';
+                            statusText = 'Đã duyệt';
+                        } else if (p.status === 'PAID') {
+                            badgeClass = 'bg-success';
+                            statusText = 'Đã thanh toán';
+                        }
+
+                        return `
+                            <tr>
+                                <td class="fw-bold">${p.employeeName || 'N/A'}</td>
+                                <td><span class="badge bg-light text-dark border">${p.employeeCode || 'N/A'}</span></td>
+                                <td>Tháng ${p.month}/${p.year}</td>
+                                <td>${formatCurrency(p.baseSalary)}</td>
+                                <td class="text-success">+${formatCurrency(p.grossSalary ? (p.grossSalary - p.baseSalary) : 0)}</td>
+                                <td class="text-danger">-${formatCurrency(p.totalDeductions || 0)}</td>
+                                <td><strong class="text-primary">${formatCurrency(p.netSalary)}</strong></td>
+                                <td><span class="badge ${badgeClass}">${statusText}</span></td>
+                                <td class="text-end pe-4">
+                                    ${canApprovePayroll && p.status !== 'PAID' ? `
+                                        <button class="btn btn-sm btn-outline-success me-1" title="Ban Giám hiệu phê duyệt / Đánh dấu chi trả" onclick="updatePayrollStatus(${p.id}, 'PAID')">
+                                            <i class="bi bi-check-lg"></i> Duyệt
+                                        </button>
+                                    ` : ''}
+                                    ${canManagePayroll && p.status !== 'PAID' ? `
+                                        <button class="btn btn-sm btn-outline-danger" title="Xóa đề xuất lương" onclick="confirmDeletePayroll(${p.id})">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    ` : ''}
+                                    ${!canApprovePayroll && !canManagePayroll ? '<span class="text-muted small">Chỉ xem</span>' : ''}
+                                </td>
+                            </tr>
+                        `;
+                    }).join('');
+                } catch (e) {
+                    console.error('Error loading payrolls', e);
+                    tbody.innerHTML = '<tr><td colspan="9" class="text-center py-5 text-danger">Có lỗi khi tải dữ liệu bảng lương</td></tr>';
+                }
+            }
+
+            function openAddPayrollModal() {
+                document.getElementById('payrollForm').reset();
+                document.getElementById('payroll-id').value = '';
+                document.getElementById('payroll-f-month').value = document.getElementById('payroll-month').value;
+                document.getElementById('payroll-f-year').value = document.getElementById('payroll-year').value;
+                openModal('payrollModal');
+            }
+
+            async function savePayroll() {
+                const empId = document.getElementById('payroll-emp-select').value;
+                const month = parseInt(document.getElementById('payroll-f-month').value);
+                const year = parseInt(document.getElementById('payroll-f-year').value);
+                const baseSalary = parseFloat(document.getElementById('payroll-f-base').value);
+                const allowance = parseFloat(document.getElementById('payroll-f-allowance').value) || 0;
+                const deduction = parseFloat(document.getElementById('payroll-f-deduction').value) || 0;
+                const status = document.getElementById('payroll-f-status').value;
+
+                if (!empId || !month || !year || isNaN(baseSalary)) {
+                    showAlert('Vui lòng điền đầy đủ các trường bắt buộc!', 'warning');
+                    return;
+                }
+
+                const payload = {
+                    employeeId: parseInt(empId),
+                    month: month,
+                    year: year,
+                    baseSalary: baseSalary,
+                    grossSalary: baseSalary + allowance,
+                    totalDeductions: deduction,
+                    netSalary: (baseSalary + allowance) - deduction,
+                    status: status
+                };
+
+                try {
+                    await fetchApi('/api/v1/payrolls', {
+                        method: 'POST',
+                        body: JSON.stringify(payload)
+                    });
+                    showAlert('Tạo phiếu lương thành công!', 'success');
+                    closeModal('payrollModal');
+                    loadPayrolls();
+                } catch (e) {
+                    console.error('Save payroll error', e);
+                }
+            }
+
+            async function updatePayrollStatus(id, newStatus) {
+                try {
+                    await fetchApi(`/api/v1/payrolls/${id}/status?status=${newStatus}`, { method: 'PUT' });
+                    showAlert('Đã cập nhật trạng thái phiếu lương!', 'success');
+                    loadPayrolls();
+                } catch (e) {
+                    console.error('Update status error', e);
+                }
+            }
+
+            let deleteTargetPayrollId = null;
+            function confirmDeletePayroll(id) {
+                deleteTargetPayrollId = id;
+                const btn = document.getElementById('confirm-delete-payroll-btn');
+                btn.onclick = async () => {
+                    try {
+                        await fetchApi(`/api/v1/payrolls/${deleteTargetPayrollId}`, { method: 'DELETE' });
+                        showAlert('Đã xóa phiếu lương!', 'success');
+                        closeModal('deletePayrollModal');
+                        loadPayrolls();
+                    } catch (e) {
+                        console.error('Delete payroll error', e);
+                    }
+                };
+                openModal('deletePayrollModal');
+            }
+
+            function formatCurrency(amount) {
+                if (amount == null) return '0 ₫';
+                return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
+            }
+        </script>
+    </div>
+</body>
+</html>

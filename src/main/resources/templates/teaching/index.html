@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>School HRM - Quản lý Giảng dạy</title>
+</head>
+<html th:replace="~{layout/main-layout :: layout(~{::content}, ~{::scripts}, 'Quản lý Giảng dạy')}">
+
+    <div th:fragment="content">
+        <!-- Navigation Pills -->
+        <ul class="nav nav-pills mb-4 gap-2" id="teachingTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active px-4 py-2 fw-semibold" id="assignments-tab" data-bs-toggle="pill" data-bs-target="#assignments-pane" type="button" role="tab" onclick="loadAssignments()">
+                    <i class="bi bi-person-workspace me-2"></i> Phân công giảng dạy
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link px-4 py-2 fw-semibold" id="logs-tab" data-bs-toggle="pill" data-bs-target="#logs-pane" type="button" role="tab" onclick="loadTeachingLogs()">
+                    <i class="bi bi-journal-check me-2"></i> Nhật ký giờ dạy (Teaching Logs)
+                </button>
+            </li>
+        </ul>
+
+        <div class="tab-content" id="teachingTabContent">
+            <!-- TAB 1: PHÂN CÔNG GIẢNG DẠY -->
+            <div class="tab-pane fade show active" id="assignments-pane" role="tabpanel">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="m-0 fw-bold">Danh sách Phân công Môn & Lớp học</h5>
+                    <button class="btn btn-sm btn-primary" data-roles="BOARD_OF_DIRECTORS,HEAD_OF_DEPARTMENT" onclick="openAddAssignmentModal()">
+                        <i class="bi bi-plus-lg me-1"></i> Phân công mới
+                    </button>
+                </div>
+                <div class="card shadow-sm border-0">
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Giáo viên</th>
+                                        <th>Mã GV</th>
+                                        <th>Môn học</th>
+                                        <th>Lớp học</th>
+                                        <th>Năm học</th>
+                                        <th>Học kỳ</th>
+                                        <th>Số tiết kế hoạch</th>
+                                        <th class="text-end pe-4">Thao tác</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="assignments-table-body">
+                                    <tr>
+                                        <td colspan="8" class="text-center py-5 text-muted">Đang tải phân công...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 2: NHẬT KÝ GIẢNG DẠY THỰC TẾ -->
+            <div class="tab-pane fade" id="logs-pane" role="tabpanel">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="m-0 fw-bold">Nhật ký Giờ dạy Thực tế</h5>
+                    <button class="btn btn-sm btn-success" onclick="openAddLogModal()">
+                        <i class="bi bi-plus-lg me-1"></i> Ghi nhận giờ dạy
+                    </button>
+                </div>
+                <div class="card shadow-sm border-0">
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Giáo viên</th>
+                                        <th>Ngày dạy</th>
+                                        <th>Môn & Lớp</th>
+                                        <th>Số tiết dạy</th>
+                                        <th>Nội dung bài học</th>
+                                        <th>Trạng thái</th>
+                                        <th class="text-end pe-4">Thao tác</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="logs-table-body">
+                                    <tr>
+                                        <td colspan="7" class="text-center py-5 text-muted">Đang tải nhật ký dạy học...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL: PHÂN CÔNG GIẢNG DẠY -->
+        <div class="modal fade" id="assignmentModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title fw-bold">Phân công Giảng dạy</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="assignmentForm">
+                            <div class="mb-3">
+                                <label class="form-label required">Giáo viên *</label>
+                                <select id="asg-teacherId" class="form-select" required>
+                                    <option value="">-- Chọn giáo viên --</option>
+                                </select>
+                            </div>
+                            <div class="row g-2 mb-3">
+                                <div class="col-6">
+                                    <label class="form-label required">Môn học *</label>
+                                    <input type="text" id="asg-subject" class="form-control" placeholder="VD: Tiếng Anh" required>
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label required">Khối / Lớp *</label>
+                                    <input type="text" id="asg-grade" class="form-control" placeholder="VD: Khối 10" required>
+                                </div>
+                            </div>
+                            <div class="row g-2 mb-3">
+                                <div class="col-6">
+                                    <label class="form-label required">Chương trình đào tạo *</label>
+                                    <select id="asg-curriculum" class="form-select" required>
+                                        <option value="CAMBRIDGE">Cambridge</option>
+                                        <option value="IB">International Baccalaureate (IB)</option>
+                                        <option value="AP">Advanced Placement (AP)</option>
+                                        <option value="NATIONAL">Chương trình Quốc gia</option>
+                                    </select>
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label required">Số giờ dạy / tuần *</label>
+                                    <input type="number" step="0.5" id="asg-hours" class="form-control" value="8" required>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                        <button type="button" class="btn btn-primary" onclick="saveAssignment()">Lưu phân công</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL: GHI NHẬT KÝ DẠY -->
+        <div class="modal fade" id="logModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title fw-bold">Ghi nhận Nhật ký Giảng dạy</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="logForm">
+                            <div class="mb-3">
+                                <label class="form-label required">Phân công giảng dạy *</label>
+                                <select id="log-assignmentId" class="form-select" required>
+                                    <option value="">-- Chọn phân công môn học --</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label required">Giáo viên thực dạy *</label>
+                                <select id="log-teacherId" class="form-select" required>
+                                    <option value="">-- Chọn giáo viên --</option>
+                                </select>
+                            </div>
+                            <div class="row g-2 mb-3">
+                                <div class="col-6">
+                                    <label class="form-label required">Ngày dạy *</label>
+                                    <input type="date" id="log-date" class="form-control" required>
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label required">Số tiết dạy (Periods) *</label>
+                                    <input type="number" id="log-periods" class="form-control" value="2" min="1" required>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Loại buổi dạy</label>
+                                <select id="log-type" class="form-select">
+                                    <option value="REGULAR">Giờ dạy chính thức (REGULAR)</option>
+                                    <option value="SUBSTITUTE">Dạy thay / Thỉnh giảng (SUBSTITUTE)</option>
+                                    <option value="OVERTIME">Dạy tăng tiết / Vượt giờ (OVERTIME)</option>
+                                </select>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                        <button type="button" class="btn btn-success" onclick="saveTeachingLog()">Ghi nhận</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div th:fragment="scripts">
+        <script>
+            let teachersList = [];
+            let cachedAssignments = [];
+
+            document.addEventListener('DOMContentLoaded', async () => {
+                await loadTeachers();
+                loadAssignments();
+            });
+
+            async function loadTeachers() {
+                try {
+                    const res = await fetchApi('/api/v1/employees?size=200');
+                    if (res && res.data && res.data.content) {
+                        teachersList = res.data.content;
+                        const sel1 = document.getElementById('asg-teacherId');
+                        const sel2 = document.getElementById('log-teacherId');
+                        sel1.innerHTML = '<option value="">-- Chọn giáo viên --</option>';
+                        sel2.innerHTML = '<option value="">-- Chọn giáo viên --</option>';
+                        teachersList.forEach(t => {
+                            const opt = `<option value="${t.id}">${t.fullName} (${t.employeeCode})</option>`;
+                            sel1.innerHTML += opt;
+                            sel2.innerHTML += opt;
+                        });
+                    }
+                } catch (e) {
+                    console.error('Error loading teachers', e);
+                }
+            }
+
+            function getTeacherName(id) {
+                const t = teachersList.find(x => x.id === id);
+                return t ? `${t.fullName} (${t.employeeCode})` : `GV #${id}`;
+            }
+
+            async function loadAssignments() {
+                const tbody = document.getElementById('assignments-table-body');
+                tbody.innerHTML = '<tr><td colspan="8" class="text-center py-5 text-muted">Đang tải phân công...</td></tr>';
+
+                try {
+                    const res = await fetchApi('/api/v1/teaching-assignments');
+                    cachedAssignments = res.data || [];
+
+                    // Cập nhật dropdown phân công cho modal nhật ký
+                    const logAsgSelect = document.getElementById('log-assignmentId');
+                    logAsgSelect.innerHTML = '<option value="">-- Chọn phân công môn học --</option>';
+                    cachedAssignments.forEach(a => {
+                        logAsgSelect.innerHTML += `<option value="${a.id}">#${a.id} - ${a.subjectName} (${a.gradeLevel || 'N/A'}) - ${getTeacherName(a.teacherId)}</option>`;
+                    });
+
+                    if (cachedAssignments.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="8" class="text-center py-5 text-muted">Chưa có phân công giảng dạy nào</td></tr>';
+                        return;
+                    }
+
+                    const canManageAsg = hasRole('BOARD_OF_DIRECTORS', 'HEAD_OF_DEPARTMENT');
+                    tbody.innerHTML = cachedAssignments.map(a => `
+                        <tr>
+                            <td class="fw-bold">${getTeacherName(a.teacherId)}</td>
+                            <td><span class="badge bg-light text-dark border">GV #${a.teacherId}</span></td>
+                            <td><strong class="text-primary">${a.subjectName}</strong></td>
+                            <td><span class="badge bg-info text-dark">${a.gradeLevel || 'N/A'}</span></td>
+                            <td><span class="badge bg-secondary">${a.curriculum || 'CHUAN'}</span></td>
+                            <td>Học kỳ hiện tại</td>
+                            <td><span class="fw-bold">${a.weeklyContactHours || 0} giờ/tuần</span></td>
+                            <td class="text-end pe-4">
+                                ${canManageAsg ? `
+                                    <button class="btn btn-sm btn-outline-danger" onclick="deleteAssignment(${a.id})" title="Xóa phân công">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                ` : '<span class="text-muted small">Chỉ xem</span>'}
+                            </td>
+                        </tr>
+                    `).join('');
+                } catch (e) {
+                    console.error('Error loading assignments', e);
+                    tbody.innerHTML = '<tr><td colspan="8" class="text-center py-5 text-danger">Có lỗi khi tải danh sách phân công</td></tr>';
+                }
+            }
+
+            function openAddAssignmentModal() {
+                document.getElementById('assignmentForm').reset();
+                openModal('assignmentModal');
+            }
+
+            async function saveAssignment() {
+                const teacherId = document.getElementById('asg-teacherId').value;
+                const subject = document.getElementById('asg-subject').value.trim();
+                const grade = document.getElementById('asg-grade').value.trim();
+                const curriculum = document.getElementById('asg-curriculum').value;
+                const hours = parseFloat(document.getElementById('asg-hours').value) || 0;
+
+                if (!teacherId || !subject || !grade) {
+                    showAlert('Vui lòng điền đầy đủ thông tin phân công!', 'warning');
+                    return;
+                }
+
+                const payload = {
+                    teacherId: parseInt(teacherId),
+                    subjectName: subject,
+                    gradeLevel: grade,
+                    curriculum: curriculum,
+                    weeklyContactHours: hours
+                };
+
+                try {
+                    await fetchApi('/api/v1/teaching-assignments', {
+                        method: 'POST',
+                        body: JSON.stringify(payload)
+                    });
+                    showAlert('Phân công giảng dạy thành công!', 'success');
+                    closeModal('assignmentModal');
+                    loadAssignments();
+                } catch (e) {
+                    console.error('Save assignment error', e);
+                }
+            }
+
+            async function deleteAssignment(id) {
+                if (!confirm('Bạn có chắc chắn muốn xóa phân công này?')) return;
+                try {
+                    await fetchApi(`/api/v1/teaching-assignments/${id}`, { method: 'DELETE' });
+                    showAlert('Đã xóa phân công giảng dạy!', 'success');
+                    loadAssignments();
+                } catch (e) {
+                    console.error('Delete assignment error', e);
+                }
+            }
+
+            // ─── TAB 2: TEACHING LOGS ───────────────────────────────────────
+            async function loadTeachingLogs() {
+                const tbody = document.getElementById('logs-table-body');
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center py-5 text-muted">Đang tải nhật ký...</td></tr>';
+
+                try {
+                    const res = await fetchApi('/api/v1/teaching-logs');
+                    const logs = res.data || [];
+                    if (logs.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="7" class="text-center py-5 text-muted">Chưa có nhật ký giảng dạy nào</td></tr>';
+                        return;
+                    }
+
+                    tbody.innerHTML = logs.map(l => `
+                        <tr>
+                            <td class="fw-bold">${l.actualTeacherName || l.teacherName || 'N/A'}</td>
+                            <td>${formatDate(l.teachingDate)}</td>
+                            <td><strong>${l.subjectName || 'N/A'}</strong></td>
+                            <td><span class="badge bg-success">${l.periodsTaught || 0} tiết</span></td>
+                            <td><small class="text-muted">${l.type || 'REGULAR'}</small></td>
+                            <td><span class="badge ${l.status === 'APPROVED' ? 'bg-success' : l.status === 'REJECTED' ? 'bg-danger' : 'bg-warning text-dark'}">${l.status || 'PENDING'}</span></td>
+                            <td class="text-end pe-4">
+                                <button class="btn btn-sm btn-outline-danger" onclick="deleteLog(${l.id})">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `).join('');
+                } catch (e) {
+                    console.error('Error loading logs', e);
+                    tbody.innerHTML = '<tr><td colspan="7" class="text-center py-5 text-danger">Có lỗi khi tải nhật ký giảng dạy</td></tr>';
+                }
+            }
+
+            function openAddLogModal() {
+                document.getElementById('logForm').reset();
+                document.getElementById('log-date').value = new Date().toISOString().split('T')[0];
+                openModal('logModal');
+            }
+
+            async function saveTeachingLog() {
+                const assignmentId = document.getElementById('log-assignmentId').value;
+                const actualTeacherId = document.getElementById('log-teacherId').value;
+                const date = document.getElementById('log-date').value;
+                const periods = parseInt(document.getElementById('log-periods').value) || 1;
+                const type = document.getElementById('log-type').value;
+
+                if (!assignmentId || !actualTeacherId || !date) {
+                    showAlert('Vui lòng điền đủ thông tin bắt buộc!', 'warning');
+                    return;
+                }
+
+                const payload = {
+                    assignmentId: parseInt(assignmentId),
+                    actualTeacherId: parseInt(actualTeacherId),
+                    teachingDate: date,
+                    periodsTaught: periods,
+                    type: type || 'REGULAR'
+                };
+
+                try {
+                    await fetchApi('/api/v1/teaching-logs', {
+                        method: 'POST',
+                        body: JSON.stringify(payload)
+                    });
+                    showAlert('Ghi nhận giờ dạy thành công!', 'success');
+                    closeModal('logModal');
+                    loadTeachingLogs();
+                } catch (e) {
+                    console.error('Save log error', e);
+                }
+            }
+
+            async function deleteLog(id) {
+                if (!confirm('Bạn có muốn xóa nhật ký này?')) return;
+                try {
+                    await fetchApi(`/api/v1/teaching-logs/${id}`, { method: 'DELETE' });
+                    showAlert('Đã xóa nhật ký giờ dạy!', 'success');
+                    loadTeachingLogs();
+                } catch (e) {
+                    console.error('Delete log error', e);
+                }
+            }
+        </script>
+    </div>
+</body>
+</html>
