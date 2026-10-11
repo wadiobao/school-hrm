@@ -1,4 +1,4 @@
-﻿package com.kltn.school_hrm.shared.configuration;
+package com.kltn.school_hrm.shared.configuration;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -14,10 +14,11 @@ public class SecurityConfig {
 	        .csrf(csrf -> csrf.disable()) // Tắt CSRF đối với REST API
 	        .authorizeHttpRequests(auth -> auth
 	            // Cho phép truy cập không cần token cho các endpoint này và web frontend
-	            .requestMatchers("/api/v1/users/register", "/api/v1/auth/login", 
+	            .requestMatchers("/api/v1/users/register", "/api/v1/users/login", "/api/v1/auth/login", 
 	                             "/", "/login", "/employees/**", "/departments/**", "/positions/**", 
-	                             "/attendance/**", "/leaves/**",
+	                             "/attendance/**", "/leaves/**", "/payroll/**", "/teaching/**",
 	                             "/api/v1/**",
+	                             "/api/attendance-records/**",
 	                             "/css/**", "/js/**", "/images/**", "/webjars/**").permitAll()
 	            // Tất cả API khác bắt buộc phải đăng nhập
 	            .anyRequest().authenticated()

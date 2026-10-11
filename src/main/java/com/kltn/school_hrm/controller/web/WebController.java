@@ -42,4 +42,14 @@ public class WebController {
     public String leaves() {
         return "leaves/index";
     }
+
+    @GetMapping("/payroll")
+    public String payroll() {
+        return "payroll/index";
+    }
+
+    @GetMapping("/teaching")
+    public String teaching() {
+        return "teaching/index";
+    }
 }
