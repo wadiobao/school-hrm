@@ -6,9 +6,9 @@
 <html th:replace="~{layout/main-layout :: layout(~{::content}, ~{::scripts}, 'Dashboard')}">
 
     <div th:fragment="content">
-        <!-- Stat KPI Cards Row -->
+        <!-- Stat KPI Cards Row (Hiển thị theo quyền hạn xem báo cáo/thống kê) -->
         <div class="row g-4 mb-4">
-            <div class="col-xl-3 col-sm-6">
+            <div class="col-xl-3 col-sm-6" data-roles="SUPER_ADMIN,HR_MANAGER,BOARD_OF_DIRECTORS,HEAD_OF_DEPARTMENT">
                 <div class="card stat-card bg-grad-primary shadow">
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-center">
@@ -24,7 +24,7 @@
                 </div>
             </div>
 
-            <div class="col-xl-3 col-sm-6">
+            <div class="col-xl-3 col-sm-6" data-roles="SUPER_ADMIN,HR_MANAGER,BOARD_OF_DIRECTORS,HEAD_OF_DEPARTMENT">
                 <div class="card stat-card bg-grad-success shadow">
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-center">
@@ -40,7 +40,7 @@
                 </div>
             </div>
 
-            <div class="col-xl-3 col-sm-6">
+            <div class="col-xl-3 col-sm-6" data-roles="SUPER_ADMIN,HR_MANAGER,BOARD_OF_DIRECTORS,HEAD_OF_DEPARTMENT">
                 <div class="card stat-card bg-grad-warning shadow">
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-center">
@@ -56,7 +56,7 @@
                 </div>
             </div>
 
-            <div class="col-xl-3 col-sm-6">
+            <div class="col-xl-3 col-sm-6" data-roles="SUPER_ADMIN,HR_MANAGER,BOARD_OF_DIRECTORS">
                 <div class="card stat-card bg-grad-info shadow">
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-center">
@@ -71,11 +71,81 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Welcome Banner cho Giáo viên & Nhân viên (Teacher & Staff) -->
+            <div class="col-12" data-roles="TEACHER,STAFF">
+                <div class="card border-0 shadow-sm bg-white p-4">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <h4 class="fw-bold mb-1 text-primary">Xin chào quý Thầy Cô / Cán bộ nhân viên!</h4>
+                            <p class="text-muted mb-0">Hệ thống School HRM hỗ trợ tra cứu chấm công, gửi yêu cầu nghỉ phép và xem phiếu lương cá nhân trực tuyến.</p>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <a href="/attendance" class="btn btn-primary"><i class="bi bi-calendar-check me-1"></i>Xem bảng công</a>
+                            <a href="/leaves" class="btn btn-outline-primary"><i class="bi bi-calendar2-plus me-1"></i>Tạo đơn nghỉ phép</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Thống kê Quỹ phép cá nhân trên Dashboard (Teacher & Staff) -->
+            <div class="col-sm-6 col-xl-3" data-roles="TEACHER,STAFF">
+                <div class="card border-0 shadow-sm bg-primary bg-opacity-10 h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="text-primary fw-semibold small text-uppercase">Tổng Quỹ Phép Năm</div>
+                                <h3 class="fw-bold mt-2 mb-0 text-primary" id="dash-balance-total">-- ngày</h3>
+                            </div>
+                            <div class="fs-1 text-primary opacity-50"><i class="bi bi-calendar2-heart"></i></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-xl-3" data-roles="TEACHER,STAFF">
+                <div class="card border-0 shadow-sm bg-danger bg-opacity-10 h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="text-danger fw-semibold small text-uppercase">Đã Nghỉ (Used)</div>
+                                <h3 class="fw-bold mt-2 mb-0 text-danger" id="dash-balance-used">-- ngày</h3>
+                            </div>
+                            <div class="fs-1 text-danger opacity-50"><i class="bi bi-calendar-x"></i></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-xl-3" data-roles="TEACHER,STAFF">
+                <div class="card border-0 shadow-sm bg-warning bg-opacity-10 h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="text-warning-emphasis fw-semibold small text-uppercase">Đang Chờ Duyệt</div>
+                                <h3 class="fw-bold mt-2 mb-0 text-warning-emphasis" id="dash-balance-pending">-- ngày</h3>
+                            </div>
+                            <div class="fs-1 text-warning opacity-50"><i class="bi bi-hourglass-split"></i></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-xl-3" data-roles="TEACHER,STAFF">
+                <div class="card border-0 shadow-sm bg-success bg-opacity-10 h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="text-success fw-semibold small text-uppercase">Còn Lại Khả Dụng</div>
+                                <h3 class="fw-bold mt-2 mb-0 text-success" id="dash-balance-remaining">-- ngày</h3>
+                            </div>
+                            <div class="fs-1 text-success opacity-50"><i class="bi bi-check-circle"></i></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Quick actions & Recent Employees -->
         <div class="row g-4">
-            <div class="col-lg-8">
+            <div class="col-lg-8" data-roles="SUPER_ADMIN,HR_MANAGER,BOARD_OF_DIRECTORS,HEAD_OF_DEPARTMENT">
                 <div class="card shadow-sm h-100">
                     <div class="card-header d-flex justify-content-between align-items-center bg-white py-3">
                         <h6 class="m-0 fw-bold text-dark"><i class="bi bi-person-lines-fill me-2 text-primary"></i>Nhân viên vừa gia nhập</h6>
@@ -107,11 +177,11 @@
             <div class="col-lg-4">
                 <div class="card shadow-sm h-100">
                     <div class="card-header bg-white py-3">
-                        <h6 class="m-0 fw-bold text-dark"><i class="bi bi-lightning-charge-fill me-2 text-warning"></i>Phím tắt nhanh</h6>
+                        <h6 class="m-0 fw-bold text-dark"><i class="bi bi-lightning-charge-fill me-2 text-warning"></i>Phím tắt thao tác</h6>
                     </div>
                     <div class="card-body">
                         <div class="d-grid gap-3">
-                            <a href="/employees" class="btn btn-light text-start p-3 border d-flex align-items-center">
+                            <a href="/employees" data-roles="SUPER_ADMIN,HR_MANAGER" class="btn btn-light text-start p-3 border d-flex align-items-center">
                                 <div class="avatar-circle me-3 bg-primary text-white"><i class="bi bi-person-plus-fill"></i></div>
                                 <div>
                                     <div class="fw-semibold">Thêm nhân viên mới</div>
@@ -122,14 +192,28 @@
                                 <div class="avatar-circle me-3 bg-success text-white"><i class="bi bi-check2-circle"></i></div>
                                 <div>
                                     <div class="fw-semibold">Chấm công hôm nay</div>
-                                    <small class="text-muted">Theo dõi giờ vào/ra của giáo viên & nhân viên</small>
+                                    <small class="text-muted">Theo dõi lịch sử giờ vào/ra làm việc</small>
                                 </div>
                             </a>
                             <a href="/leaves" class="btn btn-light text-start p-3 border d-flex align-items-center">
                                 <div class="avatar-circle me-3 bg-warning text-white"><i class="bi bi-file-earmark-check-fill"></i></div>
                                 <div>
-                                    <div class="fw-semibold">Phê duyệt nghỉ phép</div>
-                                    <small class="text-muted">Xử lý các đơn xin phép nghỉ giảng dạy</small>
+                                    <div class="fw-semibold">Nghỉ phép</div>
+                                    <small class="text-muted">Gửi hoặc xử lý đơn xin nghỉ phép</small>
+                                </div>
+                            </a>
+                            <a href="/teaching" data-roles="TEACHER" class="btn btn-light text-start p-3 border d-flex align-items-center">
+                                <div class="avatar-circle me-3 bg-info text-white"><i class="bi bi-journal-check"></i></div>
+                                <div>
+                                    <div class="fw-semibold">Ghi nhật ký giờ dạy</div>
+                                    <small class="text-muted">Cập nhật tiết dạy thực tế</small>
+                                </div>
+                            </a>
+                            <a href="/payroll" data-roles="TEACHER,STAFF" class="btn btn-light text-start p-3 border d-flex align-items-center">
+                                <div class="avatar-circle me-3 bg-secondary text-white"><i class="bi bi-cash-stack"></i></div>
+                                <div>
+                                    <div class="fw-semibold">Xem phiếu lương cá nhân</div>
+                                    <small class="text-muted">Tra cứu chi tiết thu nhập hàng tháng</small>
                                 </div>
                             </a>
                         </div>
@@ -146,11 +230,47 @@
             });
 
             async function loadDashboardData() {
+                const user = getCurrentUser();
+                if (!user) return;
+
+                // Nếu là TEACHER hoặc STAFF: nạp thông tin Quỹ phép cá nhân
+                if (hasRole('TEACHER', 'STAFF')) {
+                    const currentYear = new Date().getFullYear();
+                    try {
+                        let endpoint = user.employeeId 
+                            ? `/api/v1/leaves/balances/employee/${user.employeeId}?year=${currentYear}`
+                            : `/api/v1/leaves/balances?year=${currentYear}`;
+                        
+                        const bRes = await fetchApi(endpoint);
+                        if (bRes && bRes.data) {
+                            const b = Array.isArray(bRes.data) ? (bRes.data[0] || {}) : bRes.data;
+                            const elTotal = document.getElementById('dash-balance-total');
+                            const elUsed = document.getElementById('dash-balance-used');
+                            const elPending = document.getElementById('dash-balance-pending');
+                            const elRem = document.getElementById('dash-balance-remaining');
+
+                            if (elTotal) elTotal.textContent = `${b.totalDays || 0} ngày`;
+                            if (elUsed) elUsed.textContent = `${b.usedDays || 0} ngày`;
+                            if (elPending) elPending.textContent = `${b.pendingDays || 0} ngày`;
+                            if (elRem) elRem.textContent = `${b.remainingDays || 0} ngày`;
+                        }
+                    } catch (err) {
+                        console.error('Error fetching personal leave balance on dashboard', err);
+                    }
+                }
+
+                // Chỉ cấp quản lý mới fetch các số liệu thống kê tổng thể toàn trường
+                const canViewManagementStats = hasRole('SUPER_ADMIN', 'HR_MANAGER', 'BOARD_OF_DIRECTORS', 'HEAD_OF_DEPARTMENT');
+                if (!canViewManagementStats) {
+                    return;
+                }
+
                 // 1. Employees count & recent
                 try {
                     const empRes = await fetchApi('/api/v1/employees?size=5&sort=createdAt,desc');
                     if (empRes && empRes.data) {
-                        document.getElementById('stat-total-employees').textContent = empRes.data.totalElements || '0';
+                        const el = document.getElementById('stat-total-employees');
+                        if (el) el.textContent = empRes.data.totalElements || '0';
                         renderRecentEmployees(empRes.data.content || []);
                     }
                 } catch (e) {
@@ -161,20 +281,24 @@
                 try {
                     const deptRes = await fetchApi('/api/v1/departments');
                     if (deptRes && deptRes.data) {
-                        document.getElementById('stat-total-departments').textContent = deptRes.data.length || '0';
+                        const el = document.getElementById('stat-total-departments');
+                        if (el) el.textContent = deptRes.data.length || '0';
                     }
                 } catch (e) {
                     console.error('Error fetching departments', e);
                 }
 
                 // 3. Positions count
-                try {
-                    const posRes = await fetchApi('/api/v1/positions');
-                    if (posRes && posRes.data) {
-                        document.getElementById('stat-total-positions').textContent = posRes.data.length || '0';
+                if (hasRole('SUPER_ADMIN', 'HR_MANAGER', 'BOARD_OF_DIRECTORS')) {
+                    try {
+                        const posRes = await fetchApi('/api/v1/positions');
+                        if (posRes && posRes.data) {
+                            const el = document.getElementById('stat-total-positions');
+                            if (el) el.textContent = posRes.data.length || '0';
+                        }
+                    } catch (e) {
+                        console.error('Error fetching positions', e);
                     }
-                } catch (e) {
-                    console.error('Error fetching positions', e);
                 }
 
                 // 4. Pending leaves count
@@ -182,7 +306,8 @@
                     const leaveRes = await fetchApi('/api/v1/leaves');
                     if (leaveRes && leaveRes.data) {
                         const pendingCount = leaveRes.data.filter(l => l.status === 'PENDING').length;
-                        document.getElementById('stat-pending-leaves').textContent = pendingCount;
+                        const el = document.getElementById('stat-pending-leaves');
+                        if (el) el.textContent = pendingCount;
                     }
                 } catch (e) {
                     console.error('Error fetching leaves', e);
