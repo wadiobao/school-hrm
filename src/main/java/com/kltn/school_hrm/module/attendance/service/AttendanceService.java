@@ -1,4 +1,4 @@
-﻿package com.kltn.school_hrm.module.attendance.service;
+package com.kltn.school_hrm.module.attendance.service;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -6,6 +6,7 @@ import java.util.List;
 import com.kltn.school_hrm.module.attendance.dto.request.AttendanceCorrectionRequest;
 import com.kltn.school_hrm.module.attendance.dto.request.CheckInRequest;
 import com.kltn.school_hrm.module.attendance.dto.request.CheckOutRequest;
+import com.kltn.school_hrm.module.attendance.dto.request.ManualAttendanceRequest;
 import com.kltn.school_hrm.module.attendance.dto.response.AttendanceResponse;
 
 /**
@@ -21,6 +22,12 @@ public interface AttendanceService {
 
     /** Hiệu chỉnh thông tin chấm công (dành cho HR/Quản lý). */
     AttendanceResponse correctAttendance(Long id, AttendanceCorrectionRequest request);
+
+    /** Tạo bản ghi chấm công thủ công từ Web UI (HR nhập tay). */
+    AttendanceResponse createManual(ManualAttendanceRequest request);
+
+    /** Cập nhật bản ghi chấm công thủ công theo ID từ Web UI. */
+    AttendanceResponse updateManual(Long id, ManualAttendanceRequest request);
 
     /** Lấy chi tiết chấm công theo ID. */
     AttendanceResponse getAttendanceById(Long id);

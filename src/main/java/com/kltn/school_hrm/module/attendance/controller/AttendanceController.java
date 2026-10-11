@@ -1,4 +1,4 @@
-﻿package com.kltn.school_hrm.module.attendance.controller;
+package com.kltn.school_hrm.module.attendance.controller;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -20,6 +20,7 @@ import com.kltn.school_hrm.dto.common.ApiResponse;
 import com.kltn.school_hrm.module.attendance.dto.request.AttendanceCorrectionRequest;
 import com.kltn.school_hrm.module.attendance.dto.request.CheckInRequest;
 import com.kltn.school_hrm.module.attendance.dto.request.CheckOutRequest;
+import com.kltn.school_hrm.module.attendance.dto.request.ManualAttendanceRequest;
 import com.kltn.school_hrm.module.attendance.dto.response.AttendanceResponse;
 import com.kltn.school_hrm.module.attendance.service.AttendanceService;
 
@@ -40,10 +41,25 @@ public class AttendanceController {
                 .body(ApiResponse.success(attendanceService.checkIn(request), "Check-in thành công"));
     }
 
+    /** POST /api/v1/attendances — Tạo bản ghi chấm công thủ công từ Web UI */
+    @PostMapping
+    public ResponseEntity<ApiResponse<AttendanceResponse>> createManual(@Valid @RequestBody ManualAttendanceRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success(attendanceService.createManual(request), "Tạo chấm công thủ công thành công"));
+    }
+
     /** POST /api/v1/attendances/check-out — Ghi nhận tan ca */
     @PostMapping("/check-out")
     public ResponseEntity<ApiResponse<AttendanceResponse>> checkOut(@Valid @RequestBody CheckOutRequest request) {
         return ResponseEntity.ok(ApiResponse.success(attendanceService.checkOut(request), "Check-out thành công"));
+    }
+
+    /** PUT /api/v1/attendances/{id} — Cập nhật chấm công thủ công từ Web UI */
+    @PutMapping("/{id}")
+    public ResponseEntity<ApiResponse<AttendanceResponse>> updateManual(
+            @PathVariable Long id,
+            @Valid @RequestBody ManualAttendanceRequest request) {
+        return ResponseEntity.ok(ApiResponse.success(attendanceService.updateManual(id, request), "Cập nhật chấm công thành công"));
     }
 
     /** PUT /api/v1/attendances/{id}/correct — Hiệu chỉnh thông tin chấm công */

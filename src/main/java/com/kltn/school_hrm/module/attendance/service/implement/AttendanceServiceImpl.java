@@ -1,4 +1,4 @@
-﻿package com.kltn.school_hrm.module.attendance.service.implement;
+package com.kltn.school_hrm.module.attendance.service.implement;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.kltn.school_hrm.module.attendance.dto.request.AttendanceCorrectionRequest;
 import com.kltn.school_hrm.module.attendance.dto.request.CheckInRequest;
 import com.kltn.school_hrm.module.attendance.dto.request.CheckOutRequest;
+import com.kltn.school_hrm.module.attendance.dto.request.ManualAttendanceRequest;
 import com.kltn.school_hrm.module.attendance.dto.response.AttendanceCalculationResult;
 import com.kltn.school_hrm.module.attendance.dto.response.AttendanceResponse;
 import com.kltn.school_hrm.module.attendance.entity.Attendance;
@@ -139,6 +140,57 @@ public class AttendanceServiceImpl implements AttendanceService {
     }
 
     @Override
+    public AttendanceResponse createManual(ManualAttendanceRequest request) {
+        Employee employee = employeeRepository.findById(request.getEmployeeId())
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy nhân viên với ID: " + request.getEmployeeId()));
+
+        LocalDateTime checkIn = parseTimeString(request.getCheckIn(), request.getWorkDate());
+        LocalDateTime checkOut = parseTimeString(request.getCheckOut(), request.getWorkDate());
+
+        if (checkIn != null && checkOut != null && checkOut.isBefore(checkIn)) {
+            throw new BusinessException("Thời gian check-out không thể trước thời gian check-in.");
+        }
+
+        Attendance attendance = Attendance.builder()
+                .employee(employee)
+                .workDate(request.getWorkDate())
+                .checkIn(checkIn)
+                .checkOut(checkOut)
+                .status(request.getStatus() != null ? request.getStatus() : AttendanceStatus.PRESENT)
+                .deviceId(request.getDeviceId() != null ? request.getDeviceId() : "WEB_MANUAL")
+                .build();
+
+        attendance = attendanceRepository.save(attendance);
+        return mapToResponse(attendance);
+    }
+
+    @Override
+    public AttendanceResponse updateManual(Long id, ManualAttendanceRequest request) {
+        Attendance attendance = attendanceRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy bản ghi chấm công với ID: " + id));
+
+        if (request.getCheckIn() != null) {
+            attendance.setCheckIn(parseTimeString(request.getCheckIn(), request.getWorkDate() != null ? request.getWorkDate() : attendance.getWorkDate()));
+        }
+        if (request.getCheckOut() != null) {
+            LocalDateTime newCheckOut = parseTimeString(request.getCheckOut(), request.getWorkDate() != null ? request.getWorkDate() : attendance.getWorkDate());
+            if (attendance.getCheckIn() != null && newCheckOut != null && newCheckOut.isBefore(attendance.getCheckIn())) {
+                throw new BusinessException("Thời gian check-out không thể trước thời gian check-in.");
+            }
+            attendance.setCheckOut(newCheckOut);
+        }
+        if (request.getStatus() != null) {
+            attendance.setStatus(request.getStatus());
+        }
+        if (request.getDeviceId() != null) {
+            attendance.setDeviceId(request.getDeviceId());
+        }
+
+        attendance = attendanceRepository.save(attendance);
+        return mapToResponse(attendance);
+    }
+
+    @Override
     public AttendanceResponse correctAttendance(Long id, AttendanceCorrectionRequest request) {
         Attendance attendance = attendanceRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy bản ghi chấm công với ID: " + id));
@@ -207,6 +259,23 @@ public class AttendanceServiceImpl implements AttendanceService {
             throw new ResourceNotFoundException("Không tìm thấy bản ghi chấm công với ID: " + id);
         }
         attendanceRepository.deleteById(id);
+    }
+
+    /**
+     * Parse chuỗi HH:mm hoặc HH:mm:ss thành LocalDateTime bằng cách kết hợp với workDate.
+     * Trả về null nếu timeStr null hoặc blank.
+     */
+    private LocalDateTime parseTimeString(String timeStr, LocalDate date) {
+        if (timeStr == null || timeStr.isBlank() || date == null) return null;
+        try {
+            String[] parts = timeStr.split(":");
+            int hour = Integer.parseInt(parts[0]);
+            int minute = Integer.parseInt(parts[1]);
+            int second = parts.length > 2 ? Integer.parseInt(parts[2]) : 0;
+            return date.atTime(hour, minute, second);
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     private AttendanceResponse mapToResponse(Attendance attendance) {
