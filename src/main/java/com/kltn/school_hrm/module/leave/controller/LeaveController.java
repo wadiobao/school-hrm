@@ -1,4 +1,4 @@
-﻿package com.kltn.school_hrm.module.leave.controller;
+package com.kltn.school_hrm.module.leave.controller;
 
 import java.util.List;
 
@@ -18,7 +18,9 @@ import org.springframework.web.bind.annotation.RestController;
 import com.kltn.school_hrm.dto.common.ApiResponse;
 import com.kltn.school_hrm.module.leave.dto.request.LeaveCreateRequest;
 import com.kltn.school_hrm.module.leave.dto.request.LeaveDecisionRequest;
+import com.kltn.school_hrm.module.leave.dto.response.LeaveBalanceResponse;
 import com.kltn.school_hrm.module.leave.dto.response.LeaveResponse;
+import com.kltn.school_hrm.module.leave.service.LeaveBalanceService;
 import com.kltn.school_hrm.module.leave.service.LeaveRequestService;
 
 import jakarta.validation.Valid;
@@ -30,6 +32,7 @@ import lombok.RequiredArgsConstructor;
 public class LeaveController {
 
     private final LeaveRequestService leaveService;
+    private final LeaveBalanceService leaveBalanceService;
 
     @PostMapping
     public ResponseEntity<ApiResponse<LeaveResponse>> createLeaveRequest(@Valid @RequestBody LeaveCreateRequest request) {
@@ -75,6 +78,23 @@ public class LeaveController {
     @PostMapping("/overdue/process")
     public ResponseEntity<ApiResponse<List<LeaveResponse>>> processOverdueLeaveRequests() {
         return ResponseEntity.ok(ApiResponse.success(leaveService.processOverdueLeaveRequests(), "Overdue leave requests processed successfully"));
+    }
+
+    /** GET /api/v1/leaves/balances?year=2026 — Lấy danh sách quỹ phép toàn trường */
+    @GetMapping("/balances")
+    public ResponseEntity<ApiResponse<List<LeaveBalanceResponse>>> getAllBalances(
+            @RequestParam(required = false) Integer year) {
+        int targetYear = year != null ? year : java.time.LocalDate.now().getYear();
+        return ResponseEntity.ok(ApiResponse.success(leaveBalanceService.getAllBalancesByYear(targetYear), "Lấy danh sách quỹ phép thành công"));
+    }
+
+    /** GET /api/v1/leaves/balances/employee/{employeeId}?year=2026 — Lấy quỹ phép chi tiết của nhân viên */
+    @GetMapping("/balances/employee/{employeeId}")
+    public ResponseEntity<ApiResponse<LeaveBalanceResponse>> getEmployeeBalance(
+            @PathVariable Long employeeId,
+            @RequestParam(required = false) Integer year) {
+        int targetYear = year != null ? year : java.time.LocalDate.now().getYear();
+        return ResponseEntity.ok(ApiResponse.success(leaveBalanceService.getBalanceByEmployeeAndYear(employeeId, targetYear), "Lấy quỹ phép nhân viên thành công"));
     }
 }
 

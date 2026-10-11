@@ -1,4 +1,4 @@
-﻿package com.kltn.school_hrm.module.leave.service.implement;
+package com.kltn.school_hrm.module.leave.service.implement;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -153,5 +153,82 @@ public class LeaveBalanceServiceImpl implements LeaveBalanceService {
         for (Employee employee : activeEmployees) {
             accrue(employee, year, days, "Cấp quỹ phép năm " + year);
         }
+    }
+
+    @Override
+    public void initializeBalanceForEmployee(Employee employee, int year, BigDecimal days) {
+        if (employee == null || employee.getId() == null) {
+            return;
+        }
+
+        // Nếu đã có quỹ phép năm này cho nhân viên thì không ghi đè
+        if (leaveBalanceRepository.findByEmployeeIdAndYear(employee.getId(), year).isPresent()) {
+            return;
+        }
+
+        // Mặc định chuẩn Bộ luật Lao động: 12 ngày phép/năm
+        BigDecimal grantDays = (days != null && days.compareTo(BigDecimal.ZERO) > 0) ? days : BigDecimal.valueOf(12);
+
+        LeaveBalance balance = LeaveBalance.builder()
+                .employee(employee)
+                .year(year)
+                .totalDays(grantDays)
+                .usedDays(BigDecimal.ZERO)
+                .pendingDays(BigDecimal.ZERO)
+                .expiredDays(BigDecimal.ZERO)
+                .build();
+
+        balance = leaveBalanceRepository.save(balance);
+        leaveBalanceTransactionService.createAccrualTransaction(
+                balance,
+                grantDays,
+                "Khởi tạo quỹ phép năm " + year + " khi tiếp nhận nhân viên mới");
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public com.kltn.school_hrm.module.leave.dto.response.LeaveBalanceResponse getBalanceByEmployeeAndYear(Long employeeId, int year) {
+        LeaveBalance balance = leaveBalanceRepository.findByEmployeeIdAndYear(employeeId, year)
+                .orElse(null);
+
+        if (balance == null) {
+            Employee employee = employeeRepository.findById(employeeId).orElse(null);
+            return com.kltn.school_hrm.module.leave.dto.response.LeaveBalanceResponse.builder()
+                    .employeeId(employeeId)
+                    .employeeCode(employee != null ? employee.getEmployeeCode() : null)
+                    .employeeName(employee != null ? employee.getFullName() : null)
+                    .year(year)
+                    .totalDays(BigDecimal.ZERO)
+                    .usedDays(BigDecimal.ZERO)
+                    .pendingDays(BigDecimal.ZERO)
+                    .expiredDays(BigDecimal.ZERO)
+                    .remainingDays(BigDecimal.ZERO)
+                    .build();
+        }
+
+        return mapToResponse(balance);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<com.kltn.school_hrm.module.leave.dto.response.LeaveBalanceResponse> getAllBalancesByYear(int year) {
+        return leaveBalanceRepository.findByYear(year).stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    private com.kltn.school_hrm.module.leave.dto.response.LeaveBalanceResponse mapToResponse(LeaveBalance balance) {
+        return com.kltn.school_hrm.module.leave.dto.response.LeaveBalanceResponse.builder()
+                .id(balance.getId())
+                .employeeId(balance.getEmployee() != null ? balance.getEmployee().getId() : null)
+                .employeeCode(balance.getEmployee() != null ? balance.getEmployee().getEmployeeCode() : null)
+                .employeeName(balance.getEmployee() != null ? balance.getEmployee().getFullName() : null)
+                .year(balance.getYear())
+                .totalDays(balance.getTotalDays() != null ? balance.getTotalDays() : BigDecimal.ZERO)
+                .usedDays(balance.getUsedDays() != null ? balance.getUsedDays() : BigDecimal.ZERO)
+                .pendingDays(balance.getPendingDays() != null ? balance.getPendingDays() : BigDecimal.ZERO)
+                .expiredDays(balance.getExpiredDays() != null ? balance.getExpiredDays() : BigDecimal.ZERO)
+                .remainingDays(balance.getRemainingDays() != null ? balance.getRemainingDays() : BigDecimal.ZERO)
+                .build();
     }
 }
