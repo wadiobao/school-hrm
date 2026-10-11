@@ -1,8 +1,10 @@
-﻿package com.kltn.school_hrm.module.core.service;
+package com.kltn.school_hrm.module.core.service;
 
 import java.util.List;
 
+import com.kltn.school_hrm.module.core.dto.request.LoginRequest;
 import com.kltn.school_hrm.module.core.dto.request.UserRegisterRequest;
+import com.kltn.school_hrm.module.core.dto.response.LoginResponse;
 import com.kltn.school_hrm.module.core.dto.response.UserResponse;
 
 public interface UserService {
@@ -11,4 +13,5 @@ public interface UserService {
     List<UserResponse> getAllUsers();
     UserResponse updateUser(Long id, UserRegisterRequest request);
     void deleteUser(Long id);
+    LoginResponse login(LoginRequest request);
 }

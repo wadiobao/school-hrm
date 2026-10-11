@@ -1,4 +1,4 @@
-﻿package com.kltn.school_hrm.module.core.controller;
+package com.kltn.school_hrm.module.core.controller;
 
 import java.util.List;
 
@@ -21,12 +21,21 @@ import com.kltn.school_hrm.module.core.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
+import com.kltn.school_hrm.module.core.dto.request.LoginRequest;
+import com.kltn.school_hrm.module.core.dto.response.LoginResponse;
+
 @RestController
 @RequestMapping("/api/v1/users")
 @RequiredArgsConstructor
 public class UserController {
 
     private final UserService userService;
+
+    @PostMapping("/login")
+    public ResponseEntity<ApiResponse<LoginResponse>> login(@Valid @RequestBody LoginRequest request) {
+        LoginResponse response = userService.login(request);
+        return ResponseEntity.ok(ApiResponse.success(response, "Đăng nhập thành công"));
+    }
 
     @PostMapping("/register")
     public ResponseEntity<ApiResponse<UserResponse>> register(@Valid @RequestBody UserRegisterRequest request) {
