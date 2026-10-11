@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <title>School HRM - Quản lý Chấm công</title>
@@ -6,56 +6,293 @@
 <html th:replace="~{layout/main-layout :: layout(~{::content}, ~{::scripts}, 'Quản lý Chấm công')}">
 
     <div th:fragment="content">
-        <!-- Date Selector & Action Toolbar -->
-        <div class="card mb-4 border-0 shadow-sm">
-            <div class="card-body">
-                <div class="row g-3 align-items-center">
-                    <div class="col-md-4">
-                        <div class="input-group">
-                            <span class="input-group-text bg-white"><i class="bi bi-calendar-event text-primary"></i></span>
-                            <input type="date" id="selected-workDate" class="form-control" onchange="loadAttendances()">
+        <!-- Navigation Pills -->
+        <ul class="nav nav-pills mb-4 gap-2" id="attendanceTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active px-4 py-2 fw-semibold" id="records-tab" data-bs-toggle="pill" data-bs-target="#records-pane" type="button" role="tab">
+                    <i class="bi bi-calendar-check-fill me-2"></i> Bảng tổng hợp công (Records)
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link px-4 py-2 fw-semibold" id="shifts-tab" data-bs-toggle="pill" data-bs-target="#shifts-pane" type="button" role="tab" onclick="loadShifts()">
+                    <i class="bi bi-clock-history me-2"></i> Ca làm việc (Shifts)
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link px-4 py-2 fw-semibold" id="legacy-tab" data-bs-toggle="pill" data-bs-target="#legacy-pane" type="button" role="tab" onclick="loadLegacyAttendances()">
+                    <i class="bi bi-fingerprint me-2"></i> Ghi nhận trực tiếp (Check-in/out)
+                </button>
+            </li>
+        </ul>
+
+        <div class="tab-content" id="attendanceTabContent">
+            <!-- TAB 1: ATTENDANCE RECORDS (BẢNG TỔNG HỢP CÔNG & RE-AGGREGATE) -->
+            <div class="tab-pane fade show active" id="records-pane" role="tabpanel">
+                <div class="card mb-4 border-0 shadow-sm">
+                    <div class="card-body">
+                        <div class="row g-3 align-items-center">
+                            <div class="col-md-3">
+                                <label class="form-label small text-muted mb-1">Từ ngày</label>
+                                <input type="date" id="record-fromDate" class="form-control form-control-sm">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label small text-muted mb-1">Đến ngày</label>
+                                <input type="date" id="record-toDate" class="form-control form-control-sm">
+                            </div>
+                            <div class="col-md-6 d-flex align-items-end justify-content-end gap-2">
+                                <button class="btn btn-sm btn-outline-secondary" onclick="setRecordToday()">
+                                    <i class="bi bi-calendar2-day"></i> Hôm nay
+                                </button>
+                                <button class="btn btn-sm btn-primary" onclick="loadAttendanceRecords()">
+                                    <i class="bi bi-filter"></i> Lọc dữ liệu
+                                </button>
+                                <button class="btn btn-sm btn-warning text-dark fw-semibold" data-roles="SUPER_ADMIN,HR_MANAGER" onclick="openReAggregateModal()">
+                                    <i class="bi bi-arrow-repeat"></i> Re-aggregate ngày công
+                                </button>
+                            </div>
                         </div>
                     </div>
-                    <div class="col-md-8 d-flex justify-content-end gap-2">
-                        <button class="btn btn-outline-secondary" onclick="setToday()">
-                            <i class="bi bi-calendar2-day"></i> Hôm nay
-                        </button>
-                        <button class="btn btn-primary" onclick="openAddAttendanceModal()">
-                            <i class="bi bi-plus-lg me-1"></i> Ghi nhận Chấm công
+                </div>
+
+                <div class="card shadow-sm border-0">
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Nhân viên</th>
+                                        <th>Mã NV</th>
+                                        <th>Ngày công</th>
+                                        <th>First IN</th>
+                                        <th>Last OUT</th>
+                                        <th>Số phút làm việc</th>
+                                        <th>Đi trễ / Về sớm</th>
+                                        <th>Trạng thái</th>
+                                        <th class="text-end pe-4">Chi tiết</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="records-table-body">
+                                    <tr>
+                                        <td colspan="9" class="text-center py-5 text-muted">Đang tải dữ liệu tổng hợp công...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 2: SHIFTS & PHÂN CA -->
+            <div class="tab-pane fade" id="shifts-pane" role="tabpanel">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="m-0 fw-bold">Danh sách Ca làm việc</h5>
+                    <button class="btn btn-sm btn-primary" onclick="openAddShiftModal()">
+                        <i class="bi bi-plus-lg me-1"></i> Thêm ca mới
+                    </button>
+                </div>
+                <div class="card shadow-sm border-0">
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Mã ca</th>
+                                        <th>Tên ca</th>
+                                        <th>Giờ bắt đầu</th>
+                                        <th>Giờ kết thúc</th>
+                                        <th>Ân hạn (Grace)</th>
+                                        <th>Nghỉ trưa (Break)</th>
+                                        <th>Ca qua đêm</th>
+                                        <th>Trạng thái</th>
+                                        <th class="text-end pe-4">Thao tác</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="shifts-table-body">
+                                    <tr>
+                                        <td colspan="9" class="text-center py-5 text-muted">Đang tải danh sách ca...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 3: LEGACY MANUAL CHECK-IN/OUT -->
+            <div class="tab-pane fade" id="legacy-pane" role="tabpanel">
+                <div class="card mb-4 border-0 shadow-sm">
+                    <div class="card-body">
+                        <div class="row g-3 align-items-center">
+                            <div class="col-md-4">
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white"><i class="bi bi-calendar-event text-primary"></i></span>
+                                    <input type="date" id="selected-workDate" class="form-control" onchange="loadLegacyAttendances()">
+                                </div>
+                            </div>
+                            <div class="col-md-8 d-flex justify-content-end gap-2">
+                                <button class="btn btn-outline-secondary" onclick="setLegacyToday()">
+                                    <i class="bi bi-calendar2-day"></i> Hôm nay
+                                </button>
+                                <button class="btn btn-primary" data-roles="HR_MANAGER" onclick="openAddAttendanceModal()">
+                                    <i class="bi bi-plus-lg me-1"></i> Ghi nhận Chấm công
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card shadow-sm border-0">
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Nhân viên</th>
+                                        <th>Mã NV</th>
+                                        <th>Ngày làm việc</th>
+                                        <th>Giờ Check-in</th>
+                                        <th>Giờ Check-out</th>
+                                        <th>Thiết bị / Phương thức</th>
+                                        <th>Trạng thái</th>
+                                        <th class="text-end pe-4">Thao tác</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="attendance-table-body">
+                                    <tr>
+                                        <td colspan="8" class="text-center py-5 text-muted">Đang tải dữ liệu...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL: XEM CHI TIẾT SESSIONS CỦA BẢN GHI CÔNG -->
+        <div class="modal fade" id="recordDetailModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title fw-bold">Chi tiết Phiên làm việc (Sessions)</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="bg-light p-3 rounded mb-3">
+                            <div class="row">
+                                <div class="col-md-4"><strong>Nhân viên:</strong> <span id="modal-emp-name"></span></div>
+                                <div class="col-md-4"><strong>Ngày:</strong> <span id="modal-work-date"></span></div>
+                                <div class="col-md-4"><strong>Trạng thái:</strong> <span id="modal-status-badge"></span></div>
+                            </div>
+                        </div>
+                        <h6 class="fw-bold mb-2">Các phiên làm việc trong ngày:</h6>
+                        <div class="table-responsive">
+                            <table class="table table-sm table-bordered">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Giờ vào (Check-in)</th>
+                                        <th>Giờ ra (Check-out)</th>
+                                        <th>Thời lượng làm việc</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="sessions-table-body">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL: TRIGGER RE-AGGREGATE -->
+        <div class="modal fade" id="reAggregateModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title fw-bold">Re-aggregate Ngày công từ Raw Logs</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="small text-muted">Hệ thống sẽ gom lại tất cả raw logs quẹt thẻ của nhân viên trong ngày chỉ định, khử trùng lặp và tính toán lại ngày công.</p>
+                        <div class="mb-3">
+                            <label class="form-label required">Nhân viên *</label>
+                            <select id="reagg-employeeId" class="form-select" required>
+                                <option value="">-- Chọn nhân sự --</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label required">Ngày làm việc *</label>
+                            <input type="date" id="reagg-workDate" class="form-control" required>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                        <button type="button" class="btn btn-warning text-dark fw-semibold" onclick="executeReAggregate()">
+                            <i class="bi bi-play-circle me-1"></i> Bắt đầu Re-aggregate
                         </button>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Attendance Table Card -->
-        <div class="card shadow-sm border-0">
-            <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0">
-                        <thead>
-                            <tr>
-                                <th>Nhân viên</th>
-                                <th>Mã NV</th>
-                                <th>Ngày làm việc</th>
-                                <th>Giờ Check-in</th>
-                                <th>Giờ Check-out</th>
-                                <th>Thiết bị / Phương thức</th>
-                                <th>Trạng thái</th>
-                                <th class="text-end pe-4">Thao tác</th>
-                            </tr>
-                        </thead>
-                        <tbody id="attendance-table-body">
-                            <tr>
-                                <td colspan="8" class="text-center py-5 text-muted">Đang tải dữ liệu...</td>
-                            </tr>
-                        </tbody>
-                    </table>
+        <!-- MODAL: TẠO/SỬA CA (SHIFT) -->
+        <div class="modal fade" id="shiftModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title fw-bold" id="shiftModalTitle">Thêm ca làm việc</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="shiftForm">
+                            <input type="hidden" id="shift-id">
+                            <div class="mb-3">
+                                <label class="form-label required">Mã ca *</label>
+                                <input type="text" id="shift-code" class="form-control" placeholder="VD: CA_SANG" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label required">Tên ca *</label>
+                                <input type="text" id="shift-name" class="form-control" placeholder="VD: Ca Sáng Hành Chính" required>
+                            </div>
+                            <div class="row g-2 mb-3">
+                                <div class="col-6">
+                                    <label class="form-label required">Giờ bắt đầu *</label>
+                                    <input type="time" id="shift-startTime" class="form-control" required>
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label required">Giờ kết thúc *</label>
+                                    <input type="time" id="shift-endTime" class="form-control" required>
+                                </div>
+                            </div>
+                            <div class="row g-2 mb-3">
+                                <div class="col-6">
+                                    <label class="form-label">Ân hạn trễ (phút)</label>
+                                    <input type="number" id="shift-graceMinutes" class="form-control" value="0">
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label">Nghỉ trưa (phút)</label>
+                                    <input type="number" id="shift-breakMinutes" class="form-control" value="0">
+                                </div>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="shift-overNight">
+                                <label class="form-check-label" for="shift-overNight">Ca qua đêm (Overnight)</label>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                        <button type="button" class="btn btn-primary" onclick="saveShift()">Lưu ca</button>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- Add / Edit Attendance Modal -->
+        <!-- Add / Edit Attendance Legacy Modal -->
         <div class="modal fade" id="attendanceModal" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered">
                 <div class="modal-content">
@@ -93,6 +330,7 @@
                                     <option value="LATE">Đi trễ (LATE)</option>
                                     <option value="EARLY_LEAVE">Về sớm (EARLY_LEAVE)</option>
                                     <option value="ABSENT">Vắng mặt (ABSENT)</option>
+                                    <option value="INCOMPLETE">Thiếu quẹt thẻ (INCOMPLETE)</option>
                                 </select>
                             </div>
                             <div class="mb-3">
@@ -109,7 +347,7 @@
             </div>
         </div>
 
-        <!-- Delete Modal -->
+        <!-- Delete Legacy Modal -->
         <div class="modal fade" id="deleteAttModal" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog modal-sm modal-dialog-centered">
                 <div class="modal-content">
@@ -130,27 +368,39 @@
     <div th:fragment="scripts">
         <script>
             let employeeList = [];
+            let cachedRecords = [];
 
             document.addEventListener('DOMContentLoaded', async () => {
-                setToday();
+                setRecordToday();
+                setLegacyToday();
                 await loadEmployees();
-                loadAttendances();
+                loadAttendanceRecords();
             });
 
-            function setToday() {
+            function setRecordToday() {
+                const today = new Date().toISOString().split('T')[0];
+                document.getElementById('record-fromDate').value = today;
+                document.getElementById('record-toDate').value = today;
+            }
+
+            function setLegacyToday() {
                 const today = new Date().toISOString().split('T')[0];
                 document.getElementById('selected-workDate').value = today;
-                loadAttendances();
             }
 
             async function loadEmployees() {
                 try {
-                    const res = await fetchApi('/api/v1/employees?size=100');
+                    const res = await fetchApi('/api/v1/employees?size=200');
                     if (res && res.data && res.data.content) {
                         employeeList = res.data.content;
-                        const sel = document.getElementById('att-employeeId');
+                        const sel1 = document.getElementById('att-employeeId');
+                        const sel2 = document.getElementById('reagg-employeeId');
+                        sel1.innerHTML = '<option value="">-- Chọn nhân sự --</option>';
+                        sel2.innerHTML = '<option value="">-- Chọn nhân sự --</option>';
                         employeeList.forEach(emp => {
-                            sel.innerHTML += `<option value="${emp.id}">${emp.fullName} (${emp.employeeCode})</option>`;
+                            const opt = `<option value="${emp.id}">${emp.fullName} (${emp.employeeCode})</option>`;
+                            sel1.innerHTML += opt;
+                            sel2.innerHTML += opt;
                         });
                     }
                 } catch (e) {
@@ -158,23 +408,248 @@
                 }
             }
 
-            async function loadAttendances() {
+            // ─── TAB 1: ATTENDANCE RECORDS ──────────────────────────────────
+            async function loadAttendanceRecords() {
+                const from = document.getElementById('record-fromDate').value;
+                const to = document.getElementById('record-toDate').value;
+                const tbody = document.getElementById('records-table-body');
+                if (!from || !to) return;
+
+                tbody.innerHTML = '<tr><td colspan="9" class="text-center py-5 text-muted">Đang tải bảng công...</td></tr>';
+
+                try {
+                    const res = await fetchApi(`/api/attendance-records?from=${from}&to=${to}`);
+                    cachedRecords = Array.isArray(res) ? res : (res.data || []);
+
+                    if (cachedRecords.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="9" class="text-center py-5 text-muted">Không có bản ghi công nào trong khoảng thời gian này</td></tr>';
+                        return;
+                    }
+
+                    tbody.innerHTML = cachedRecords.map((r, idx) => {
+                        let badgeClass = 'bg-success';
+                        let statusText = 'Có mặt';
+                        if (r.status === 'LATE') {
+                            badgeClass = 'bg-warning text-dark';
+                            statusText = 'Đi trễ';
+                        } else if (r.status === 'EARLY_LEAVE') {
+                            badgeClass = 'bg-info text-dark';
+                            statusText = 'Về sớm';
+                        } else if (r.status === 'INCOMPLETE') {
+                            badgeClass = 'bg-danger';
+                            statusText = 'Thiếu quẹt thẻ';
+                        } else if (r.status === 'ABSENT') {
+                            badgeClass = 'bg-secondary';
+                            statusText = 'Vắng mặt';
+                        }
+
+                        const lateText = (r.lateMinutes && r.lateMinutes > 0) ? `<span class="badge bg-danger me-1">Trễ ${r.lateMinutes}p</span>` : '';
+                        const earlyText = (r.earlyLeaveMinutes && r.earlyLeaveMinutes > 0) ? `<span class="badge bg-warning text-dark">Sớm ${r.earlyLeaveMinutes}p</span>` : '';
+                        const diffText = (lateText || earlyText) ? `${lateText}${earlyText}` : '<span class="text-muted">Đúng giờ</span>';
+
+                        return `
+                            <tr>
+                                <td class="fw-bold">${r.employeeName || 'N/A'}</td>
+                                <td><span class="badge bg-light text-dark border">${r.employeeCode || 'N/A'}</span></td>
+                                <td>${formatDate(r.workDate)}</td>
+                                <td><span class="badge bg-light text-success border">${formatTimeStr(r.firstCheckIn)}</span></td>
+                                <td><span class="badge bg-light text-danger border">${formatTimeStr(r.lastCheckOut)}</span></td>
+                                <td><span class="fw-semibold">${r.workedMinutes != null ? r.workedMinutes + ' phút' : '0 phút'}</span></td>
+                                <td>${diffText}</td>
+                                <td><span class="badge ${badgeClass}">${statusText}</span></td>
+                                <td class="text-end pe-4">
+                                    <button class="btn btn-sm btn-outline-primary" onclick="showRecordDetail(${idx})">
+                                        <i class="bi bi-eye"></i> Phiên (${r.sessions ? r.sessions.length : 0})
+                                    </button>
+                                </td>
+                            </tr>
+                        `;
+                    }).join('');
+                } catch (e) {
+                    console.error('Error loading records', e);
+                    tbody.innerHTML = '<tr><td colspan="9" class="text-center py-5 text-danger">Có lỗi khi tải dữ liệu tổng hợp công</td></tr>';
+                }
+            }
+
+            function showRecordDetail(idx) {
+                const r = cachedRecords[idx];
+                if (!r) return;
+                document.getElementById('modal-emp-name').textContent = `${r.employeeName} (${r.employeeCode})`;
+                document.getElementById('modal-work-date').textContent = formatDate(r.workDate);
+                document.getElementById('modal-status-badge').textContent = r.status;
+
+                const tbody = document.getElementById('sessions-table-body');
+                if (!r.sessions || r.sessions.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">Không có phiên nào</td></tr>';
+                } else {
+                    tbody.innerHTML = r.sessions.map((s, i) => `
+                        <tr>
+                            <td>${i + 1}</td>
+                            <td>${formatTimeStr(s.checkIn)}</td>
+                            <td>${formatTimeStr(s.checkOut)}</td>
+                            <td>${s.workedMinutes != null ? s.workedMinutes + ' phút' : '--'}</td>
+                        </tr>
+                    `).join('');
+                }
+                openModal('recordDetailModal');
+            }
+
+            function openReAggregateModal() {
+                document.getElementById('reagg-workDate').value = document.getElementById('record-fromDate').value;
+                openModal('reAggregateModal');
+            }
+
+            async function executeReAggregate() {
+                const empId = document.getElementById('reagg-employeeId').value;
+                const workDate = document.getElementById('reagg-workDate').value;
+                if (!empId || !workDate) {
+                    showAlert('Vui lòng chọn nhân viên và ngày công!', 'warning');
+                    return;
+                }
+
+                try {
+                    await fetchApi(`/api/attendance-records/re-aggregate?employeeId=${empId}&workDate=${workDate}`, {
+                        method: 'POST'
+                    });
+                    showAlert('Re-aggregate thành công!', 'success');
+                    closeModal('reAggregateModal');
+                    loadAttendanceRecords();
+                } catch (e) {
+                    console.error('Re-aggregate error', e);
+                }
+            }
+
+            // ─── TAB 2: SHIFTS ──────────────────────────────────────────────
+            async function loadShifts() {
+                const tbody = document.getElementById('shifts-table-body');
+                tbody.innerHTML = '<tr><td colspan="9" class="text-center py-5 text-muted">Đang tải danh mục ca...</td></tr>';
+
+                try {
+                    const res = await fetchApi('/api/v1/shifts');
+                    const shifts = res.data || [];
+                    if (shifts.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="9" class="text-center py-5 text-muted">Chưa có ca làm việc nào</td></tr>';
+                        return;
+                    }
+
+                    tbody.innerHTML = shifts.map(s => `
+                        <tr>
+                            <td><span class="badge bg-light text-dark border">${s.code}</span></td>
+                            <td class="fw-bold">${s.name}</td>
+                            <td>${formatTime(s.startTime)}</td>
+                            <td>${formatTime(s.endTime)}</td>
+                            <td>${s.graceMinutes || 0} phút</td>
+                            <td>${s.breakMinutes || 0} phút</td>
+                            <td>${s.overNight ? '<span class="badge bg-dark">Ca đêm</span>' : '<span class="text-muted">Không</span>'}</td>
+                            <td>${s.active ? '<span class="badge bg-success">Đang dùng</span>' : '<span class="badge bg-secondary">Tạm ngưng</span>'}</td>
+                            <td class="text-end pe-4">
+                                <button class="btn btn-sm btn-outline-primary me-1" onclick="editShift(${s.id})">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-warning" onclick="toggleShift(${s.id})">
+                                    <i class="bi bi-power"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `).join('');
+                } catch (e) {
+                    console.error('Error loading shifts', e);
+                    tbody.innerHTML = '<tr><td colspan="9" class="text-center py-5 text-danger">Có lỗi khi tải danh mục ca</td></tr>';
+                }
+            }
+
+            function openAddShiftModal() {
+                document.getElementById('shiftForm').reset();
+                document.getElementById('shift-id').value = '';
+                document.getElementById('shiftModalTitle').textContent = 'Thêm ca làm việc';
+                openModal('shiftModal');
+            }
+
+            async function editShift(id) {
+                try {
+                    const res = await fetchApi(`/api/v1/shifts/${id}`);
+                    if (res && res.data) {
+                        const s = res.data;
+                        document.getElementById('shift-id').value = s.id;
+                        document.getElementById('shift-code').value = s.code;
+                        document.getElementById('shift-name').value = s.name;
+                        document.getElementById('shift-startTime').value = s.startTime ? s.startTime.substring(0, 5) : '';
+                        document.getElementById('shift-endTime').value = s.endTime ? s.endTime.substring(0, 5) : '';
+                        document.getElementById('shift-graceMinutes').value = s.graceMinutes || 0;
+                        document.getElementById('shift-breakMinutes').value = s.breakMinutes || 0;
+                        document.getElementById('shift-overNight').checked = !!s.overNight;
+                        document.getElementById('shiftModalTitle').textContent = 'Chỉnh sửa ca làm việc';
+                        openModal('shiftModal');
+                    }
+                } catch (e) {
+                    console.error('Edit shift error', e);
+                }
+            }
+
+            async function saveShift() {
+                const id = document.getElementById('shift-id').value;
+                const startTime = document.getElementById('shift-startTime').value;
+                const endTime = document.getElementById('shift-endTime').value;
+
+                const payload = {
+                    code: document.getElementById('shift-code').value.trim(),
+                    name: document.getElementById('shift-name').value.trim(),
+                    startTime: startTime.length === 5 ? startTime + ':00' : startTime,
+                    endTime: endTime.length === 5 ? endTime + ':00' : endTime,
+                    graceMinutes: parseInt(document.getElementById('shift-graceMinutes').value) || 0,
+                    breakMinutes: parseInt(document.getElementById('shift-breakMinutes').value) || 0,
+                    overNight: document.getElementById('shift-overNight').checked
+                };
+
+                if (!payload.code || !payload.name || !payload.startTime || !payload.endTime) {
+                    showAlert('Vui lòng nhập đầy đủ thông tin ca!', 'warning');
+                    return;
+                }
+
+                try {
+                    if (id) {
+                        await fetchApi(`/api/v1/shifts/${id}`, { method: 'PUT', body: JSON.stringify(payload) });
+                        showAlert('Cập nhật ca thành công!', 'success');
+                    } else {
+                        await fetchApi('/api/v1/shifts', { method: 'POST', body: JSON.stringify(payload) });
+                        showAlert('Tạo ca làm việc thành công!', 'success');
+                    }
+                    closeModal('shiftModal');
+                    loadShifts();
+                } catch (e) {
+                    console.error('Save shift error', e);
+                }
+            }
+
+            async function toggleShift(id) {
+                try {
+                    await fetchApi(`/api/v1/shifts/${id}/toggle`, { method: 'PATCH' });
+                    showAlert('Đã thay đổi trạng thái ca!', 'success');
+                    loadShifts();
+                } catch (e) {
+                    console.error('Toggle shift error', e);
+                }
+            }
+
+            // ─── TAB 3: LEGACY ATTENDANCES ──────────────────────────────────
+            async function loadLegacyAttendances() {
                 const workDate = document.getElementById('selected-workDate').value;
                 const tbody = document.getElementById('attendance-table-body');
                 if (!workDate) return;
 
-                tbody.innerHTML = '<tr><td colspan="8" class="text-center py-5 text-muted">Đang tải dữ liệu chấm công...</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="8" class="text-center py-5 text-muted">Đang tải dữ liệu...</td></tr>';
 
                 try {
                     const res = await fetchApi(`/api/v1/attendances/date?workDate=${workDate}`);
                     if (res && res.data) {
                         const attendances = res.data;
                         if (attendances.length === 0) {
-                            tbody.innerHTML = '<tr><td colspan="8" class="text-center py-5 text-muted">Không có bản ghi chấm công nào vào ngày này</td></tr>';
+                            tbody.innerHTML = '<tr><td colspan="8" class="text-center py-5 text-muted">Không có bản ghi nào vào ngày này</td></tr>';
                             return;
                         }
 
-                        tbody.innerHTML = attendances.map(att => {
+                    const canManageAtt = hasRole('HR_MANAGER');
+                    tbody.innerHTML = attendances.map(att => {
                             let badgeClass = 'bg-success';
                             let statusText = 'Có mặt';
                             if (att.status === 'LATE') {
@@ -186,6 +661,9 @@
                             } else if (att.status === 'EARLY_LEAVE') {
                                 badgeClass = 'bg-secondary';
                                 statusText = 'Về sớm';
+                            } else if (att.status === 'INCOMPLETE') {
+                                badgeClass = 'bg-danger';
+                                statusText = 'Thiếu quẹt thẻ';
                             }
 
                             return `
@@ -198,12 +676,14 @@
                                     <td><small class="text-muted">${att.deviceId || 'WEB_MANUAL'}</small></td>
                                     <td><span class="badge ${badgeClass}">${statusText}</span></td>
                                     <td class="text-end pe-4">
-                                        <button class="btn btn-sm btn-outline-primary me-1" title="Sửa" onclick="editAttendance(${att.id})">
-                                            <i class="bi bi-pencil"></i>
-                                        </button>
-                                        <button class="btn btn-sm btn-outline-danger" title="Xóa" onclick="confirmDeleteAtt(${att.id})">
-                                            <i class="bi bi-trash"></i>
-                                        </button>
+                                        ${canManageAtt ? `
+                                            <button class="btn btn-sm btn-outline-primary me-1" title="Điều chỉnh chấm công" onclick="editAttendance(${att.id})">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-danger" title="Xóa" onclick="confirmDeleteAtt(${att.id})">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        ` : '<span class="text-muted small">Chỉ xem</span>'}
                                     </td>
                                 </tr>
                             `;
@@ -236,7 +716,6 @@
                         document.getElementById('att-checkOut').value = att.checkOut ? att.checkOut.substring(0, 5) : '';
                         document.getElementById('att-status').value = att.status || 'PRESENT';
                         document.getElementById('att-deviceId').value = att.deviceId || 'WEB_MANUAL';
-
                         document.getElementById('attModalTitle').textContent = 'Chỉnh sửa Chấm công';
                         openModal('attendanceModal');
                     }
@@ -279,7 +758,7 @@
                         showAlert('Ghi nhận chấm công thành công!', 'success');
                     }
                     closeModal('attendanceModal');
-                    loadAttendances();
+                    loadLegacyAttendances();
                 } catch (e) {
                     console.error('Save att error', e);
                 }
@@ -294,12 +773,21 @@
                         await fetchApi(`/api/v1/attendances/${deleteTargetAttId}`, { method: 'DELETE' });
                         showAlert('Đã xóa bản ghi chấm công!', 'success');
                         closeModal('deleteAttModal');
-                        loadAttendances();
+                        loadLegacyAttendances();
                     } catch (e) {
                         console.error('Delete att error', e);
                     }
                 };
                 openModal('deleteAttModal');
+            }
+
+            function formatTimeStr(dtStr) {
+                if (!dtStr) return '--:--';
+                const parts = dtStr.split('T');
+                if (parts.length > 1) {
+                    return parts[1].substring(0, 5);
+                }
+                return dtStr.substring(0, 5);
             }
         </script>
     </div>
