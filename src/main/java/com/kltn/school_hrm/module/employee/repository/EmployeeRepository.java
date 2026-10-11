@@ -1,4 +1,4 @@
-﻿package com.kltn.school_hrm.module.employee.repository;
+package com.kltn.school_hrm.module.employee.repository;
 
 import java.util.List;
 import java.util.Optional;
@@ -17,6 +17,7 @@ import com.kltn.school_hrm.shared.enums.Enums.RoleCode;
 @Repository
 public interface EmployeeRepository extends JpaRepository<Employee, Long> {
 	Optional<Employee> findByEmployeeCode(String employeeCode);
+	Optional<Employee> findByUserId(Long userId);
 
 	boolean existsByEmployeeCode(String employeeCode);
 

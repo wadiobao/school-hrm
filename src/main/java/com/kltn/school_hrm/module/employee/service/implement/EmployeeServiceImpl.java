@@ -1,4 +1,4 @@
-﻿package com.kltn.school_hrm.module.employee.service.implement;
+package com.kltn.school_hrm.module.employee.service.implement;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -26,6 +26,7 @@ import com.kltn.school_hrm.module.core.repository.PositionRepository;
 import com.kltn.school_hrm.module.core.repository.UserRepository;
 import com.kltn.school_hrm.module.employee.repository.WorkPermitAndVisaRepository;
 import com.kltn.school_hrm.module.employee.service.EmployeeService;
+import com.kltn.school_hrm.module.leave.service.LeaveBalanceService;
 import com.kltn.school_hrm.shared.utils.AesEncryptor;
 
 import lombok.RequiredArgsConstructor;
@@ -41,6 +42,7 @@ public class EmployeeServiceImpl implements EmployeeService {
 	private final UserRepository userRepository;
 	private final WorkPermitAndVisaRepository workPermitAndVisaRepository;
 	private final AesEncryptor aesEncryptor;
+	private final LeaveBalanceService leaveBalanceService;
 
 	@Override
 	@Transactional
@@ -89,6 +91,15 @@ public class EmployeeServiceImpl implements EmployeeService {
 				.build();
 
 		Employee savedEmployee = employeeRepository.save(employee);
+
+		// Tự động khởi tạo quỹ nghỉ phép năm cho nhân viên mới (chuẩn 12 ngày/năm)
+		int currentYear = savedEmployee.getJoinDate() != null ? savedEmployee.getJoinDate().getYear() : java.time.LocalDate.now().getYear();
+		try {
+			leaveBalanceService.initializeBalanceForEmployee(savedEmployee, currentYear, java.math.BigDecimal.valueOf(12));
+		} catch (Exception e) {
+			// Không làm fail quá trình tạo nhân viên nếu khởi tạo quỹ phép gặp exception
+		}
+
 		return mapToResponse(savedEmployee);
 	}
 
