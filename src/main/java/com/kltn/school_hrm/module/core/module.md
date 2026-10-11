@@ -22,6 +22,7 @@ Toàn bộ kiến trúc của module **Core (Hệ thống cốt lõi & Danh mụ
 | [RoleService](/src/main/java/com/kltn/school_hrm/module/core/service/RoleService.java) | **Quản lý vai trò quyền hạn** | Tra cứu và thiết lập danh mục vai trò trong hệ thống. |
 | [DepartmentService](/src/main/java/com/kltn/school_hrm/module/core/service/DepartmentService.java) | **Quản lý danh mục phòng ban** | Thêm, sửa, xóa, tìm kiếm danh mục phòng ban, tổ chức bộ môn. |
 | [PositionService](/src/main/java/com/kltn/school_hrm/module/core/service/PositionService.java) | **Quản lý danh mục vị trí chức danh** | Cung cấp CRUD và phân loại vị trí công việc theo tiêu chuẩn trường học. |
+| [WorkingCalendarService](/src/main/java/com/kltn/school_hrm/module/core/service/WorkingCalendarService.java) | **Tính ngày công chuẩn (Working Calendar)** | Tính toán số ngày làm việc tiêu chuẩn giữa 2 mốc thời gian, loại trừ cuối tuần (T7, CN) và ngày nghỉ lễ từ `HolidayRepository`. Hỗ trợ tính ngày nghỉ phép, ngày công và đối soát lương. |
 
 ---
 
@@ -34,5 +35,12 @@ Toàn bộ kiến trúc của module **Core (Hệ thống cốt lõi & Danh mụ
                       │
                       ├─────────► [Position]
                       │
-[Holiday] ────────────┴─────────► [Dùng chung cho Attendance & Leave]
+[Holiday] ────────────┴─────────► [HolidayRepository]
+                                          │
+                                          ▼
+                               [WorkingCalendarService]
+                                          │
+                        ┌─────────────────┴─────────────────┐
+                        ▼                                   ▼
+              [LeaveDayCalculator]             [AttendanceCalculationService]
 ```
