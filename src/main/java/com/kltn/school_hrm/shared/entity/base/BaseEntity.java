@@ -1,4 +1,4 @@
-﻿package com.kltn.school_hrm.shared.entity.base;
+package com.kltn.school_hrm.shared.entity.base;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
@@ -26,7 +26,6 @@ import lombok.experimental.SuperBuilder;
 @MappedSuperclass
 @SuperBuilder
 @NoArgsConstructor
-@AllArgsConstructor
 @EntityListeners(AuditingEntityListener.class)
 public abstract class BaseEntity implements Serializable {
 
