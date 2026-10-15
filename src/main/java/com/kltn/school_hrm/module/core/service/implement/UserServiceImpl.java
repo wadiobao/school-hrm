@@ -14,6 +14,7 @@ import com.kltn.school_hrm.module.core.entity.User;
 import com.kltn.school_hrm.shared.enums.Enums.RoleCode;
 import com.kltn.school_hrm.shared.enums.Enums.UserStatus;
 import com.kltn.school_hrm.shared.exception.custom.ResourceNotFoundException;
+import com.kltn.school_hrm.shared.utils.JwtService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -37,6 +38,7 @@ public class UserServiceImpl implements UserService {
 	private final RoleRepository roleRepository;
 	private final EmployeeRepository employeeRepository;
 	private final PasswordEncoder passwordEncoder;
+	private final JwtService jwtService;
 
 	@Override
 	@Transactional(readOnly = true)
@@ -62,7 +64,8 @@ public class UserServiceImpl implements UserService {
 
 		// 3. Kiểm tra trạng thái tài khoản
 		if (user.getStatus() != UserStatus.ACTIVE) {
-			throw new BusinessException("Tài khoản đã bị tạm khóa hoặc ngừng kích hoạt. Vui lòng liên hệ Quản trị viên.");
+			throw new BusinessException(
+					"Tài khoản đã bị tạm khóa hoặc ngừng kích hoạt. Vui lòng liên hệ Quản trị viên.");
 		}
 
 		// 4. Kiểm tra mật khẩu mã hóa BCrypt
@@ -73,15 +76,20 @@ public class UserServiceImpl implements UserService {
 		// 5. Tìm thông tin nhân viên gắn với tài khoản
 		Employee employee = employeeRepository.findByUserId(user.getId()).orElse(null);
 
+		String accessToken = jwtService.generateToken(user);
+
 		return LoginResponse.builder()
 				.userId(user.getId())
 				.username(user.getUsername())
 				.email(user.getEmail())
 				.fullName(employee != null ? employee.getFullName() : user.getUsername())
-				.roleCode(user.getRole() != null && user.getRole().getRoleCode() != null ? user.getRole().getRoleCode().name() : "STAFF")
+				.roleCode(user.getRole() != null && user.getRole().getRoleCode() != null
+						? user.getRole().getRoleCode().name()
+						: "STAFF")
 				.roleName(user.getRole() != null ? user.getRole().getRoleName() : "Nhân viên")
 				.employeeId(employee != null ? employee.getId() : null)
 				.employeeCode(employee != null ? employee.getEmployeeCode() : null)
+				.accessToken(accessToken)
 				.build();
 	}
 
