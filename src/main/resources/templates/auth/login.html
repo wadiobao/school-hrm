@@ -109,6 +109,8 @@
                                     <div class="text-muted">• <b>HR:</b> <code>hrmanager</code> / <code>Hr@123456</code></div>
                                     <div class="text-muted">• <b>Giáo viên:</b> <code>teacher</code> / <code>Teacher@123</code></div>
                                     <div class="text-muted">• <b>Nhân viên:</b> <code>staff</code> / <code>Staff@123</code></div>
+                                    <div class="text-muted">• <b>Hiệu trưởng:</b> <code>principal</code> / <code>Principal@123</code></div>
+                                    <div class="text-muted">• <b>Trưởng môn toán:</b> <code>mathhead</code> / <code>MathHead@123</code></div>
                                 </div>
                             </form>
                         </div>
@@ -153,9 +155,12 @@
                     throw new Error(data.message || 'Tài khoản hoặc mật khẩu không chính xác.');
                 }
 
-                // Lưu thông tin phiên đăng nhập vào localStorage
+                // Lưu thông tin phiên đăng nhập và accessToken vào localStorage
                 const user = data.data;
                 localStorage.setItem('currentUser', JSON.stringify(user));
+                if (user && user.accessToken) {
+                    localStorage.setItem('accessToken', user.accessToken);
+                }
 
                 // Chuyển hướng về trang chủ
                 window.location.href = '/';

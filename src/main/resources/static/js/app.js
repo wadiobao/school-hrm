@@ -1,13 +1,37 @@
+// Lấy JWT Access Token từ localStorage
+function getAccessToken() {
+    const directToken = localStorage.getItem('accessToken');
+    if (directToken) return directToken;
+    const user = getCurrentUser();
+    return user ? user.accessToken : null;
+}
+
 // API helper function
 async function fetchApi(url, options = {}) {
     try {
+        const token = getAccessToken();
+        const headers = {
+            'Content-Type': 'application/json',
+            ...options.headers
+        };
+
+        // Kích hoạt JwtAuthFilter bằng Authorization header
+        if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+        }
+
         const response = await fetch(url, {
             ...options,
-            headers: {
-                'Content-Type': 'application/json',
-                ...options.headers
-            }
+            headers
         });
+
+        // Tự động điều hướng về login nếu token hết hạn / không hợp lệ
+        if (response.status === 401 && window.location.pathname !== '/login') {
+            localStorage.removeItem('currentUser');
+            localStorage.removeItem('accessToken');
+            window.location.href = '/login';
+            return;
+        }
 
         // Handle empty body responses (e.g. 204 or void success)
         const text = await response.text();
@@ -217,6 +241,7 @@ function enforcePageAccess(roleCode) {
 
 function logout() {
     localStorage.removeItem('currentUser');
+    localStorage.removeItem('accessToken');
     window.location.href = '/login';
 }
 

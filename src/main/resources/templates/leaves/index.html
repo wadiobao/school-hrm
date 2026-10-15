@@ -173,11 +173,12 @@
                     <div class="modal-body">
                         <input type="hidden" id="decision-leave-id">
                         <input type="hidden" id="decision-action-type">
-                        <div class="mb-3">
-                            <label class="form-label required">Người phê duyệt (Manager/Admin ID) *</label>
-                            <select id="decision-approverId" class="form-select" required>
-                                <option value="">-- Chọn người phê duyệt --</option>
-                            </select>
+                        <div class="alert alert-light border d-flex align-items-center mb-3 py-2">
+                            <i class="bi bi-person-check-fill text-primary fs-4 me-2"></i>
+                            <div>
+                                <div class="small text-muted">Người phê duyệt hiện tại:</div>
+                                <div class="fw-bold text-dark" id="decision-approver-name">Đang xác định...</div>
+                            </div>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Ghi chú / Ý kiến xử lý</label>
@@ -251,13 +252,11 @@
                         employeeList = res.data.content;
                         const selEmp = document.getElementById('leave-employeeId');
                         const selSub = document.getElementById('leave-substituteTeacherId');
-                        const selApprover = document.getElementById('decision-approverId');
 
                         employeeList.forEach(emp => {
                             const opt = `<option value="${emp.id}">${emp.fullName} (${emp.employeeCode})</option>`;
                             selEmp.innerHTML += opt;
                             selSub.innerHTML += opt;
-                            selApprover.innerHTML += opt;
                         });
                     }
                 } catch (e) {
@@ -311,13 +310,30 @@
 
                 tbody.innerHTML = filteredList.map(req => {
                     const isPending = req.status === 'PENDING';
-                    let statusBadge = '<span class="badge bg-warning text-dark">Chờ duyệt</span>';
-                    if (req.status === 'APPROVED') statusBadge = '<span class="badge bg-success">Đã duyệt</span>';
-                    if (req.status === 'REJECTED') statusBadge = '<span class="badge bg-danger">Từ chối</span>';
+                    const user = getCurrentUser();
+                    const myEmployeeId = user ? user.employeeId : null;
 
-                    // Theo permission.md mục 1.1: Không mặc định cho SUPER_ADMIN duyệt nghỉ phép.
-                    // Chỉ BOARD_OF_DIRECTORS (cấp cao), HEAD_OF_DEPARTMENT (cấp đơn vị), HR_MANAGER (quản lý theo quy trình)
-                    const canApproveLeave = hasRole('BOARD_OF_DIRECTORS', 'HEAD_OF_DEPARTMENT', 'HR_MANAGER');
+                    let statusBadge = '<span class="badge bg-warning text-dark">Chờ duyệt</span>';
+                    if (req.status === 'APPROVED') {
+                        statusBadge = '<span class="badge bg-success"><i class="bi bi-check2-all me-1"></i>Đã duyệt</span>';
+                    } else if (req.status === 'REJECTED') {
+                        statusBadge = '<span class="badge bg-danger"><i class="bi bi-x-circle me-1"></i>Từ chối</span>';
+                    } else if (req.currentLevelName) {
+                        statusBadge = `<span class="badge bg-warning text-dark"><i class="bi bi-hourglass-split me-1"></i>Cấp ${req.currentLevel || 1}/${req.totalLevels || 1}: ${req.currentLevelName}</span>`;
+                        if (req.currentApproverName) {
+                            statusBadge += `<div class="small text-muted mt-1"><i class="bi bi-person me-1"></i>Người duyệt: <strong>${req.currentApproverName}</strong></div>`;
+                        }
+                    }
+
+                    // Kiểm tra quyền duyệt: Chỉ người được phân công ở cấp hiện tại mới có nút Duyệt
+                    // Khi người cấp 1 chưa duyệt, người cấp 2 tuyệt đối KHÔNG có nút duyệt mà chỉ hiển thị đang chờ cấp 1
+                    const isDirectAssignedApprover = req.currentApproverId && myEmployeeId && Number(req.currentApproverId) === Number(myEmployeeId);
+                    const canApproveThis = isPending && isDirectAssignedApprover;
+
+                    // Text thông báo cho người chưa tới lượt duyệt hoặc không có thẩm quyền ở cấp này
+                    const waitingText = req.currentApproverName 
+                        ? `Đang chờ: ${req.currentApproverName} duyệt` 
+                        : 'Chờ cấp trên duyệt';
 
                     return `
                         <tr>
@@ -328,19 +344,20 @@
                             <td><span class="badge bg-light text-primary border">${req.leaveType}</span></td>
                             <td>
                                 <div>${formatDate(req.startDate)} <i class="bi bi-arrow-right mx-1"></i> ${formatDate(req.endDate)}</div>
+                                <small class="text-muted">${req.totalDays || 0} ngày</small>
                             </td>
                             <td><small class="text-muted">${req.reason || 'Không có ghi chú'}</small></td>
                             <td>${req.substituteTeacherName ? `<span class="badge bg-info bg-opacity-10 text-dark border">${req.substituteTeacherName}</span>` : '<span class="text-muted small">Không</span>'}</td>
                             <td>${statusBadge}</td>
                             <td class="text-end pe-4">
-                                ${isPending ? (canApproveLeave ? `
+                                ${isPending ? (canApproveThis ? `
                                     <button class="btn btn-sm btn-success me-1" title="Phê duyệt" onclick="openDecisionModal(${req.id}, 'APPROVE')">
                                         <i class="bi bi-check-lg"></i> Duyệt
                                     </button>
                                     <button class="btn btn-sm btn-outline-danger" title="Từ chối" onclick="openDecisionModal(${req.id}, 'REJECT')">
                                         <i class="bi bi-x-lg"></i> Từ chối
                                     </button>
-                                ` : '<span class="badge bg-warning text-dark">Chờ cấp trên duyệt</span>') : `
+                                ` : `<span class="badge bg-light text-muted border"><i class="bi bi-hourglass-split me-1"></i>${waitingText}</span>`) : `
                                     <span class="text-muted small">Đã hoàn tất</span>
                                 `}
                             </td>
@@ -397,9 +414,19 @@
             }
 
             function openDecisionModal(leaveId, actionType) {
+                const user = getCurrentUser();
+                const reqItem = allLeaveRequests.find(r => r.id === leaveId);
+
                 document.getElementById('decision-leave-id').value = leaveId;
                 document.getElementById('decision-action-type').value = actionType;
                 document.getElementById('decision-comment').value = '';
+
+                // Hiển thị tên người duyệt đang thực hiện
+                const approverNameEl = document.getElementById('decision-approver-name');
+                if (approverNameEl) {
+                    const currentStepInfo = reqItem && reqItem.currentLevelName ? ` [${reqItem.currentLevelName}]` : '';
+                    approverNameEl.textContent = `${user ? (user.fullName || user.username) : 'N/A'}${currentStepInfo}`;
+                }
 
                 const btn = document.getElementById('btn-confirm-decision');
                 if (actionType === 'APPROVE') {
@@ -417,15 +444,15 @@
             async function submitDecision() {
                 const leaveId = document.getElementById('decision-leave-id').value;
                 const actionType = document.getElementById('decision-action-type').value;
-                const approverIdVal = document.getElementById('decision-approverId').value;
+                const user = getCurrentUser();
 
-                if (!approverIdVal) {
-                    showAlert('Vui lòng chọn Người phê duyệt', 'warning');
+                if (!user || !user.employeeId) {
+                    showAlert('Tài khoản của bạn chưa liên kết hồ sơ nhân viên để thực hiện phê duyệt', 'warning');
                     return;
                 }
 
                 const payload = {
-                    approverId: parseInt(approverIdVal),
+                    approverId: user.employeeId,
                     comment: document.getElementById('decision-comment').value.trim()
                 };
 
