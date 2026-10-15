@@ -1,4 +1,4 @@
-﻿package com.kltn.school_hrm.module.leave.service.implement;
+package com.kltn.school_hrm.module.leave.service.implement;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -376,16 +376,33 @@ public class LeaveRequestServiceImpl implements LeaveRequestService {
         List<ApprovalStepResponse> approvalStepResponses = new ArrayList<>();
         List<ApprovalActionResponse> approvalActionResponses = new ArrayList<>();
 
+        final Integer[] approvalMeta = new Integer[] { null, null }; // [currentLevel, totalLevels]
+        final Long[] currentApproverMeta = new Long[] { null }; // [currentApproverId]
+        final String[] currentApproverNameMeta = new String[] { null, null }; // [currentApproverName, currentLevelName]
+
         // 1. Lấy thông tin steps và actions từ Generic Approval Framework
         approvalRequestRepository.findByBusinessTypeAndBusinessId("LEAVE_REQUEST", leaveRequest.getId())
                 .ifPresent(approvalReq -> {
+                    approvalMeta[0] = approvalReq.getCurrentLevel();
+
                     List<ApprovalRequestStep> steps = approvalRequestStepRepository
                             .findByApprovalRequestIdOrderByLevelOrderAsc(approvalReq.getId());
+                    approvalMeta[1] = steps.size();
+
                     for (ApprovalRequestStep step : steps) {
                         Long approverId = step.getAssignedApprover() != null ? step.getAssignedApprover().getId() : null;
                         String approverName = step.getAssignedApprover() != null ? step.getAssignedApprover().getFullName() : null;
                         if (approverId != null && !approverIds.contains(approverId)) {
                             approverIds.add(approverId);
+                        }
+
+                        // Nếu là step tương ứng với level hiện tại của đơn và đang PENDING
+                        if (approvalReq.getCurrentLevel() != null
+                                && approvalReq.getCurrentLevel().equals(step.getLevelOrder())
+                                && step.getStatus() == ApprovalStatus.PENDING) {
+                            currentApproverMeta[0] = approverId;
+                            currentApproverNameMeta[0] = approverName;
+                            currentApproverNameMeta[1] = step.getLevelName();
                         }
 
                         approvalStepResponses.add(ApprovalStepResponse.builder()
@@ -442,6 +459,11 @@ public class LeaveRequestServiceImpl implements LeaveRequestService {
                                 : null)
                 .approverId(approverIds)
                 .status(leaveRequest.getStatus())
+                .currentLevel(approvalMeta[0])
+                .totalLevels(approvalMeta[1])
+                .currentApproverId(currentApproverMeta[0])
+                .currentApproverName(currentApproverNameMeta[0])
+                .currentLevelName(currentApproverNameMeta[1])
                 .approvalSteps(approvalStepResponses)
                 .approvalActions(approvalActionResponses)
                 .build();

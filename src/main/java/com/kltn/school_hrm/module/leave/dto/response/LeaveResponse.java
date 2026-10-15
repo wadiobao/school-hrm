@@ -1,4 +1,4 @@
-﻿package com.kltn.school_hrm.module.leave.dto.response;
+package com.kltn.school_hrm.module.leave.dto.response;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -29,6 +29,11 @@ public class LeaveResponse {
     private Long substituteTeacherId;
     private List<Long> approverId;
     private RequestStatus status;
+    private Integer currentLevel;
+    private Integer totalLevels;
+    private Long currentApproverId;
+    private String currentApproverName;
+    private String currentLevelName;
     private List<ApprovalStepResponse> approvalSteps;
     private List<ApprovalActionResponse> approvalActions;
 }
