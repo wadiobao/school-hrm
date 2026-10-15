@@ -30,13 +30,19 @@ import lombok.RequiredArgsConstructor;
 
 /**
  * Khởi tạo dữ liệu mặc định khi ứng dụng lần đầu khởi động.
- * <p>Chỉ seed khi chưa có dữ liệu (idempotent – an toàn khi chạy nhiều lần).</p>
+ * <p>
+ * Chỉ seed khi chưa có dữ liệu (idempotent – an toàn khi chạy nhiều lần).
+ * </p>
  *
  * <b>Tài khoản mặc định:</b>
+ * 
  * <pre>
- *   Admin  : username=admin      | password=Admin@123
- *   HR     : username=hrmanager  | password=Hr@123456
- *   Staff  : username=staff      | password=Staff@123
+ *   Admin     : username=admin      | password=Admin@123
+ *   HR        : username=hrmanager  | password=Hr@123456
+ *   Staff     : username=staff      | password=Staff@123
+ *   Teacher   : username=teacher    | password=Teacher@123
+ *   Principal : username=principal  | password=Principal@123
+ *   MathHead  : username=mathhead   | password=MathHead@123
  * </pre>
  */
 @Component
@@ -45,13 +51,13 @@ public class DataInitializer implements ApplicationRunner {
 
     private static final Logger log = LoggerFactory.getLogger(DataInitializer.class);
 
-    private final RoleRepository        roleRepository;
-    private final UserRepository        userRepository;
-    private final DepartmentRepository  departmentRepository;
-    private final PositionRepository    positionRepository;
-    private final EmployeeRepository    employeeRepository;
-    private final PasswordEncoder       passwordEncoder;
-    private final com.kltn.school_hrm.module.leave.service.LeaveBalanceService leaveBalanceService;
+    private final RoleRepository roleRepository;
+    private final UserRepository userRepository;
+    private final DepartmentRepository departmentRepository;
+    private final PositionRepository positionRepository;
+    private final EmployeeRepository employeeRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final LeaveBalanceService leaveBalanceService;
 
     @Override
     @Transactional
@@ -59,43 +65,46 @@ public class DataInitializer implements ApplicationRunner {
         log.info("=== DataInitializer: Kiểm tra & khởi tạo dữ liệu mẫu ===");
 
         // ── 1. Roles ──────────────────────────────────────────────────────────
-        Role adminRole = seedRole(RoleCode.SUPER_ADMIN,   "Quản trị hệ thống",
+        Role adminRole = seedRole(RoleCode.SUPER_ADMIN, "Quản trị hệ thống",
                 "Toàn quyền quản trị hệ thống HRM");
-        Role hrRole    = seedRole(RoleCode.HR_MANAGER,    "Trưởng phòng Nhân sự",
+        Role hrRole = seedRole(RoleCode.HR_MANAGER, "Trưởng phòng Nhân sự",
                 "Quản lý hồ sơ nhân viên, bảng lương, chấm công");
-        Role staffRole   = seedRole(RoleCode.STAFF,         "Nhân viên Hành chính",
+        Role staffRole = seedRole(RoleCode.STAFF, "Nhân viên Hành chính",
                 "Xem thông tin cá nhân và bảng công");
-        Role teacherRole = seedRole(RoleCode.TEACHER,       "Giáo viên",
+        Role teacherRole = seedRole(RoleCode.TEACHER, "Giáo viên",
                 "Giảng dạy và ghi nhật ký giờ dạy");
-        seedRole(RoleCode.HEAD_OF_DEPARTMENT,  "Trưởng Bộ môn",
+        Role hodRole = seedRole(RoleCode.HEAD_OF_DEPARTMENT, "Trưởng Bộ môn",
                 "Phê duyệt đơn nghỉ phép và quản lý bộ môn");
-        seedRole(RoleCode.BOARD_OF_DIRECTORS,  "Ban Giám hiệu",
+        Role boardRole = seedRole(RoleCode.BOARD_OF_DIRECTORS, "Ban Giám hiệu",
                 "Phê duyệt cấp cao và xem báo cáo tổng quan");
 
         // ── 2. Departments ────────────────────────────────────────────────────
         Department adminDept = seedDepartment("BAN-GIAM-HOC", "Ban Giám hiệu");
-        Department hrDept    = seedDepartment("PHONG-NS",     "Phòng Nhân sự");
-        Department itDept    = seedDepartment("PHONG-CNTT",   "Phòng Công nghệ Thông tin");
-        Department mathDept  = seedDepartment("BAN-TOAN",     "Bộ môn Toán");
-        seedDepartment("BAN-ANH",    "Bộ môn Tiếng Anh");
-        seedDepartment("BAN-LY",     "Bộ môn Vật lý");
+        Department hrDept = seedSubDepartment("PHONG-NS", "Phòng Nhân sự", adminDept);
+        Department itDept = seedSubDepartment("PHONG-CNTT", "Phòng Công nghệ Thông tin", adminDept);
+        Department mathDept = seedSubDepartment("BAN-TOAN", "Bộ môn Toán", adminDept);
+        seedSubDepartment("BAN-ANH", "Bộ môn Tiếng Anh", adminDept);
+        seedSubDepartment("BAN-LY", "Bộ môn Vật lý", adminDept);
 
         // ── 3. Positions ──────────────────────────────────────────────────────
-        Position principalPos  = seedPosition("HIEU-TRUONG",  "Hiệu trưởng",        new BigDecimal("0.50"));
-        Position hrManagerPos  = seedPosition("TRUONG-NS",    "Trưởng phòng NS",    new BigDecimal("0.30"));
-        Position teacherPos    = seedPosition("GIAO-VIEN",    "Giáo viên",          new BigDecimal("0.20"));
-        Position staffPos      = seedPosition("NHAN-VIEN",    "Nhân viên",          new BigDecimal("0.10"));
-        Position itAdminPos    = seedPosition("IT-ADMIN",     "Quản trị hệ thống",  new BigDecimal("0.25"));
+        Position principalPos = seedPosition("HIEU-TRUONG", "Hiệu trưởng", new BigDecimal("0.50"));
+        Position hrManagerPos = seedPosition("TRUONG-NS", "Trưởng phòng NS", new BigDecimal("0.30"));
+        Position hodPos = seedPosition("TRUONG-BO-MON", "Trưởng Bộ môn", new BigDecimal("0.35"));
+        Position teacherPos = seedPosition("GIAO-VIEN", "Giáo viên", new BigDecimal("0.20"));
+        Position staffPos = seedPosition("NHAN-VIEN", "Nhân viên", new BigDecimal("0.10"));
+        Position itAdminPos = seedPosition("IT-ADMIN", "Quản trị hệ thống", new BigDecimal("0.25"));
 
         // ── 4. Users & Employees ──────────────────────────────────────────────
-        Employee adminEmp = seedAdminUser(adminRole, adminDept, itAdminPos);
-        Employee hrEmp    = seedHrUser(hrRole,    hrDept, hrManagerPos);
-        Employee staffEmp = seedStaffUser(staffRole, hrDept, staffPos);
-        Employee teacherEmp = seedTeacherUser(teacherRole, mathDept, teacherPos);
+        Employee adminEmp     = seedAdminUser(adminRole, adminDept, itAdminPos);
+        Employee hrEmp        = seedHrUser(hrRole, hrDept, hrManagerPos);
+        Employee staffEmp     = seedStaffUser(staffRole, hrDept, staffPos);
+        Employee teacherEmp   = seedTeacherUser(teacherRole, mathDept, teacherPos);
+        Employee principalEmp = seedPrincipalUser(boardRole, adminDept, principalPos);
+        Employee mathHeadEmp  = seedMathHeadUser(hodRole, mathDept, hodPos);
 
-        // ── 5. Khởi tạo quỹ nghỉ phép năm 2026 cho nhân viên mẫu (12 ngày/năm) ──
+        // ── 5. Khởi tạo quỹ nghỉ phép năm hiện tại cho nhân viên mẫu (12 ngày/năm) ──
         int currentYear = LocalDate.now().getYear();
-        List.of(adminEmp, hrEmp, staffEmp, teacherEmp).forEach(emp -> {
+        List.of(adminEmp, hrEmp, staffEmp, teacherEmp, principalEmp, mathHeadEmp).forEach(emp -> {
             if (emp != null) {
                 try {
                     leaveBalanceService.initializeBalanceForEmployee(emp, currentYear, BigDecimal.valueOf(12));
@@ -139,6 +148,20 @@ public class DataInitializer implements ApplicationRunner {
         });
     }
 
+    /** Tạo Department con nếu chưa tồn tại (theo code). */
+    private Department seedSubDepartment(String code, String name, Department parent) {
+        return departmentRepository.findByCode(code).orElseGet(() -> {
+            Department dept = Department.builder()
+                    .code(code)
+                    .name(name)
+                    .parentDepartment(parent)
+                    .build();
+            Department saved = departmentRepository.save(dept);
+            log.info("  [+] Department con tạo mới: {} - {}", code, name);
+            return saved;
+        });
+    }
+
     /** Tạo Position nếu chưa tồn tại (theo code). */
     private Position seedPosition(String code, String name, BigDecimal allowanceRate) {
         return positionRepository.findByCode(code).orElseGet(() -> {
@@ -154,8 +177,7 @@ public class DataInitializer implements ApplicationRunner {
     }
 
     /**
-     * Seed tài khoản Admin (SUPER_ADMIN).
-     * username: admin | password: Admin@123
+     * Seed tài khoản Admin (SUPER_ADMIN). username: admin | password: Admin@123
      */
     private Employee seedAdminUser(Role role, Department dept, Position pos) {
         if (userRepository.existsByUsername("admin")) {
@@ -193,8 +215,7 @@ public class DataInitializer implements ApplicationRunner {
     }
 
     /**
-     * Seed tài khoản HR Manager.
-     * username: hrmanager | password: Hr@123456
+     * Seed tài khoản HR Manager. username: hrmanager | password: Hr@123456
      */
     private Employee seedHrUser(Role role, Department dept, Position pos) {
         if (userRepository.existsByUsername("hrmanager")) {
@@ -232,8 +253,7 @@ public class DataInitializer implements ApplicationRunner {
     }
 
     /**
-     * Seed tài khoản Staff mẫu.
-     * username: staff | password: Staff@123
+     * Seed tài khoản Staff mẫu. username: staff | password: Staff@123
      */
     private Employee seedStaffUser(Role role, Department dept, Position pos) {
         if (userRepository.existsByUsername("staff")) {
@@ -271,8 +291,7 @@ public class DataInitializer implements ApplicationRunner {
     }
 
     /**
-     * Seed tài khoản Giáo viên mẫu.
-     * username: teacher | password: Teacher@123
+     * Seed tài khoản Giáo viên mẫu. username: teacher | password: Teacher@123
      */
     private Employee seedTeacherUser(Role role, Department dept, Position pos) {
         if (userRepository.existsByUsername("teacher")) {
@@ -307,5 +326,81 @@ public class DataInitializer implements ApplicationRunner {
 
         log.info("  [+] Teacher user tạo thành công: username=teacher | password=Teacher@123");
         return teacherEmp;
+    }
+
+    /**
+     * Seed tài khoản Hiệu trưởng (BOARD_OF_DIRECTORS). username: principal | password: Principal@123
+     */
+    private Employee seedPrincipalUser(Role role, Department dept, Position pos) {
+        if (userRepository.existsByUsername("principal")) {
+            log.info("  [=] User 'principal' đã tồn tại, bỏ qua.");
+            return employeeRepository.findByEmployeeCode("EMP-HT-001").orElse(null);
+        }
+
+        User principalUser = User.builder()
+                .username("principal")
+                .passwordHash(passwordEncoder.encode("Principal@123"))
+                .email("principal@school-hrm.local")
+                .phone("0900000005")
+                .status(UserStatus.ACTIVE)
+                .role(role)
+                .build();
+        principalUser = userRepository.save(principalUser);
+
+        Employee principalEmp = Employee.builder()
+                .user(principalUser)
+                .employeeCode("EMP-HT-001")
+                .fullName("TS. Nguyễn Văn Hiệu Trưởng")
+                .email("principal@school-hrm.local")
+                .phone("0900000005")
+                .citizenId("079000000005")
+                .gender("Nam")
+                .department(dept)
+                .position(pos)
+                .joinDate(LocalDate.of(2020, 8, 1))
+                .status(EmployeeStatus.WORKING)
+                .build();
+        principalEmp = employeeRepository.save(principalEmp);
+
+        log.info("  [+] Principal user tạo thành công: username=principal | password=Principal@123");
+        return principalEmp;
+    }
+
+    /**
+     * Seed tài khoản Trưởng ban Toán (HEAD_OF_DEPARTMENT). username: mathhead | password: MathHead@123
+     */
+    private Employee seedMathHeadUser(Role role, Department dept, Position pos) {
+        if (userRepository.existsByUsername("mathhead")) {
+            log.info("  [=] User 'mathhead' đã tồn tại, bỏ qua.");
+            return employeeRepository.findByEmployeeCode("EMP-TBT-001").orElse(null);
+        }
+
+        User mathHeadUser = User.builder()
+                .username("mathhead")
+                .passwordHash(passwordEncoder.encode("MathHead@123"))
+                .email("mathhead@school-hrm.local")
+                .phone("0900000006")
+                .status(UserStatus.ACTIVE)
+                .role(role)
+                .build();
+        mathHeadUser = userRepository.save(mathHeadUser);
+
+        Employee mathHeadEmp = Employee.builder()
+                .user(mathHeadUser)
+                .employeeCode("EMP-TBT-001")
+                .fullName("ThS. Trần Thị Trưởng Ban Toán")
+                .email("mathhead@school-hrm.local")
+                .phone("0900000006")
+                .citizenId("079000000006")
+                .gender("Nữ")
+                .department(dept)
+                .position(pos)
+                .joinDate(LocalDate.of(2021, 9, 1))
+                .status(EmployeeStatus.WORKING)
+                .build();
+        mathHeadEmp = employeeRepository.save(mathHeadEmp);
+
+        log.info("  [+] MathHead user tạo thành công: username=mathhead | password=MathHead@123");
+        return mathHeadEmp;
     }
 }
