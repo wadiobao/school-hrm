@@ -8,14 +8,14 @@
     <div th:fragment="content">
         <!-- Module Navigation Tabs -->
         <ul class="nav nav-pills mb-4 gap-2" id="payrollNavTabs" role="tablist">
-            <li class="nav-item" role="presentation">
+            <li class="nav-item" id="periods-nav-item" role="presentation" data-roles="SUPER_ADMIN,HR_MANAGER,BOARD_OF_DIRECTORS">
                 <button class="nav-link active px-4 py-2 fw-semibold rounded-pill" id="periods-tab" data-bs-toggle="pill" data-bs-target="#periods-pane" type="button" role="tab">
                     <i class="bi bi-calendar3 me-1"></i> 1. Kỳ tính lương
                 </button>
             </li>
             <li class="nav-item" role="presentation">
                 <button class="nav-link px-4 py-2 fw-semibold rounded-pill" id="payrolls-tab" data-bs-toggle="pill" data-bs-target="#payrolls-pane" type="button" role="tab">
-                    <i class="bi bi-wallet2 me-1"></i> 2. Bảng lương chi tiết
+                    <i class="bi bi-wallet2 me-1"></i> <span id="payroll-tab-title">2. Bảng lương chi tiết</span>
                 </button>
             </li>
         </ul>
@@ -118,7 +118,7 @@
                                     <option value="">-- Chọn kỳ tính lương --</option>
                                 </select>
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-md-4" id="payroll-search-container">
                                 <label class="form-label small text-muted mb-1">Tìm kiếm nhân sự</label>
                                 <div class="input-group input-group-sm">
                                     <span class="input-group-text"><i class="bi bi-search"></i></span>
@@ -126,7 +126,7 @@
                                 </div>
                             </div>
                             <div class="col-md-4 d-flex align-items-end justify-content-end gap-2">
-                                <button class="btn btn-sm btn-outline-primary" id="btn-calc-current-period" onclick="calculateForSelectedPeriod()">
+                                <button class="btn btn-sm btn-outline-primary" id="btn-calc-current-period" data-roles="SUPER_ADMIN,HR_MANAGER" style="display: none;" onclick="calculateForSelectedPeriod()">
                                     <i class="bi bi-calculator me-1"></i> Tính tự động kỳ này
                                 </button>
                                 <button class="btn btn-sm btn-primary" onclick="loadPayrollsForSelectedPeriod()">
@@ -411,7 +411,36 @@
             let currentPayrolls = [];
             let selectedPeriodId = null;
 
+            /**
+             * Áp dụng UI theo role cho trang payroll:
+             * - TEACHER/STAFF: ẩn Tab 1, chuyển active sang Tab 2, đổi tiêu đề, ẩn search.
+             * - HR_MANAGER/SUPER_ADMIN: hiện đầy đủ (mặc định).
+             */
+            function applyPayrollRoleUI() {
+                const canManage = hasRole('HR_MANAGER') || hasRole('SUPER_ADMIN');
+                const isBOD = hasRole('BOARD_OF_DIRECTORS');
+                const isEmployee = hasRole('TEACHER') || hasRole('STAFF');
+
+                if (isEmployee && !canManage && !isBOD) {
+                    // Đổi tiêu đề Tab 2
+                    const tabTitle = document.getElementById('payroll-tab-title');
+                    if (tabTitle) tabTitle.textContent = 'Phiếu lương của tôi';
+
+                    // Ẩn ô tìm kiếm (nhân viên không cần lọc theo người khác)
+                    const searchContainer = document.getElementById('payroll-search-container');
+                    if (searchContainer) searchContainer.style.setProperty('display', 'none', 'important');
+
+                    // Chuyển active sang Tab 2 ngay khi trang load
+                    const payrollsTabBtn = document.getElementById('payrolls-tab');
+                    if (payrollsTabBtn) {
+                        const tab = new bootstrap.Tab(payrollsTabBtn);
+                        tab.show();
+                    }
+                }
+            }
+
             document.addEventListener('DOMContentLoaded', async () => {
+                applyPayrollRoleUI();
                 await loadPeriods();
             });
 
@@ -431,6 +460,11 @@
 
                     // Cập nhật dropdown bên Tab 2
                     populatePeriodDropdown();
+
+                    // Tự động tải bảng lương cho kỳ được chọn
+                    if (selectedPeriodId) {
+                        await loadPayrollsForSelectedPeriod();
+                    }
 
                     if (periodsList.length === 0) {
                         tbody.innerHTML = '<tr><td colspan="6" class="text-center py-5 text-muted">Chưa có kỳ tính lương nào. Vui lòng bấm "Tạo kỳ lương mới".</td></tr>';
@@ -648,7 +682,11 @@
                 document.getElementById('stat-payroll-net').textContent = formatCurrency(totalNet);
 
                 if (payrolls.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="10" class="text-center py-5 text-muted">Kỳ lương này chưa có dữ liệu bảng lương. Vui lòng bấm <strong>"Tính tự động kỳ này"</strong>.</td></tr>';
+                    const canManage = hasRole('HR_MANAGER') || hasRole('SUPER_ADMIN');
+                    const hint = canManage
+                        ? 'Kỳ lương này chưa có dữ liệu bảng lương. Vui lòng bấm <strong>"Tính tự động kỳ này"</strong> để tính lương toàn trường.'
+                        : 'Kỳ lương này chưa có dữ liệu bảng lương của bạn. Vui lòng liên hệ phòng nhân sự để được hỗ trợ.';
+                    tbody.innerHTML = `<tr><td colspan="10" class="text-center py-5 text-muted">${hint}</td></tr>`;
                     return;
                 }
 

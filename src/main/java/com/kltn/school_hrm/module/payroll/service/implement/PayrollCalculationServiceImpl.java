@@ -103,16 +103,6 @@ public class PayrollCalculationServiceImpl implements PayrollCalculationService 
         PayrollPeriod period = getPeriodOrThrow(periodId);
         Employee employee = employeeRepository.findById(employeeId)
                 .orElseThrow(() -> new BusinessException("Không tìm thấy nhân viên: " + employeeId));
-
-        // Nếu đã tồn tại DRAFT thì xóa để tính lại
-        payrollRepository.findByPeriodIdAndEmployeeId(periodId, employeeId).ifPresent(existing -> {
-            if (existing.getStatus() == PayrollStatus.PAID) {
-                throw new BusinessException("Bảng lương đã chi trả, không thể tính lại");
-            }
-            payrollItemRepository.deleteByPayrollId(existing.getId());
-            payrollRepository.delete(existing);
-        });
-
         return doCalculate(period, employee);
     }
 
@@ -127,17 +117,28 @@ public class PayrollCalculationServiceImpl implements PayrollCalculationService 
         return period;
     }
 
-    /** Tính lương cho một nhân viên trong kỳ và lưu vào DB */
+    /** Tính lương cho một nhân viên trong kỳ và lưu vào DB (upsert: xóa cũ nếu DRAFT/CONFIRMED) */
     private PayrollResponse doCalculate(PayrollPeriod period, Employee employee) {
         LocalDate start = period.getStartDate();
         LocalDate end = period.getEndDate();
         int standardDays = period.getStandardWorkDays();
+
+        // 0. Upsert: xóa bản ghi cũ nếu tồn tại (trừ PAID)
+        payrollRepository.findByPeriodIdAndEmployeeId(period.getId(), employee.getId()).ifPresent(existing -> {
+            if (existing.getStatus() == PayrollStatus.PAID) {
+                throw new BusinessException("Bảng lương của " + employee.getFullName() + " đã chi trả, không thể tính lại");
+            }
+            payrollItemRepository.deleteByPayrollId(existing.getId());
+            payrollRepository.delete(existing);
+            payrollRepository.flush(); // đảm bảo xóa trước khi insert mới
+        });
 
         // 1. Hợp đồng active trong kỳ
         Contract contract = contractRepository
                 .findActiveContractForPeriod(employee.getId(), start, end)
                 .orElseThrow(() -> new BusinessException(
                         "Nhân viên " + employee.getFullName() + " không có hợp đồng hiệu lực trong kỳ"));
+
 
         BigDecimal contractSalary = contract.getGrossSalary() != null
                 ? contract.getGrossSalary()
