@@ -1,4 +1,4 @@
-﻿package com.kltn.school_hrm.module.payroll.service;
+package com.kltn.school_hrm.module.payroll.service;
 
 import java.util.List;
 
@@ -12,6 +12,7 @@ public interface PayrollService {
     PayrollResponse getPayrollById(Long id);
     List<PayrollResponse> getAllPayrolls();
     List<PayrollResponse> getPayrollsByEmployeeId(Long employeeId);
+    List<PayrollResponse> getPayrollsByPeriodId(Long periodId);
     List<PayrollResponse> getPayrollsByMonthAndYear(Integer month, Integer year);
     PayrollResponse updatePayrollStatus(Long id, PayrollStatus status);
     void deletePayroll(Long id);
