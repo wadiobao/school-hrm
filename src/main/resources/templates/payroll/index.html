@@ -6,173 +6,399 @@
 <html th:replace="~{layout/main-layout :: layout(~{::content}, ~{::scripts}, 'Quản lý Tiền lương')}">
 
     <div th:fragment="content">
-        <!-- Filter Toolbar -->
-        <div class="card mb-4 border-0 shadow-sm">
-            <div class="card-body">
-                <div class="row g-3 align-items-center">
+        <!-- Module Navigation Tabs -->
+        <ul class="nav nav-pills mb-4 gap-2" id="payrollNavTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active px-4 py-2 fw-semibold rounded-pill" id="periods-tab" data-bs-toggle="pill" data-bs-target="#periods-pane" type="button" role="tab">
+                    <i class="bi bi-calendar3 me-1"></i> 1. Kỳ tính lương
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link px-4 py-2 fw-semibold rounded-pill" id="payrolls-tab" data-bs-toggle="pill" data-bs-target="#payrolls-pane" type="button" role="tab">
+                    <i class="bi bi-wallet2 me-1"></i> 2. Bảng lương chi tiết
+                </button>
+            </li>
+        </ul>
+
+        <div class="tab-content" id="payrollTabContent">
+            <!-- TAB 1: KỲ TÍNH LƯƠNG (PAYROLL PERIODS) -->
+            <div class="tab-pane fade show active" id="periods-pane" role="tabpanel">
+                <!-- Toolbar kỳ lương -->
+                <div class="card mb-4 border-0 shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+                            <div>
+                                <h5 class="fw-bold mb-1"><i class="bi bi-calendar-range text-primary me-2"></i>Danh sách kỳ lương</h5>
+                                <p class="text-muted small mb-0">Quản lý kỳ chi trả, ngày công chuẩn và thực hiện tính lương tự động</p>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-outline-secondary btn-sm" onclick="loadPeriods()">
+                                    <i class="bi bi-arrow-clockwise"></i> Làm mới
+                                </button>
+                                <button class="btn btn-primary btn-sm" data-roles="HR_MANAGER,SUPER_ADMIN" onclick="openCreatePeriodModal()">
+                                    <i class="bi bi-plus-lg me-1"></i> Tạo kỳ lương mới
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Periods Stats -->
+                <div class="row g-3 mb-4">
+                    <div class="col-md-4">
+                        <div class="card border-0 shadow-sm bg-primary bg-opacity-10 h-100">
+                            <div class="card-body d-flex align-items-center justify-content-between">
+                                <div>
+                                    <div class="text-primary fw-semibold small text-uppercase">Tổng số kỳ lương</div>
+                                    <h3 class="fw-bold mt-1 mb-0" id="stat-period-total">0</h3>
+                                </div>
+                                <i class="bi bi-calendar-check text-primary fs-1 opacity-50"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card border-0 shadow-sm bg-success bg-opacity-10 h-100">
+                            <div class="card-body d-flex align-items-center justify-content-between">
+                                <div>
+                                    <div class="text-success fw-semibold small text-uppercase">Kỳ đang mở (OPEN)</div>
+                                    <h3 class="fw-bold mt-1 mb-0" id="stat-period-open">0</h3>
+                                </div>
+                                <i class="bi bi-unlock text-success fs-1 opacity-50"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card border-0 shadow-sm bg-secondary bg-opacity-10 h-100">
+                            <div class="card-body d-flex align-items-center justify-content-between">
+                                <div>
+                                    <div class="text-secondary fw-semibold small text-uppercase">Kỳ đã chốt (LOCKED)</div>
+                                    <h3 class="fw-bold mt-1 mb-0" id="stat-period-locked">0</h3>
+                                </div>
+                                <i class="bi bi-lock text-secondary fs-1 opacity-50"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Periods Table -->
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Kỳ lương</th>
+                                        <th>Khoảng thời gian</th>
+                                        <th>Ngày công chuẩn</th>
+                                        <th>Trạng thái</th>
+                                        <th>Ghi chú</th>
+                                        <th class="text-end pe-4">Thao tác</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="period-table-body">
+                                    <tr>
+                                        <td colspan="6" class="text-center py-5 text-muted">Đang tải danh sách kỳ lương...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 2: BẢNG LƯƠNG CHI TIẾT (PAYROLLS) -->
+            <div class="tab-pane fade" id="payrolls-pane" role="tabpanel">
+                <!-- Filter Bar -->
+                <div class="card mb-4 border-0 shadow-sm">
+                    <div class="card-body">
+                        <div class="row g-3 align-items-center">
+                            <div class="col-md-4">
+                                <label class="form-label small text-muted mb-1">Chọn kỳ lương cần xem</label>
+                                <select id="payroll-period-select" class="form-select form-select-sm" onchange="onPeriodSelectChanged()">
+                                    <option value="">-- Chọn kỳ tính lương --</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small text-muted mb-1">Tìm kiếm nhân sự</label>
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text"><i class="bi bi-search"></i></span>
+                                    <input type="text" id="payroll-search-input" class="form-control" placeholder="Tên hoặc mã nhân viên..." oninput="filterPayrollTable()">
+                                </div>
+                            </div>
+                            <div class="col-md-4 d-flex align-items-end justify-content-end gap-2">
+                                <button class="btn btn-sm btn-outline-primary" id="btn-calc-current-period" onclick="calculateForSelectedPeriod()">
+                                    <i class="bi bi-calculator me-1"></i> Tính tự động kỳ này
+                                </button>
+                                <button class="btn btn-sm btn-primary" onclick="loadPayrollsForSelectedPeriod()">
+                                    <i class="bi bi-arrow-clockwise me-1"></i> Tải lại
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Payroll Summary Cards -->
+                <div class="row g-3 mb-4">
                     <div class="col-md-3">
-                        <label class="form-label small text-muted mb-1">Tháng trả lương</label>
-                        <select id="payroll-month" class="form-select form-select-sm">
-                            <option value="1">Tháng 1</option>
-                            <option value="2">Tháng 2</option>
-                            <option value="3">Tháng 3</option>
-                            <option value="4">Tháng 4</option>
-                            <option value="5">Tháng 5</option>
-                            <option value="6">Tháng 6</option>
-                            <option value="7">Tháng 7</option>
-                            <option value="8">Tháng 8</option>
-                            <option value="9">Tháng 9</option>
-                            <option value="10">Tháng 10</option>
-                            <option value="11">Tháng 11</option>
-                            <option value="12">Tháng 12</option>
-                        </select>
+                        <div class="card border-0 shadow-sm bg-primary bg-opacity-10 h-100">
+                            <div class="card-body">
+                                <div class="text-primary fw-semibold small text-uppercase">Số nhân sự tính lương</div>
+                                <h3 class="fw-bold mt-1 mb-0" id="stat-payroll-count">0</h3>
+                            </div>
+                        </div>
                     </div>
                     <div class="col-md-3">
-                        <label class="form-label small text-muted mb-1">Năm tài chính</label>
-                        <input type="number" id="payroll-year" class="form-control form-control-sm" value="2026">
+                        <div class="card border-0 shadow-sm bg-info bg-opacity-10 h-100">
+                            <div class="card-body">
+                                <div class="text-info fw-semibold small text-uppercase">Tổng thu nhập gộp (Gross)</div>
+                                <h3 class="fw-bold mt-1 mb-0" id="stat-payroll-gross">0 ₫</h3>
+                            </div>
+                        </div>
                     </div>
-                    <div class="col-md-6 d-flex align-items-end justify-content-end gap-2">
-                        <button class="btn btn-sm btn-outline-secondary" onclick="setPayrollCurrentMonth()">
-                            <i class="bi bi-calendar-month"></i> Tháng này
-                        </button>
-                        <button class="btn btn-sm btn-primary" onclick="loadPayrolls()">
-                            <i class="bi bi-search me-1"></i> Xem bảng lương
-                        </button>
-                        <button class="btn btn-sm btn-success" data-roles="HR_MANAGER" onclick="openAddPayrollModal()">
-                            <i class="bi bi-plus-lg me-1"></i> Lập phiếu lương
-                        </button>
+                    <div class="col-md-3">
+                        <div class="card border-0 shadow-sm bg-danger bg-opacity-10 h-100">
+                            <div class="card-body">
+                                <div class="text-danger fw-semibold small text-uppercase">Tổng khấu trừ (BH+Thuế)</div>
+                                <h3 class="fw-bold mt-1 mb-0" id="stat-payroll-deduction">0 ₫</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card border-0 shadow-sm bg-success bg-opacity-10 h-100">
+                            <div class="card-body">
+                                <div class="text-success fw-semibold small text-uppercase">Tổng thực nhận (Net)</div>
+                                <h3 class="fw-bold mt-1 mb-0" id="stat-payroll-net">0 ₫</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Payrolls Table -->
+                <div class="card shadow-sm border-0">
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Nhân viên</th>
+                                        <th>Mã NV</th>
+                                        <th>Lương HĐ (Gốc)</th>
+                                        <th>Công tính lương</th>
+                                        <th>Giờ dạy</th>
+                                        <th>Lương gộp (Gross)</th>
+                                        <th>Khấu trừ</th>
+                                        <th>Thực nhận (Net)</th>
+                                        <th>Trạng thái</th>
+                                        <th class="text-end pe-4">Thao tác</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="payroll-table-body">
+                                    <tr>
+                                        <td colspan="10" class="text-center py-5 text-muted">Vui lòng chọn kỳ tính lương để xem</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Payroll Summary Cards -->
-        <div class="row g-3 mb-4">
-            <div class="col-md-4">
-                <div class="card border-0 shadow-sm bg-primary bg-opacity-10">
-                    <div class="card-body">
-                        <div class="text-primary fw-semibold small text-uppercase">Tổng phiếu lương</div>
-                        <h3 class="fw-bold mt-1 mb-0" id="stat-payroll-count">0</h3>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="card border-0 shadow-sm bg-success bg-opacity-10">
-                    <div class="card-body">
-                        <div class="text-success fw-semibold small text-uppercase">Tổng chi lương thực nhận</div>
-                        <h3 class="fw-bold mt-1 mb-0" id="stat-payroll-total">0 ₫</h3>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="card border-0 shadow-sm bg-info bg-opacity-10">
-                    <div class="card-body">
-                        <div class="text-info fw-semibold small text-uppercase">Đã thanh toán (PAID)</div>
-                        <h3 class="fw-bold mt-1 mb-0" id="stat-payroll-paid">0</h3>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Payroll Table Card -->
-        <div class="card shadow-sm border-0">
-            <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Nhân viên</th>
-                                <th>Mã NV</th>
-                                <th>Kỳ lương</th>
-                                <th>Lương cơ bản</th>
-                                <th>Tổng phụ cấp</th>
-                                <th>Tổng khấu trừ</th>
-                                <th>Thực nhận (Net Salary)</th>
-                                <th>Trạng thái</th>
-                                <th class="text-end pe-4">Thao tác</th>
-                            </tr>
-                        </thead>
-                        <tbody id="payroll-table-body">
-                            <tr>
-                                <td colspan="9" class="text-center py-5 text-muted">Đang tải bảng lương...</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <!-- MODAL: LẬP / CẬP NHẬT PHIẾU LƯƠNG -->
-        <div class="modal fade" id="payrollModal" tabindex="-1" aria-hidden="true">
+        <!-- MODAL 1: TẠO KỲ TÍNH LƯƠNG MỚI -->
+        <div class="modal fade" id="createPeriodModal" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h5 class="modal-title fw-bold" id="payrollModalTitle">Lập Phiếu Lương</h5>
+                        <h5 class="modal-title fw-bold"><i class="bi bi-calendar-plus text-primary me-2"></i>Tạo Kỳ Tính Lương Mới</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body">
-                        <form id="payrollForm">
-                            <input type="hidden" id="payroll-id">
-                            <div class="mb-3">
-                                <label class="form-label required">Nhân viên *</label>
-                                <select id="payroll-emp-select" class="form-select" required>
-                                    <option value="">-- Chọn nhân sự --</option>
-                                </select>
-                            </div>
+                        <form id="createPeriodForm">
                             <div class="row g-2 mb-3">
                                 <div class="col-6">
                                     <label class="form-label required">Tháng *</label>
-                                    <input type="number" id="payroll-f-month" class="form-control" min="1" max="12" required>
+                                    <select id="p-month" class="form-select" onchange="updateDefaultPeriodDates()" required>
+                                        <option value="1">Tháng 1</option>
+                                        <option value="2">Tháng 2</option>
+                                        <option value="3">Tháng 3</option>
+                                        <option value="4">Tháng 4</option>
+                                        <option value="5">Tháng 5</option>
+                                        <option value="6">Tháng 6</option>
+                                        <option value="7">Tháng 7</option>
+                                        <option value="8">Tháng 8</option>
+                                        <option value="9">Tháng 9</option>
+                                        <option value="10">Tháng 10</option>
+                                        <option value="11">Tháng 11</option>
+                                        <option value="12">Tháng 12</option>
+                                    </select>
                                 </div>
                                 <div class="col-6">
                                     <label class="form-label required">Năm *</label>
-                                    <input type="number" id="payroll-f-year" class="form-control" required>
+                                    <input type="number" id="p-year" class="form-control" onchange="updateDefaultPeriodDates()" required>
                                 </div>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label required">Lương cơ bản (VND) *</label>
-                                <input type="number" id="payroll-f-base" class="form-control" placeholder="VD: 15000000" required>
                             </div>
                             <div class="row g-2 mb-3">
                                 <div class="col-6">
-                                    <label class="form-label">Phụ cấp (VND)</label>
-                                    <input type="number" id="payroll-f-allowance" class="form-control" value="0">
+                                    <label class="form-label required">Từ ngày *</label>
+                                    <input type="date" id="p-start-date" class="form-control" required>
                                 </div>
                                 <div class="col-6">
-                                    <label class="form-label">Khấu trừ / BH (VND)</label>
-                                    <input type="number" id="payroll-f-deduction" class="form-control" value="0">
+                                    <label class="form-label required">Đến ngày *</label>
+                                    <input type="date" id="p-end-date" class="form-control" required>
                                 </div>
                             </div>
                             <div class="mb-3">
-                                <label class="form-label">Trạng thái chi trả</label>
-                                <select id="payroll-f-status" class="form-select">
-                                    <option value="DRAFT">Dự thảo (DRAFT)</option>
-                                    <option value="CONFIRMED">Đã duyệt (CONFIRMED)</option>
-                                    <option value="PAID">Đã thanh toán (PAID)</option>
-                                </select>
+                                <label class="form-label required">Số ngày công chuẩn (ngày) *</label>
+                                <input type="number" id="p-standard-days" class="form-control" value="22" min="1" max="31" required>
+                                <small class="text-muted">Dùng làm mẫu số để tính đơn giá ngày công: (Lương hợp đồng / Ngày công chuẩn)</small>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Ghi chú</label>
+                                <textarea id="p-note" class="form-control" rows="2" placeholder="Ví dụ: Kỳ tính lương tháng 10/2026..."></textarea>
                             </div>
                         </form>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
-                        <button type="button" class="btn btn-primary" onclick="savePayroll()">Lưu phiếu lương</button>
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Hủy</button>
+                        <button type="button" class="btn btn-primary" onclick="submitCreatePeriod()">
+                            <i class="bi bi-check-lg me-1"></i> Khởi tạo kỳ lương
+                        </button>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Delete Modal -->
-        <div class="modal fade" id="deletePayrollModal" tabindex="-1" aria-hidden="true">
+        <!-- MODAL 2: XÁC NHẬN CHỐT KỲ LƯƠNG -->
+        <div class="modal fade" id="lockPeriodModal" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog modal-sm modal-dialog-centered">
                 <div class="modal-content">
                     <div class="modal-body text-center p-4">
-                        <i class="bi bi-exclamation-triangle text-danger" style="font-size: 3rem;"></i>
-                        <h5 class="mt-3">Xác nhận xóa</h5>
-                        <p class="text-muted small">Bạn có chắc chắn muốn xóa phiếu lương này?</p>
+                        <i class="bi bi-lock-fill text-warning" style="font-size: 3rem;"></i>
+                        <h5 class="mt-3 fw-bold">Chốt kỳ tính lương?</h5>
+                        <p class="text-muted small">Sau khi chốt kỳ, bảng lương sẽ bị <strong>khóa cố định</strong> để lưu trữ chứng từ tài chính. Không thể tính toán lại hoặc chỉnh sửa nữa.</p>
                         <div class="d-flex justify-content-center gap-2 mt-4">
                             <button type="button" class="btn btn-light" data-bs-dismiss="modal">Hủy</button>
-                            <button type="button" class="btn btn-danger" id="confirm-delete-payroll-btn">Xóa</button>
+                            <button type="button" class="btn btn-warning fw-semibold" id="confirm-lock-period-btn">Đồng ý Chốt</button>
                         </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL 3: CHI TIẾT PHIẾU LƯƠNG (PAYSLIP MODAL) -->
+        <div class="modal fade" id="payslipModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header border-0 pb-0">
+                        <div class="d-flex align-items-center">
+                            <div class="bg-primary text-white p-2 rounded-3 me-2">
+                                <i class="bi bi-file-earmark-spreadsheet-fill fs-4"></i>
+                            </div>
+                            <div>
+                                <h5 class="modal-title fw-bold mb-0">PHIẾU LƯƠNG CHI TIẾT</h5>
+                                <small class="text-muted" id="ps-period-title">Kỳ lương Tháng --/----</small>
+                            </div>
+                        </div>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body pt-3" id="payslip-printable-area">
+                        <!-- Employee Info Header Card -->
+                        <div class="card bg-light border-0 mb-3">
+                            <div class="card-body py-3">
+                                <div class="row g-2">
+                                    <div class="col-sm-6">
+                                        <div class="small text-muted">Nhân viên:</div>
+                                        <div class="fw-bold fs-6 text-dark" id="ps-emp-name">--</div>
+                                        <div class="small text-secondary" id="ps-emp-code">--</div>
+                                    </div>
+                                    <div class="col-sm-6 text-sm-end">
+                                        <div class="small text-muted">Trạng thái phiếu lương:</div>
+                                        <div id="ps-status-badge">--</div>
+                                        <div class="small text-muted mt-1">Ngày lập: <span id="ps-created-at">--</span></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Work & Teaching Summary -->
+                        <div class="row g-2 mb-3">
+                            <div class="col-md-4">
+                                <div class="p-2 border rounded text-center">
+                                    <div class="small text-muted">Lương hợp đồng</div>
+                                    <div class="fw-bold text-dark mt-1" id="ps-contract-salary">0 ₫</div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="p-2 border rounded text-center">
+                                    <div class="small text-muted">Ngày công hưởng lương</div>
+                                    <div class="fw-bold text-primary mt-1" id="ps-work-days">0 / 22 ngày</div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="p-2 border rounded text-center">
+                                    <div class="small text-muted">Giờ giảng dạy</div>
+                                    <div class="fw-bold text-info mt-1" id="ps-teaching-hours">0 giờ</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Breakdown: Earnings vs Deductions -->
+                        <div class="row g-3 mb-3">
+                            <!-- Thu nhập -->
+                            <div class="col-md-6">
+                                <div class="card border-0 shadow-sm h-100">
+                                    <div class="card-header bg-success bg-opacity-10 text-success fw-bold py-2">
+                                        <i class="bi bi-plus-circle me-1"></i> CÁC KHOẢN THU NHẬP
+                                    </div>
+                                    <div class="card-body p-0">
+                                        <table class="table table-sm table-borderless mb-0">
+                                            <tbody id="ps-earnings-tbody">
+                                                <!-- Dynamic Items -->
+                                            </tbody>
+                                            <tfoot class="border-top">
+                                                <tr class="fw-bold text-success">
+                                                    <td class="ps-3 py-2">TỔNG THU NHẬP (GROSS)</td>
+                                                    <td class="text-end pe-3 py-2" id="ps-total-gross">0 ₫</td>
+                                                </tr>
+                                            </tfoot>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Khấu trừ -->
+                            <div class="col-md-6">
+                                <div class="card border-0 shadow-sm h-100">
+                                    <div class="card-header bg-danger bg-opacity-10 text-danger fw-bold py-2">
+                                        <i class="bi bi-dash-circle me-1"></i> CÁC KHOẢN KHẤU TRỪ
+                                    </div>
+                                    <div class="card-body p-0">
+                                        <table class="table table-sm table-borderless mb-0">
+                                            <tbody id="ps-deductions-tbody">
+                                                <!-- Dynamic Items -->
+                                            </tbody>
+                                            <tfoot class="border-top">
+                                                <tr class="fw-bold text-danger">
+                                                    <td class="ps-3 py-2">TỔNG KHẤU TRỪ</td>
+                                                    <td class="text-end pe-3 py-2" id="ps-total-deductions">0 ₫</td>
+                                                </tr>
+                                            </tfoot>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- NET SALARY HIGHLIGHT -->
+                        <div class="card border-0 bg-primary text-white p-3 text-center shadow">
+                            <div class="text-white-50 text-uppercase fw-semibold small">Lương Thực Nhận (Net Salary)</div>
+                            <h2 class="fw-bold mt-1 mb-0" id="ps-net-salary">0 ₫</h2>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-0">
+                        <button type="button" class="btn btn-outline-secondary" onclick="window.print()">
+                            <i class="bi bi-printer me-1"></i> In phiếu lương
+                        </button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
                     </div>
                 </div>
             </div>
@@ -181,149 +407,325 @@
 
     <div th:fragment="scripts">
         <script>
-            let employeeList = [];
+            let periodsList = [];
+            let currentPayrolls = [];
+            let selectedPeriodId = null;
 
             document.addEventListener('DOMContentLoaded', async () => {
-                setPayrollCurrentMonth();
-                await loadEmployees();
-                loadPayrolls();
+                await loadPeriods();
             });
 
-            function setPayrollCurrentMonth() {
-                const now = new Date();
-                document.getElementById('payroll-month').value = now.getMonth() + 1;
-                document.getElementById('payroll-year').value = now.getFullYear();
-            }
-
-            async function loadEmployees() {
+            // ================= KỲ TÍNH LƯƠNG (PERIODS) =================
+            async function loadPeriods() {
+                const tbody = document.getElementById('period-table-body');
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center py-5 text-muted">Đang tải danh sách kỳ lương...</td></tr>';
                 try {
-                    const res = await fetchApi('/api/v1/employees?size=200');
-                    if (res && res.data && res.data.content) {
-                        employeeList = res.data.content;
-                        const sel = document.getElementById('payroll-emp-select');
-                        sel.innerHTML = '<option value="">-- Chọn nhân sự --</option>';
-                        employeeList.forEach(emp => {
-                            sel.innerHTML += `<option value="${emp.id}">${emp.fullName} (${emp.employeeCode})</option>`;
-                        });
-                    }
-                } catch (e) {
-                    console.error('Error loading employees', e);
-                }
-            }
-
-            async function loadPayrolls() {
-                const month = document.getElementById('payroll-month').value;
-                const year = document.getElementById('payroll-year').value;
-                const tbody = document.getElementById('payroll-table-body');
-                if (!month || !year) return;
-
-                tbody.innerHTML = '<tr><td colspan="9" class="text-center py-5 text-muted">Đang tải bảng lương...</td></tr>';
-
-                try {
-                    const res = await fetchApi(`/api/v1/payrolls/period?month=${month}&year=${year}`);
-                    const payrolls = res.data || [];
+                    const res = await fetchApi('/api/v1/payroll-periods');
+                    periodsList = res.data || [];
 
                     // Thống kê cards
-                    document.getElementById('stat-payroll-count').textContent = payrolls.length;
-                    const totalNet = payrolls.reduce((acc, p) => acc + (p.netSalary || 0), 0);
-                    document.getElementById('stat-payroll-total').textContent = formatCurrency(totalNet);
-                    const paidCount = payrolls.filter(p => p.status === 'PAID').length;
-                    document.getElementById('stat-payroll-paid').textContent = paidCount;
+                    document.getElementById('stat-period-total').textContent = periodsList.length;
+                    const openCount = periodsList.filter(p => p.status === 'OPEN').length;
+                    document.getElementById('stat-period-open').textContent = openCount;
+                    document.getElementById('stat-period-locked').textContent = periodsList.length - openCount;
 
-                    if (payrolls.length === 0) {
-                        tbody.innerHTML = '<tr><td colspan="9" class="text-center py-5 text-muted">Không có phiếu lương nào cho kỳ này</td></tr>';
+                    // Cập nhật dropdown bên Tab 2
+                    populatePeriodDropdown();
+
+                    if (periodsList.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="6" class="text-center py-5 text-muted">Chưa có kỳ tính lương nào. Vui lòng bấm "Tạo kỳ lương mới".</td></tr>';
                         return;
                     }
 
-                    const canApprovePayroll = hasRole('BOARD_OF_DIRECTORS');
-                    const canManagePayroll = hasRole('HR_MANAGER');
+                    const canManage = hasRole('HR_MANAGER') || hasRole('SUPER_ADMIN');
 
-                    tbody.innerHTML = payrolls.map(p => {
-                        let badgeClass = 'bg-secondary';
-                        let statusText = 'Dự thảo';
-                        if (p.status === 'CONFIRMED') {
-                            badgeClass = 'bg-primary';
-                            statusText = 'Đã duyệt';
-                        } else if (p.status === 'PAID') {
-                            badgeClass = 'bg-success';
-                            statusText = 'Đã thanh toán';
-                        }
+                    tbody.innerHTML = periodsList.map(p => {
+                        const isLocked = p.status === 'LOCKED';
+                        const badgeStatus = isLocked 
+                            ? '<span class="badge bg-secondary-subtle text-secondary border border-secondary"><i class="bi bi-lock me-1"></i>Đã chốt (LOCKED)</span>' 
+                            : '<span class="badge bg-success-subtle text-success border border-success"><i class="bi bi-unlock me-1"></i>Đang mở (OPEN)</span>';
 
                         return `
                             <tr>
-                                <td class="fw-bold">${p.employeeName || 'N/A'}</td>
-                                <td><span class="badge bg-light text-dark border">${p.employeeCode || 'N/A'}</span></td>
-                                <td>Tháng ${p.month}/${p.year}</td>
-                                <td>${formatCurrency(p.baseSalary)}</td>
-                                <td class="text-success">+${formatCurrency(p.grossSalary ? (p.grossSalary - p.baseSalary) : 0)}</td>
-                                <td class="text-danger">-${formatCurrency(p.totalDeductions || 0)}</td>
-                                <td><strong class="text-primary">${formatCurrency(p.netSalary)}</strong></td>
-                                <td><span class="badge ${badgeClass}">${statusText}</span></td>
+                                <td class="fw-bold text-dark">Tháng ${p.month}/${p.year}</td>
+                                <td>${formatDate(p.startDate)} <i class="bi bi-arrow-right text-muted mx-1"></i> ${formatDate(p.endDate)}</td>
+                                <td><span class="badge bg-light text-dark border">${p.standardWorkDays} ngày</span></td>
+                                <td>${badgeStatus}</td>
+                                <td class="text-muted small">${p.note || '--'}</td>
                                 <td class="text-end pe-4">
-                                    ${canApprovePayroll && p.status !== 'PAID' ? `
-                                        <button class="btn btn-sm btn-outline-success me-1" title="Ban Giám hiệu phê duyệt / Đánh dấu chi trả" onclick="updatePayrollStatus(${p.id}, 'PAID')">
-                                            <i class="bi bi-check-lg"></i> Duyệt
+                                    <button class="btn btn-sm btn-outline-primary me-1" title="Xem bảng lương kỳ này" onclick="viewPeriodPayrolls(${p.id})">
+                                        <i class="bi bi-wallet2 me-1"></i> Bảng lương
+                                    </button>
+                                    ${!isLocked && canManage ? `
+                                        <button class="btn btn-sm btn-success me-1" title="Tự động tính lương từ Hợp đồng + Chấm công + Phép" onclick="calculateForPeriod(${p.id})">
+                                            <i class="bi bi-calculator me-1"></i> Tính tự động
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-warning" title="Chốt kỳ lương" onclick="openLockPeriodModal(${p.id})">
+                                            <i class="bi bi-lock"></i> Chốt kỳ
                                         </button>
                                     ` : ''}
-                                    ${canManagePayroll && p.status !== 'PAID' ? `
-                                        <button class="btn btn-sm btn-outline-danger" title="Xóa đề xuất lương" onclick="confirmDeletePayroll(${p.id})">
-                                            <i class="bi bi-trash"></i>
-                                        </button>
-                                    ` : ''}
-                                    ${!canApprovePayroll && !canManagePayroll ? '<span class="text-muted small">Chỉ xem</span>' : ''}
                                 </td>
                             </tr>
                         `;
                     }).join('');
                 } catch (e) {
-                    console.error('Error loading payrolls', e);
-                    tbody.innerHTML = '<tr><td colspan="9" class="text-center py-5 text-danger">Có lỗi khi tải dữ liệu bảng lương</td></tr>';
+                    console.error('Error loading periods', e);
+                    tbody.innerHTML = '<tr><td colspan="6" class="text-center py-5 text-danger">Có lỗi khi tải danh sách kỳ lương</td></tr>';
                 }
             }
 
-            function openAddPayrollModal() {
-                document.getElementById('payrollForm').reset();
-                document.getElementById('payroll-id').value = '';
-                document.getElementById('payroll-f-month').value = document.getElementById('payroll-month').value;
-                document.getElementById('payroll-f-year').value = document.getElementById('payroll-year').value;
-                openModal('payrollModal');
+            function populatePeriodDropdown() {
+                const sel = document.getElementById('payroll-period-select');
+                if (!sel) return;
+                sel.innerHTML = '<option value="">-- Chọn kỳ tính lương --</option>';
+                periodsList.forEach(p => {
+                    const statusTag = p.status === 'LOCKED' ? '🔒 Đã chốt' : '🟢 Đang mở';
+                    sel.innerHTML += `<option value="${p.id}">Tháng ${p.month}/${p.year} (${statusTag})</option>`;
+                });
+                if (selectedPeriodId) {
+                    sel.value = selectedPeriodId;
+                } else if (periodsList.length > 0) {
+                    sel.value = periodsList[0].id;
+                    selectedPeriodId = periodsList[0].id;
+                }
             }
 
-            async function savePayroll() {
-                const empId = document.getElementById('payroll-emp-select').value;
-                const month = parseInt(document.getElementById('payroll-f-month').value);
-                const year = parseInt(document.getElementById('payroll-f-year').value);
-                const baseSalary = parseFloat(document.getElementById('payroll-f-base').value);
-                const allowance = parseFloat(document.getElementById('payroll-f-allowance').value) || 0;
-                const deduction = parseFloat(document.getElementById('payroll-f-deduction').value) || 0;
-                const status = document.getElementById('payroll-f-status').value;
+            function openCreatePeriodModal() {
+                const now = new Date();
+                document.getElementById('p-month').value = now.getMonth() + 1;
+                document.getElementById('p-year').value = now.getFullYear();
+                document.getElementById('p-standard-days').value = 22;
+                document.getElementById('p-note').value = '';
+                updateDefaultPeriodDates();
+                openModal('createPeriodModal');
+            }
 
-                if (!empId || !month || !year || isNaN(baseSalary)) {
-                    showAlert('Vui lòng điền đầy đủ các trường bắt buộc!', 'warning');
+            function updateDefaultPeriodDates() {
+                const month = parseInt(document.getElementById('p-month').value);
+                const year = parseInt(document.getElementById('p-year').value);
+                if (isNaN(month) || isNaN(year)) return;
+
+                const firstDay = new Date(year, month - 1, 1);
+                const lastDay = new Date(year, month, 0);
+
+                document.getElementById('p-start-date').value = formatDateIso(firstDay);
+                document.getElementById('p-end-date').value = formatDateIso(lastDay);
+            }
+
+            function formatDateIso(d) {
+                const month = String(d.getMonth() + 1).padStart(2, '0');
+                const day = String(d.getDate()).padStart(2, '0');
+                return `${d.getFullYear()}-${month}-${day}`;
+            }
+
+            async function submitCreatePeriod() {
+                const month = parseInt(document.getElementById('p-month').value);
+                const year = parseInt(document.getElementById('p-year').value);
+                const startDate = document.getElementById('p-start-date').value;
+                const endDate = document.getElementById('p-end-date').value;
+                const standardDays = parseInt(document.getElementById('p-standard-days').value);
+                const note = document.getElementById('p-note').value;
+
+                if (!month || !year || !startDate || !endDate || isNaN(standardDays)) {
+                    showAlert('Vui lòng điền đầy đủ các thông tin bắt buộc!', 'warning');
                     return;
                 }
 
-                const payload = {
-                    employeeId: parseInt(empId),
-                    month: month,
-                    year: year,
-                    baseSalary: baseSalary,
-                    grossSalary: baseSalary + allowance,
-                    totalDeductions: deduction,
-                    netSalary: (baseSalary + allowance) - deduction,
-                    status: status
+                try {
+                    await fetchApi('/api/v1/payroll-periods', {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            month: month,
+                            year: year,
+                            startDate: startDate,
+                            endDate: endDate,
+                            standardWorkDays: standardDays,
+                            note: note
+                        })
+                    });
+                    showAlert('Tạo kỳ lương thành công!', 'success');
+                    closeModal('createPeriodModal');
+                    await loadPeriods();
+                } catch (e) {
+                    console.error('Create period error', e);
+                }
+            }
+
+            let periodToLockId = null;
+            function openLockPeriodModal(id) {
+                periodToLockId = id;
+                const btn = document.getElementById('confirm-lock-period-btn');
+                btn.onclick = async () => {
+                    try {
+                        await fetchApi(`/api/v1/payroll-periods/${periodToLockId}/lock`, { method: 'PUT' });
+                        showAlert('Đã chốt kỳ lương thành công!', 'success');
+                        closeModal('lockPeriodModal');
+                        await loadPeriods();
+                    } catch (e) {
+                        console.error('Lock period error', e);
+                    }
                 };
+                openModal('lockPeriodModal');
+            }
+
+            async function calculateForPeriod(periodId) {
+                if (!confirm('Hệ thống sẽ tổng hợp hợp đồng, chấm công và các đơn nghỉ phép để tự động tính lương toàn trường. Tiếp tục?')) return;
+                try {
+                    showAlert('Đang thực hiện tính lương tự động...', 'info');
+                    const res = await fetchApi(`/api/v1/payroll-calc/period/${periodId}/calculate`, { method: 'POST' });
+                    showAlert(res.message || 'Tính lương thành công!', 'success');
+                    viewPeriodPayrolls(periodId);
+                } catch (e) {
+                    console.error('Auto calc error', e);
+                }
+            }
+
+            function viewPeriodPayrolls(periodId) {
+                selectedPeriodId = periodId;
+                const sel = document.getElementById('payroll-period-select');
+                if (sel) sel.value = periodId;
+
+                // Chuyển sang Tab 2
+                const payrollsTab = new bootstrap.Tab(document.getElementById('payrolls-tab'));
+                payrollsTab.show();
+
+                loadPayrollsForSelectedPeriod();
+            }
+
+            // ================= BẢNG LƯƠNG CHI TIẾT (PAYROLLS) =================
+            function onPeriodSelectChanged() {
+                const sel = document.getElementById('payroll-period-select');
+                selectedPeriodId = sel.value ? parseInt(sel.value) : null;
+                loadPayrollsForSelectedPeriod();
+            }
+
+            async function calculateForSelectedPeriod() {
+                if (!selectedPeriodId) {
+                    showAlert('Vui lòng chọn kỳ tính lương trước!', 'warning');
+                    return;
+                }
+                await calculateForPeriod(selectedPeriodId);
+            }
+
+            async function loadPayrollsForSelectedPeriod() {
+                const tbody = document.getElementById('payroll-table-body');
+                if (!selectedPeriodId) {
+                    tbody.innerHTML = '<tr><td colspan="10" class="text-center py-5 text-muted">Vui lòng chọn một kỳ tính lương</td></tr>';
+                    resetPayrollStats();
+                    return;
+                }
+
+                tbody.innerHTML = '<tr><td colspan="10" class="text-center py-5 text-muted"><div class="spinner-border spinner-border-sm text-primary me-2"></div>Đang tải dữ liệu bảng lương...</td></tr>';
 
                 try {
-                    await fetchApi('/api/v1/payrolls', {
-                        method: 'POST',
-                        body: JSON.stringify(payload)
-                    });
-                    showAlert('Tạo phiếu lương thành công!', 'success');
-                    closeModal('payrollModal');
-                    loadPayrolls();
+                    const res = await fetchApi(`/api/v1/payrolls/period/${selectedPeriodId}`);
+                    currentPayrolls = res.data || [];
+                    renderPayrollTable(currentPayrolls);
                 } catch (e) {
-                    console.error('Save payroll error', e);
+                    console.error('Error loading payrolls', e);
+                    tbody.innerHTML = '<tr><td colspan="10" class="text-center py-5 text-danger">Có lỗi khi tải dữ liệu bảng lương</td></tr>';
+                }
+            }
+
+            function resetPayrollStats() {
+                document.getElementById('stat-payroll-count').textContent = '0';
+                document.getElementById('stat-payroll-gross').textContent = '0 ₫';
+                document.getElementById('stat-payroll-deduction').textContent = '0 ₫';
+                document.getElementById('stat-payroll-net').textContent = '0 ₫';
+            }
+
+            function renderPayrollTable(payrolls) {
+                const tbody = document.getElementById('payroll-table-body');
+
+                // Thống kê cards
+                document.getElementById('stat-payroll-count').textContent = payrolls.length;
+                const totalGross = payrolls.reduce((acc, p) => acc + (p.grossSalary || 0), 0);
+                const totalDeduction = payrolls.reduce((acc, p) => acc + (p.totalDeductions || 0), 0);
+                const totalNet = payrolls.reduce((acc, p) => acc + (p.netSalary || 0), 0);
+
+                document.getElementById('stat-payroll-gross').textContent = formatCurrency(totalGross);
+                document.getElementById('stat-payroll-deduction').textContent = formatCurrency(totalDeduction);
+                document.getElementById('stat-payroll-net').textContent = formatCurrency(totalNet);
+
+                if (payrolls.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="10" class="text-center py-5 text-muted">Kỳ lương này chưa có dữ liệu bảng lương. Vui lòng bấm <strong>"Tính tự động kỳ này"</strong>.</td></tr>';
+                    return;
+                }
+
+                const canApprove = hasRole('BOARD_OF_DIRECTORS') || hasRole('SUPER_ADMIN');
+                const canManage = hasRole('HR_MANAGER') || hasRole('SUPER_ADMIN');
+
+                tbody.innerHTML = payrolls.map(p => {
+                    let badgeClass = 'bg-secondary';
+                    let statusText = 'Dự thảo';
+                    if (p.status === 'CONFIRMED') {
+                        badgeClass = 'bg-primary';
+                        statusText = 'Đã duyệt';
+                    } else if (p.status === 'PAID') {
+                        badgeClass = 'bg-success';
+                        statusText = 'Đã thanh toán';
+                    }
+
+                    const standardDays = p.snapshotStandardDays || 22;
+                    const paidDays = p.paidWorkDays != null ? p.paidWorkDays : '--';
+
+                    return `
+                        <tr>
+                            <td class="fw-bold text-dark">${p.employeeName || 'N/A'}</td>
+                            <td><span class="badge bg-light text-dark border">${p.employeeCode || 'N/A'}</span></td>
+                            <td>${formatCurrency(p.snapshotContractSalary)}</td>
+                            <td><span class="badge bg-light text-primary border">${paidDays} / ${standardDays} ngày</span></td>
+                            <td>${p.totalTeachingHours ? p.totalTeachingHours + ' h' : '--'}</td>
+                            <td class="text-success fw-semibold">+${formatCurrency(p.grossSalary)}</td>
+                            <td class="text-danger fw-semibold">-${formatCurrency(p.totalDeductions)}</td>
+                            <td><strong class="text-primary fs-6">${formatCurrency(p.netSalary)}</strong></td>
+                            <td><span class="badge ${badgeClass}">${statusText}</span></td>
+                            <td class="text-end pe-4">
+                                <button class="btn btn-sm btn-outline-info me-1" title="Xem phiếu lương chi tiết" onclick="viewPayslip(${p.id})">
+                                    <i class="bi bi-eye"></i> Chi tiết
+                                </button>
+                                ${p.status !== 'PAID' && canManage ? `
+                                    <button class="btn btn-sm btn-outline-secondary me-1" title="Tính lại cho nhân sự này" onclick="recalcEmployee(${p.periodId}, ${p.employeeId})">
+                                        <i class="bi bi-arrow-repeat"></i>
+                                    </button>
+                                ` : ''}
+                                ${canApprove && p.status === 'DRAFT' ? `
+                                    <button class="btn btn-sm btn-outline-primary me-1" title="Duyệt phiếu lương" onclick="updatePayrollStatus(${p.id}, 'CONFIRMED')">
+                                        <i class="bi bi-check-circle"></i> Duyệt
+                                    </button>
+                                ` : ''}
+                                ${canApprove && p.status === 'CONFIRMED' ? `
+                                    <button class="btn btn-sm btn-outline-success me-1" title="Xác nhận thanh toán" onclick="updatePayrollStatus(${p.id}, 'PAID')">
+                                        <i class="bi bi-cash-stack"></i> Chi trả
+                                    </button>
+                                ` : ''}
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+
+            function filterPayrollTable() {
+                const keyword = document.getElementById('payroll-search-input').value.toLowerCase().trim();
+                if (!keyword) {
+                    renderPayrollTable(currentPayrolls);
+                    return;
+                }
+                const filtered = currentPayrolls.filter(p => 
+                    (p.employeeName && p.employeeName.toLowerCase().includes(keyword)) ||
+                    (p.employeeCode && p.employeeCode.toLowerCase().includes(keyword))
+                );
+                renderPayrollTable(filtered);
+            }
+
+            async function recalcEmployee(periodId, employeeId) {
+                try {
+                    showAlert('Đang tính lại lương nhân sự...', 'info');
+                    await fetchApi(`/api/v1/payroll-calc/period/${periodId}/employee/${employeeId}`, { method: 'POST' });
+                    showAlert('Đã cập nhật lương nhân sự thành công!', 'success');
+                    loadPayrollsForSelectedPeriod();
+                } catch (e) {
+                    console.error('Recalc employee error', e);
                 }
             }
 
@@ -331,27 +733,77 @@
                 try {
                     await fetchApi(`/api/v1/payrolls/${id}/status?status=${newStatus}`, { method: 'PUT' });
                     showAlert('Đã cập nhật trạng thái phiếu lương!', 'success');
-                    loadPayrolls();
+                    loadPayrollsForSelectedPeriod();
                 } catch (e) {
                     console.error('Update status error', e);
                 }
             }
 
-            let deleteTargetPayrollId = null;
-            function confirmDeletePayroll(id) {
-                deleteTargetPayrollId = id;
-                const btn = document.getElementById('confirm-delete-payroll-btn');
-                btn.onclick = async () => {
-                    try {
-                        await fetchApi(`/api/v1/payrolls/${deleteTargetPayrollId}`, { method: 'DELETE' });
-                        showAlert('Đã xóa phiếu lương!', 'success');
-                        closeModal('deletePayrollModal');
-                        loadPayrolls();
-                    } catch (e) {
-                        console.error('Delete payroll error', e);
+            // ================= PAYSLIP MODAL =================
+            async function viewPayslip(payrollId) {
+                try {
+                    const res = await fetchApi(`/api/v1/payrolls/${payrollId}`);
+                    const p = res.data;
+                    if (!p) return;
+
+                    document.getElementById('ps-period-title').textContent = `Kỳ lương Tháng ${p.month}/${p.year}`;
+                    document.getElementById('ps-emp-name').textContent = p.employeeName || 'N/A';
+                    document.getElementById('ps-emp-code').textContent = `Mã NV: ${p.employeeCode || 'N/A'}`;
+                    document.getElementById('ps-created-at').textContent = formatDate(p.createdAt);
+
+                    let badgeClass = 'bg-secondary';
+                    let statusText = 'Dự thảo';
+                    if (p.status === 'CONFIRMED') {
+                        badgeClass = 'bg-primary';
+                        statusText = 'Đã duyệt';
+                    } else if (p.status === 'PAID') {
+                        badgeClass = 'bg-success';
+                        statusText = 'Đã thanh toán';
                     }
-                };
-                openModal('deletePayrollModal');
+                    document.getElementById('ps-status-badge').innerHTML = `<span class="badge ${badgeClass}">${statusText}</span>`;
+
+                    document.getElementById('ps-contract-salary').textContent = formatCurrency(p.snapshotContractSalary);
+                    document.getElementById('ps-work-days').textContent = `${p.paidWorkDays != null ? p.paidWorkDays : 0} / ${p.snapshotStandardDays || 22} ngày`;
+                    document.getElementById('ps-teaching-hours').textContent = `${p.totalTeachingHours != null ? p.totalTeachingHours : 0} giờ`;
+
+                    const earningsTbody = document.getElementById('ps-earnings-tbody');
+                    const deductionsTbody = document.getElementById('ps-deductions-tbody');
+                    earningsTbody.innerHTML = '';
+                    deductionsTbody.innerHTML = '';
+
+                    const items = p.items || [];
+                    const earningTypes = ['BASE_SALARY', 'OVERTIME', 'ALLOWANCE', 'OTHER_EARNING'];
+                    const deductionTypes = ['TAX', 'INSURANCE', 'OTHER_DEDUCTION'];
+
+                    items.forEach(item => {
+                        const tr = `
+                            <tr>
+                                <td class="ps-3 py-1 text-muted small">${item.description}</td>
+                                <td class="text-end pe-3 py-1 fw-semibold text-dark">${formatCurrency(item.amount)}</td>
+                            </tr>
+                        `;
+                        if (earningTypes.includes(item.type)) {
+                            earningsTbody.innerHTML += tr;
+                        } else {
+                            deductionsTbody.innerHTML += tr;
+                        }
+                    });
+
+                    if (earningsTbody.innerHTML === '') {
+                        earningsTbody.innerHTML = '<tr><td colspan="2" class="ps-3 py-2 text-muted small">Không có khoản thu nhập nào</td></tr>';
+                    }
+                    if (deductionsTbody.innerHTML === '') {
+                        deductionsTbody.innerHTML = '<tr><td colspan="2" class="ps-3 py-2 text-muted small">Không có khoản khấu trừ nào</td></tr>';
+                    }
+
+                    document.getElementById('ps-total-gross').textContent = formatCurrency(p.grossSalary);
+                    document.getElementById('ps-total-deductions').textContent = formatCurrency(p.totalDeductions);
+                    document.getElementById('ps-net-salary').textContent = formatCurrency(p.netSalary);
+
+                    openModal('payslipModal');
+                } catch (e) {
+                    console.error('Error opening payslip', e);
+                }
             }
 
             function formatCurrency(amount) {
@@ -360,5 +812,4 @@
             }
         </script>
     </div>
-</body>
 </html>
