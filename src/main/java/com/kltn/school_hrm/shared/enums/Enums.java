@@ -1,4 +1,4 @@
-﻿package com.kltn.school_hrm.shared.enums;
+package com.kltn.school_hrm.shared.enums;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
@@ -267,6 +267,35 @@ public class Enums {
         private final String label;
 
         PayrollStatus(String label) {
+            this.label = label;
+        }
+    }
+
+    @Getter
+    public enum PayrollPeriodStatus {
+        OPEN("Đang mở"),
+        LOCKED("Đã chốt");
+
+        private final String label;
+
+        PayrollPeriodStatus(String label) {
+            this.label = label;
+        }
+    }
+
+    @Getter
+    public enum PayrollItemType {
+        BASE_SALARY("Lương cơ bản theo công"),
+        OVERTIME("Làm thêm giờ"),
+        ALLOWANCE("Phụ cấp"),
+        TAX("Thuế TNCN"),
+        INSURANCE("Bảo hiểm"),
+        OTHER_EARNING("Thu nhập khác"),
+        OTHER_DEDUCTION("Khấu trừ khác");
+
+        private final String label;
+
+        PayrollItemType(String label) {
             this.label = label;
         }
     }
