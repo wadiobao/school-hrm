@@ -267,13 +267,17 @@ public class PayrollCalculationServiceImpl implements PayrollCalculationService 
                 .snapshotContractSalary(p.getSnapshotContractSalary())
                 .snapshotStandardDays(p.getSnapshotStandardDays())
                 .paidWorkDays(p.getPaidWorkDays())
+                .snapshotUnpaidLeaveDays(p.getSnapshotUnpaidLeaveDays())
+                .snapshotTaxableIncome(p.getSnapshotTaxableIncome())
+                .policyVersion(p.getPolicyVersion())
                 .grossSalary(p.getGrossSalary())
                 .totalDeductions(p.getTotalDeductions())
                 .netSalary(p.getNetSalary())
                 .status(p.getStatus())
                 .note(p.getNote())
-                .createdAt(p.getCreatedAt())
+                .calculatedAt(p.getCreatedAt())
                 .items(itemResponses)
                 .build();
     }
 }
+

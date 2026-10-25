@@ -34,6 +34,9 @@ public class PayrollResponse {
     private Integer snapshotStandardDays;
     private BigDecimal paidWorkDays;
     private BigDecimal totalTeachingHours;
+    private BigDecimal snapshotUnpaidLeaveDays;
+    private BigDecimal snapshotTaxableIncome;
+    private String policyVersion;
 
     // Results
     private BigDecimal grossSalary;
@@ -42,9 +45,10 @@ public class PayrollResponse {
 
     private PayrollStatus status;
     private String note;
-    private LocalDateTime createdAt;
+    private LocalDateTime calculatedAt;
 
     private List<PayrollItemResponse> items;
+
 
     @Data
     @NoArgsConstructor

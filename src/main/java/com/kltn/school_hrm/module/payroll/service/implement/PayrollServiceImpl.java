@@ -179,13 +179,17 @@ public class PayrollServiceImpl implements PayrollService {
                 .snapshotStandardDays(p.getSnapshotStandardDays())
                 .paidWorkDays(p.getPaidWorkDays())
                 .totalTeachingHours(p.getTotalTeachingHours())
+                .snapshotUnpaidLeaveDays(p.getSnapshotUnpaidLeaveDays())
+                .snapshotTaxableIncome(p.getSnapshotTaxableIncome())
+                .policyVersion(p.getPolicyVersion())
                 .grossSalary(p.getGrossSalary())
                 .totalDeductions(p.getTotalDeductions())
                 .netSalary(p.getNetSalary())
                 .status(p.getStatus())
                 .note(p.getNote())
-                .createdAt(p.getCreatedAt())
+                .calculatedAt(p.getCreatedAt())
                 .items(itemResponses)
                 .build();
     }
 }
+
