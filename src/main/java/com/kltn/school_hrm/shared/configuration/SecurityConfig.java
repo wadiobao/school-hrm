@@ -24,7 +24,7 @@ public class SecurityConfig {
 						// Cho phép truy cập không cần token cho các endpoint này và web frontend
 						.requestMatchers("/api/v1/users/register", "/api/v1/users/login", "/api/v1/auth/login",
 								"/", "/login", "/employees/**", "/departments/**", "/positions/**",
-								"/attendance/**", "/leaves/**", "/payroll/**", "/teaching/**",
+								"/attendance/**", "/leaves/**", "/payroll/**", "/contracts/**", "/teaching/**",
 								"/api/v1/**",
 								"/api/attendance-records/**",
 								"/css/**", "/js/**", "/images/**", "/webjars/**")
