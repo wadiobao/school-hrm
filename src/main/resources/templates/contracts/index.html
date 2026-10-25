@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>School HRM - Quản lý Hợp đồng</title>
+</head>
+<html th:replace="~{layout/main-layout :: layout(~{::content}, ~{::scripts}, 'Quản lý Hợp đồng')}">
+
+    <div th:fragment="content">
+        <!-- TOOLBAR: CHỌN NHÂN VIÊN (CHỈ HIỂN THỊ VỚI QUẢN TRỊ / HR / BGH) -->
+        <div class="card mb-4 border-0 shadow-sm" id="admin-contract-toolbar" style="display: none;">
+            <div class="card-body">
+                <div class="row g-3 align-items-center">
+                    <div class="col-md-6">
+                        <label class="form-label small text-muted mb-1">Chọn nhân viên để xem và quản lý hợp đồng</label>
+                        <select id="contract-emp-select" class="form-select form-select-sm" onchange="onEmployeeSelected()">
+                            <option value="">-- Chọn nhân sự --</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6 d-flex align-items-end justify-content-end gap-2">
+                        <button class="btn btn-sm btn-outline-secondary" onclick="reloadCurrentEmployeeContracts()">
+                            <i class="bi bi-arrow-clockwise"></i> Tải lại
+                        </button>
+                        <button class="btn btn-sm btn-primary" id="btn-create-contract" onclick="openCreateContractModal(false)">
+                            <i class="bi bi-plus-lg me-1"></i> Tạo HĐ mới
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- EMPLOYEE INFO HEADER -->
+        <div class="card mb-4 border-0 shadow-sm bg-light">
+            <div class="card-body py-3 d-flex flex-wrap align-items-center justify-content-between gap-3">
+                <div class="d-flex align-items-center">
+                    <div class="avatar-circle me-3" id="emp-header-avatar">NV</div>
+                    <div>
+                        <h5 class="fw-bold mb-0 text-dark" id="emp-header-name">Hồ sơ Hợp đồng Lao động</h5>
+                        <div class="text-muted small" id="emp-header-sub">Đang tải thông tin...</div>
+                    </div>
+                </div>
+                <div id="emp-header-badges">
+                    <!-- Badges -->
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION 1: HỢP ĐỒNG ĐANG HIỆU LỰC (CURRENT CONTRACT) -->
+        <div class="card mb-4 border-0 shadow-sm" id="current-contract-card">
+            <div class="card-header bg-white py-3 border-0 d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center">
+                    <i class="bi bi-file-earmark-check-fill text-success fs-4 me-2"></i>
+                    <div>
+                        <h6 class="fw-bold mb-0 text-dark">HỢP ĐỒNG LAO ĐỘNG HIỆN TẠI (ĐANG HIỆU LỰC)</h6>
+                        <small class="text-muted">Áp dụng cho kỳ tính lương và quyền lợi hiện hành</small>
+                    </div>
+                </div>
+                <div class="d-flex gap-2" id="current-contract-actions">
+                    <!-- Action buttons injected by JS for HR/Admin -->
+                </div>
+            </div>
+            <div class="card-body pt-0" id="current-contract-body">
+                <div class="text-center py-4 text-muted">
+                    <div class="spinner-border spinner-border-sm text-primary me-2"></div> Đang kiểm tra hợp đồng hiện tại...
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION 2: LỊCH SỬ HỢP ĐỒNG THEO THỜI GIAN (CONTRACT HISTORY) -->
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white py-3 border-0 d-flex align-items-center justify-content-between">
+                <div>
+                    <h6 class="fw-bold mb-0 text-dark"><i class="bi bi-clock-history text-primary me-2"></i>LỊCH SỬ CÁC HỢP ĐỒNG THEO THỜI GIAN</h6>
+                    <small class="text-muted">Nguyên tắc bất biến: Thông tin hợp đồng cũ được lưu trữ toàn vẹn để đối soát pháp lý và thuế/bảo hiểm</small>
+                </div>
+                <span class="badge bg-light text-dark border" id="stat-total-contracts">0 hợp đồng</span>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Số hợp đồng</th>
+                                <th>Loại hợp đồng</th>
+                                <th>Vị trí / Chức danh</th>
+                                <th>Mức lương Gross</th>
+                                <th>Phụ cấp</th>
+                                <th>Thời hạn hợp đồng</th>
+                                <th>Trạng thái</th>
+                                <th class="text-end pe-4">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody id="contract-history-table-body">
+                            <tr>
+                                <td colspan="8" class="text-center py-5 text-muted">Đang tải lịch sử hợp đồng...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL 1: TẠO MỚI / GIA HẠN HỢP ĐỒNG -->
+        <div class="modal fade" id="contractModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title fw-bold" id="contractModalTitle">
+                            <i class="bi bi-file-earmark-plus text-primary me-2"></i>Ký mới Hợp đồng Lao động
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <!-- Immutability Notice -->
+                        <div class="alert alert-info py-2 small d-flex align-items-center mb-3">
+                            <i class="bi bi-info-circle-fill fs-5 me-2"></i>
+                            <div><strong>Nguyên tắc lưu vết:</strong> Khi ký mới hoặc gia hạn, hệ thống sẽ tạo một bản ghi Hợp đồng mới. Hợp đồng cũ được bảo toàn bất biến trong lịch sử để phục vụ tra cứu.</div>
+                        </div>
+
+                        <form id="contractForm">
+                            <input type="hidden" id="c-form-id">
+                            <input type="hidden" id="c-form-employee-id">
+                            <input type="hidden" id="c-form-is-renew" value="false">
+                            <input type="hidden" id="c-form-renew-from-id">
+
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label required">Số hợp đồng *</label>
+                                    <input type="text" id="c-form-number" class="form-control" required placeholder="VD: HĐLĐ-2026/001">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label required">Loại hợp đồng *</label>
+                                    <select id="c-form-type" class="form-select" onchange="onContractTypeChange()" required>
+                                        <option value="PROBATION">Thử việc (PROBATION)</option>
+                                        <option value="FIXED_TERM">Xác định thời hạn (FIXED_TERM)</option>
+                                        <option value="INDEFINITE_TERM">Không xác định thời hạn (INDEFINITE_TERM)</option>
+                                    </select>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label required">Vị trí / Chức vụ *</label>
+                                    <select id="c-form-position" class="form-select" required>
+                                        <option value="">-- Chọn vị trí --</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label required">Tiền tệ *</label>
+                                    <select id="c-form-currency" class="form-select" required>
+                                        <option value="VND">VND (₫)</option>
+                                        <option value="USD">USD ($)</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label required">Lương Gross *</label>
+                                    <input type="number" id="c-form-gross" class="form-control" min="0" step="100000" placeholder="VD: 15000000" required>
+                                </div>
+
+                                <div class="col-md-4">
+                                    <label class="form-label">Phụ cấp nhà ở</label>
+                                    <input type="number" id="c-form-housing" class="form-control" min="0" value="0">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Phụ cấp vé máy bay</label>
+                                    <input type="number" id="c-form-flight" class="form-control" min="0" value="0">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Phụ cấp di dời</label>
+                                    <input type="number" id="c-form-relocation" class="form-control" min="0" value="0">
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label required">Ngày bắt đầu hiệu lực *</label>
+                                    <input type="date" id="c-form-start-date" class="form-control" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label" id="c-form-end-date-label">Ngày kết thúc *</label>
+                                    <input type="date" id="c-form-end-date" class="form-control">
+                                    <small class="text-muted" id="c-form-end-date-hint">Bắt buộc đối với HĐ thử việc & xác định thời hạn</small>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Hủy</button>
+                        <button type="button" class="btn btn-primary" onclick="saveContract()">
+                            <i class="bi bi-check-lg me-1"></i> Xác nhận Ký hợp đồng
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL 2: XÁC NHẬN CHẤM DỨT HỢP ĐỒNG (TERMINATE) -->
+        <div class="modal fade" id="terminateContractModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-sm modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-body text-center p-4">
+                        <i class="bi bi-x-circle-fill text-danger" style="font-size: 3rem;"></i>
+                        <h5 class="mt-3 fw-bold">Chấm dứt Hợp đồng?</h5>
+                        <p class="text-muted small">Hợp đồng <strong id="terminate-contract-num">--</strong> sẽ được chuyển sang trạng thái <strong>Đã chấm dứt (TERMINATED)</strong>. Thông tin hợp đồng vẫn được lưu trữ vĩnh viễn trong lịch sử.</p>
+                        <div class="d-flex justify-content-center gap-2 mt-4">
+                            <button type="button" class="btn btn-light" data-bs-dismiss="modal">Hủy</button>
+                            <button type="button" class="btn btn-danger fw-semibold" id="confirm-terminate-btn">Xác nhận Chấm dứt</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL 3: CHI TIẾT HỢP ĐỒNG (VIEW ONLY) -->
+        <div class="modal fade" id="contractDetailModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title fw-bold"><i class="bi bi-file-earmark-text text-primary me-2"></i>Chi tiết Hợp đồng Lao động</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body" id="contract-detail-modal-body">
+                        <!-- Rendered by JS -->
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div th:fragment="scripts">
+        <script>
+            let currentEmployeeId = null;
+            let currentEmployeeObj = null;
+            let isManager = false;
+            let positionsList = [];
+            let employeeContracts = [];
+            let activeContractObj = null;
+
+            document.addEventListener('DOMContentLoaded', async () => {
+                // Phân quyền: Kiểm tra người dùng
+                isManager = hasRole('SUPER_ADMIN') || hasRole('HR_MANAGER') || hasRole('BOARD_OF_DIRECTORS');
+                const canEdit = hasRole('SUPER_ADMIN') || hasRole('HR_MANAGER');
+
+                // Nếu là Quản trị viên/HR/BGH: hiển thị Toolbar chọn nhân viên
+                if (isManager) {
+                    document.getElementById('admin-contract-toolbar').style.display = 'block';
+                    if (!canEdit) {
+                        const btnCreate = document.getElementById('btn-create-contract');
+                        if (btnCreate) btnCreate.style.display = 'none';
+                    }
+                    await loadPositions();
+                    await loadEmployeesDropdown();
+                } else {
+                    // Nhân viên thông thường (TEACHER, STAFF): tự động tải hợp đồng của chính mình
+                    await loadPositions();
+                    await loadMyContracts();
+                }
+            });
+
+            async function loadPositions() {
+                try {
+                    const res = await fetchApi('/api/v1/positions');
+                    if (res && res.data) {
+                        positionsList = res.data;
+                        const sel = document.getElementById('c-form-position');
+                        sel.innerHTML = '<option value="">-- Chọn vị trí --</option>';
+                        positionsList.forEach(p => {
+                            sel.innerHTML += `<option value="${p.id}">${p.name}</option>`;
+                        });
+                    }
+                } catch (e) {
+                    console.error('Error loading positions', e);
+                }
+            }
+
+            async function loadEmployeesDropdown() {
+                try {
+                    const res = await fetchApi('/api/v1/employees?size=300');
+                    if (res && res.data && res.data.content) {
+                        const employees = res.data.content;
+                        const sel = document.getElementById('contract-emp-select');
+                        sel.innerHTML = '<option value="">-- Chọn nhân sự --</option>';
+                        employees.forEach(emp => {
+                            sel.innerHTML += `<option value="${emp.id}">${emp.fullName} (${emp.employeeCode})</option>`;
+                        });
+
+                        // Tự động chọn nhân viên từ query param hoặc người đầu tiên
+                        const urlParams = new URLSearchParams(window.location.search);
+                        const empIdParam = urlParams.get('empId');
+                        if (empIdParam && employees.some(e => e.id == empIdParam)) {
+                            sel.value = empIdParam;
+                        } else if (employees.length > 0) {
+                            sel.value = employees[0].id;
+                        }
+                        onEmployeeSelected();
+                    }
+                } catch (e) {
+                    console.error('Error loading employees dropdown', e);
+                }
+            }
+
+            // Dành cho nhân viên tự xem hợp đồng của mình
+            async function loadMyContracts() {
+                try {
+                    const res = await fetchApi('/api/v1/contracts/my-contracts');
+                    employeeContracts = res.data || [];
+
+                    // Lấy hợp đồng hiện tại
+                    const currRes = await fetchApi('/api/v1/contracts/my-current');
+                    activeContractObj = currRes.data || null;
+
+                    // Header
+                    const user = getCurrentUser() || {};
+                    document.getElementById('emp-header-name').textContent = user.fullName || 'Hồ sơ Hợp đồng của tôi';
+                    document.getElementById('emp-header-sub').textContent = 'Xem hợp đồng đang hiệu lực và toàn bộ lịch sử hợp đồng lao động của bạn';
+                    document.getElementById('emp-header-avatar').textContent = (user.fullName || 'NV').slice(0, 2).toUpperCase();
+
+                    renderCurrentContract(activeContractObj);
+                    renderContractHistory(employeeContracts);
+                } catch (e) {
+                    console.error('Error loading my contracts', e);
+                    showAlert('Không thể tải hợp đồng: ' + e.message, 'danger');
+                }
+            }
+
+            function onEmployeeSelected() {
+                const sel = document.getElementById('contract-emp-select');
+                currentEmployeeId = sel.value ? parseInt(sel.value) : null;
+                if (!currentEmployeeId) return;
+
+                const text = sel.options[sel.selectedIndex].text;
+                document.getElementById('emp-header-name').textContent = text;
+                document.getElementById('emp-header-sub').textContent = 'Quản lý hợp đồng hiện hành và lịch sử ký kết qua các giai đoạn';
+                document.getElementById('emp-header-avatar').textContent = text.slice(0, 2).toUpperCase();
+
+                reloadCurrentEmployeeContracts();
+            }
+
+            async function reloadCurrentEmployeeContracts() {
+                if (!currentEmployeeId) return;
+                try {
+                    // 1. Tải lịch sử hợp đồng
+                    const historyRes = await fetchApi(`/api/v1/contracts/employee/${currentEmployeeId}`);
+                    employeeContracts = historyRes.data || [];
+
+                    // 2. Tải hợp đồng hiện tại
+                    const currRes = await fetchApi(`/api/v1/contracts/employee/${currentEmployeeId}/current`);
+                    activeContractObj = currRes.data || null;
+
+                    renderCurrentContract(activeContractObj);
+                    renderContractHistory(employeeContracts);
+                } catch (e) {
+                    console.error('Error loading employee contracts', e);
+                    showAlert('Lỗi tải dữ liệu hợp đồng: ' + e.message, 'danger');
+                }
+            }
+
+            function renderCurrentContract(c) {
+                const container = document.getElementById('current-contract-body');
+                const actionsContainer = document.getElementById('current-contract-actions');
+                const canEdit = hasRole('SUPER_ADMIN') || hasRole('HR_MANAGER');
+
+                actionsContainer.innerHTML = '';
+
+                if (!c) {
+                    container.innerHTML = `
+                        <div class="alert alert-warning border-0 d-flex align-items-center mb-0">
+                            <i class="bi bi-exclamation-circle-fill fs-4 me-2"></i>
+                            <div>
+                                <strong>Nhân viên chưa có hợp đồng nào đang có hiệu lực.</strong>
+                                <div class="small">Vui lòng bấm "Tạo HĐ mới" để ký hợp đồng lao động cho nhân viên.</div>
+                            </div>
+                        </div>
+                    `;
+                    return;
+                }
+
+                // Buttons cho HR/Admin
+                if (canEdit) {
+                    actionsContainer.innerHTML = `
+                        <button class="btn btn-sm btn-outline-primary" onclick="openCreateContractModal(true)">
+                            <i class="bi bi-arrow-repeat me-1"></i> Gia hạn / Ký mới HĐ
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="openTerminateModal(${c.id}, '${c.contractNumber}')">
+                            <i class="bi bi-x-circle me-1"></i> Chấm dứt HĐ
+                        </button>
+                    `;
+                }
+
+                const typeLabel = c.type === 'PROBATION' ? 'Thử việc' :
+                                  c.type === 'INDEFINITE_TERM' ? 'Không xác định thời hạn' : 'Xác định thời hạn';
+                const dateText = c.endDate ? `${formatDate(c.startDate)} ➔ ${formatDate(c.endDate)}` : `Từ ${formatDate(c.startDate)} (Vô thời hạn)`;
+
+                container.innerHTML = `
+                    <div class="p-3 rounded-3 bg-success bg-opacity-10 border border-success border-opacity-25">
+                        <div class="row g-3 align-items-center">
+                            <div class="col-md-3 border-end">
+                                <div class="text-muted small">Số hợp đồng:</div>
+                                <h5 class="fw-bold text-dark mt-1 mb-1">${c.contractNumber}</h5>
+                                <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>ĐANG HIỆU LỰC (HIỆN TẠI)</span>
+                            </div>
+                            <div class="col-md-3 border-end">
+                                <div class="text-muted small">Loại HĐ & Vị trí:</div>
+                                <div class="fw-bold text-dark mt-1">${typeLabel}</div>
+                                <div class="text-primary small">${c.positionName || 'N/A'}</div>
+                            </div>
+                            <div class="col-md-3 border-end">
+                                <div class="text-muted small">Mức lương Gross & Phụ cấp:</div>
+                                <h5 class="fw-bold text-success mt-1 mb-0">${formatVnd(c.grossSalary)}</h5>
+                                <small class="text-muted">Nhà ở: ${formatVnd(c.housingAllowance)} | Vé MB: ${formatVnd(c.flightAllowance)}</small>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="text-muted small">Thời hạn hợp đồng:</div>
+                                <div class="fw-semibold text-dark mt-1">${dateText}</div>
+                                <small class="text-muted">Ngày ký: ${formatDate(c.createdAt)}</small>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            function renderContractHistory(contracts) {
+                const tbody = document.getElementById('contract-history-table-body');
+                document.getElementById('stat-total-contracts').textContent = `${contracts.length} hợp đồng`;
+
+                if (contracts.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="8" class="text-center py-5 text-muted">Chưa có bản ghi hợp đồng nào trong lịch sử</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = contracts.map(c => {
+                    const isCurr = c.isCurrent === true;
+                    const typeLabel = c.type === 'PROBATION' ? 'Thử việc' :
+                                      c.type === 'INDEFINITE_TERM' ? 'Không xác định thời hạn' : 'Xác định thời hạn';
+                    
+                    let statusBadge = '<span class="badge bg-secondary">Hết hạn (EXPIRED)</span>';
+                    if (c.status === 'ACTIVE') {
+                        statusBadge = isCurr 
+                            ? '<span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Hiệu lực (Hiện tại)</span>' 
+                            : '<span class="badge bg-info text-dark">Hiệu lực (ACTIVE)</span>';
+                    } else if (c.status === 'TERMINATED') {
+                        statusBadge = '<span class="badge bg-danger">Đã chấm dứt (TERMINATED)</span>';
+                    }
+
+                    const dateText = c.endDate ? `${formatDate(c.startDate)} ➔ ${formatDate(c.endDate)}` : `Từ ${formatDate(c.startDate)} (Vô thời hạn)`;
+                    const totalAllowances = (c.housingAllowance || 0) + (c.flightAllowance || 0) + (c.relocationAllowance || 0);
+
+                    return `
+                        <tr class="${isCurr ? 'table-success bg-opacity-25' : ''}">
+                            <td class="fw-bold">${c.contractNumber}</td>
+                            <td>${typeLabel}</td>
+                            <td>${c.positionName || 'N/A'}</td>
+                            <td class="fw-semibold text-success">${formatVnd(c.grossSalary)}</td>
+                            <td>${totalAllowances > 0 ? '+' + formatVnd(totalAllowances) : '--'}</td>
+                            <td class="small">${dateText}</td>
+                            <td>${statusBadge}</td>
+                            <td class="text-end pe-4">
+                                <button class="btn btn-sm btn-outline-info" title="Xem chi tiết" onclick="viewContractDetail(${c.id})">
+                                    <i class="bi bi-eye"></i> Xem
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+
+            function onContractTypeChange() {
+                const type = document.getElementById('c-form-type').value;
+                const endDateInput = document.getElementById('c-form-end-date');
+                const endDateLabel = document.getElementById('c-form-end-date-label');
+                const endDateHint = document.getElementById('c-form-end-date-hint');
+
+                if (type === 'INDEFINITE_TERM') {
+                    endDateInput.value = '';
+                    endDateInput.disabled = true;
+                    endDateInput.required = false;
+                    endDateLabel.classList.remove('required');
+                    endDateHint.textContent = 'Hợp đồng không xác định thời hạn không có ngày kết thúc';
+                } else {
+                    endDateInput.disabled = false;
+                    endDateInput.required = true;
+                    endDateLabel.classList.add('required');
+                    endDateHint.textContent = 'Bắt buộc đối với HĐ thử việc & xác định thời hạn';
+                }
+            }
+
+            function openCreateContractModal(isRenew = false) {
+                const targetEmpId = currentEmployeeId;
+                if (!targetEmpId) {
+                    showAlert('Vui lòng chọn nhân viên trước!', 'warning');
+                    return;
+                }
+
+                document.getElementById('contractForm').reset();
+                document.getElementById('c-form-employee-id').value = targetEmpId;
+                document.getElementById('c-form-is-renew').value = isRenew ? 'true' : 'false';
+
+                if (isRenew && activeContractObj) {
+                    document.getElementById('contractModalTitle').innerHTML = 
+                        '<i class="bi bi-arrow-repeat text-primary me-2"></i>Gia hạn / Ký mới Hợp đồng (Từ HĐ ' + activeContractObj.contractNumber + ')';
+                    document.getElementById('c-form-renew-from-id').value = activeContractObj.id;
+
+                    // Kế thừa chức vụ & mức lương cũ làm gợi ý
+                    if (activeContractObj.positionId) document.getElementById('c-form-position').value = activeContractObj.positionId;
+                    if (activeContractObj.grossSalary) document.getElementById('c-form-gross').value = activeContractObj.grossSalary;
+                    if (activeContractObj.housingAllowance) document.getElementById('c-form-housing').value = activeContractObj.housingAllowance;
+                    if (activeContractObj.flightAllowance) document.getElementById('c-form-flight').value = activeContractObj.flightAllowance;
+                    if (activeContractObj.relocationAllowance) document.getElementById('c-form-relocation').value = activeContractObj.relocationAllowance;
+                    document.getElementById('c-form-type').value = 'FIXED_TERM';
+
+                    // Gợi ý ngày bắt đầu = ngày kết thúc hợp đồng cũ + 1 ngày
+                    if (activeContractObj.endDate) {
+                        const oldEnd = new Date(activeContractObj.endDate);
+                        oldEnd.setDate(oldEnd.getDate() + 1);
+                        document.getElementById('c-form-start-date').value = formatDateIso(oldEnd);
+
+                        // Gợi ý ngày kết thúc = 1 năm sau
+                        const newEnd = new Date(oldEnd);
+                        newEnd.setFullYear(newEnd.getFullYear() + 1);
+                        newEnd.setDate(newEnd.getDate() - 1);
+                        document.getElementById('c-form-end-date').value = formatDateIso(newEnd);
+                    }
+                } else {
+                    document.getElementById('contractModalTitle').innerHTML = 
+                        '<i class="bi bi-file-earmark-plus text-primary me-2"></i>Ký mới Hợp đồng Lao động';
+                    document.getElementById('c-form-renew-from-id').value = '';
+                    document.getElementById('c-form-start-date').value = formatDateIso(new Date());
+                }
+
+                onContractTypeChange();
+                openModal('contractModal');
+            }
+
+            async function saveContract() {
+                const empId = parseInt(document.getElementById('c-form-employee-id').value);
+                const isRenew = document.getElementById('c-form-is-renew').value === 'true';
+                const renewFromId = document.getElementById('c-form-renew-from-id').value;
+
+                const contractNumber = document.getElementById('c-form-number').value.trim();
+                const type = document.getElementById('c-form-type').value;
+                const positionId = parseInt(document.getElementById('c-form-position').value);
+                const currency = document.getElementById('c-form-currency').value;
+                const grossSalary = parseFloat(document.getElementById('c-form-gross').value);
+                const housingAllowance = parseFloat(document.getElementById('c-form-housing').value) || 0;
+                const flightAllowance = parseFloat(document.getElementById('c-form-flight').value) || 0;
+                const relocationAllowance = parseFloat(document.getElementById('c-form-relocation').value) || 0;
+                const startDate = document.getElementById('c-form-start-date').value;
+                const endDate = type === 'INDEFINITE_TERM' ? null : document.getElementById('c-form-end-date').value;
+
+                if (!contractNumber || !type || isNaN(positionId) || isNaN(grossSalary) || !startDate) {
+                    showAlert('Vui lòng điền đầy đủ các thông tin bắt buộc (*)', 'warning');
+                    return;
+                }
+
+                if (type !== 'INDEFINITE_TERM' && !endDate) {
+                    showAlert('Vui lòng nhập ngày kết thúc hợp đồng!', 'warning');
+                    return;
+                }
+
+                const payload = {
+                    contractNumber: contractNumber,
+                    employeeId: empId,
+                    positionId: positionId,
+                    type: type,
+                    currency: currency,
+                    grossSalary: grossSalary,
+                    housingAllowance: housingAllowance,
+                    flightAllowance: flightAllowance,
+                    relocationAllowance: relocationAllowance,
+                    startDate: startDate,
+                    endDate: endDate
+                };
+
+                try {
+                    if (isRenew && renewFromId) {
+                        await fetchApi(`/api/v1/contracts/${renewFromId}/renew`, {
+                            method: 'POST',
+                            body: JSON.stringify(payload)
+                        });
+                        showAlert('Gia hạn hợp đồng thành công! Bản ghi mới đã được tạo.', 'success');
+                    } else {
+                        await fetchApi('/api/v1/contracts', {
+                            method: 'POST',
+                            body: JSON.stringify(payload)
+                        });
+                        showAlert('Tạo mới hợp đồng thành công!', 'success');
+                    }
+                    closeModal('contractModal');
+                    reloadCurrentEmployeeContracts();
+                } catch (e) {
+                    console.error('Save contract error', e);
+                }
+            }
+
+            let contractToTerminateId = null;
+            function openTerminateModal(id, contractNumber) {
+                contractToTerminateId = id;
+                document.getElementById('terminate-contract-num').textContent = contractNumber;
+                const btn = document.getElementById('confirm-terminate-btn');
+                btn.onclick = async () => {
+                    try {
+                        await fetchApi(`/api/v1/contracts/${contractToTerminateId}/terminate`, { method: 'PUT' });
+                        showAlert('Đã chấm dứt hợp đồng thành công!', 'success');
+                        closeModal('terminateContractModal');
+                        reloadCurrentEmployeeContracts();
+                    } catch (e) {
+                        console.error('Terminate contract error', e);
+                    }
+                };
+                openModal('terminateContractModal');
+            }
+
+            function viewContractDetail(id) {
+                const c = employeeContracts.find(item => item.id === id);
+                if (!c) return;
+
+                const typeLabel = c.type === 'PROBATION' ? 'Thử việc' :
+                                  c.type === 'INDEFINITE_TERM' ? 'Không xác định thời hạn' : 'Xác định thời hạn';
+                const statusBadge = c.status === 'ACTIVE' ? '<span class="badge bg-success">Còn hiệu lực</span>' :
+                                    c.status === 'EXPIRED' ? '<span class="badge bg-secondary">Hết hạn</span>' :
+                                    '<span class="badge bg-danger">Đã chấm dứt</span>';
+
+                document.getElementById('contract-detail-modal-body').innerHTML = `
+                    <div class="text-center mb-4">
+                        <div class="bg-primary bg-opacity-10 text-primary p-3 rounded-circle d-inline-block mb-2">
+                            <i class="bi bi-file-earmark-text-fill fs-2"></i>
+                        </div>
+                        <h5 class="fw-bold m-0">${c.contractNumber}</h5>
+                        <div class="mt-1">${statusBadge} ${c.isCurrent ? '<span class="badge bg-primary ms-1">Hợp đồng hiện tại</span>' : ''}</div>
+                    </div>
+                    <ul class="list-group list-group-flush small">
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span class="text-muted">Nhân viên:</span>
+                            <span class="fw-bold">${c.employee ? c.employee.fullName : '--'} (${c.employee ? c.employee.employeeCode : ''})</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span class="text-muted">Loại hợp đồng:</span>
+                            <span class="fw-semibold">${typeLabel}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span class="text-muted">Chức danh / Vị trí:</span>
+                            <span class="fw-semibold">${c.positionName || 'N/A'}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span class="text-muted">Mức lương Gross:</span>
+                            <span class="fw-bold text-success fs-6">${formatVnd(c.grossSalary)}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span class="text-muted">Phụ cấp nhà ở:</span>
+                            <span class="fw-semibold">${formatVnd(c.housingAllowance)}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span class="text-muted">Phụ cấp vé máy bay:</span>
+                            <span class="fw-semibold">${formatVnd(c.flightAllowance)}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span class="text-muted">Phụ cấp di dời:</span>
+                            <span class="fw-semibold">${formatVnd(c.relocationAllowance)}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span class="text-muted">Ngày bắt đầu:</span>
+                            <span class="fw-semibold">${formatDate(c.startDate)}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span class="text-muted">Ngày kết thúc:</span>
+                            <span class="fw-semibold">${c.endDate ? formatDate(c.endDate) : 'Không xác định thời hạn'}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span class="text-muted">Ngày lập:</span>
+                            <span class="fw-semibold">${formatDate(c.createdAt)}</span>
+                        </li>
+                    </ul>
+                `;
+                openModal('contractDetailModal');
+            }
+
+            function formatDateIso(d) {
+                const month = String(d.getMonth() + 1).padStart(2, '0');
+                const day = String(d.getDate()).padStart(2, '0');
+                return `${d.getFullYear()}-${month}-${day}`;
+            }
+
+            function formatVnd(amount) {
+                if (amount == null) return '0 ₫';
+                return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
+            }
+        </script>
+    </div>
+</html>

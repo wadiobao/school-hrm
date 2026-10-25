@@ -55,6 +55,11 @@
                                 <i class="bi bi-calendar2-week-fill"></i> Nghỉ phép
                             </a>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link" th:classappend="${pageTitle == 'Quản lý Hợp đồng'} ? 'active' : ''" href="/contracts">
+                                <i class="bi bi-file-earmark-text-fill"></i> Hợp đồng
+                            </a>
+                        </li>
                         <li class="nav-item" data-roles="SUPER_ADMIN,HR_MANAGER,BOARD_OF_DIRECTORS,TEACHER,STAFF">
                             <a class="nav-link" th:classappend="${pageTitle == 'Quản lý Tiền lương'} ? 'active' : ''" href="/payroll">
                                 <i class="bi bi-cash-stack"></i> Tiền lương
