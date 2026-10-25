@@ -13,6 +13,10 @@ import com.kltn.school_hrm.shared.enums.Enums.ContractStatus;
 
 @Repository
 public interface ContractRepository extends JpaRepository<Contract, Long> {
+    boolean existsByContractNumber(String contractNumber);
+
+    boolean existsByContractNumberAndIdNot(String contractNumber, Long id);
+
     boolean existsByEmployeeIdAndStatus(Long employeeId, ContractStatus status);
 
     List<Contract> findByEmployeeIdAndStatus(Long employeeId, ContractStatus status);

@@ -1,4 +1,4 @@
-﻿package com.kltn.school_hrm.module.employee.dto.response;
+package com.kltn.school_hrm.module.employee.dto.response;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -26,12 +26,14 @@ public class ContractResponse {
     // Thông tin ngắn gọn của nhân viên sở hữu hợp đồng
     private EmployeeSummary employee;
 
+    private Long positionId;
     private String positionName;
 
     private LocalDate startDate;
     private LocalDate endDate;
     private ContractType type;
     private ContractStatus status;
+    private Boolean isCurrent;
 
     private BigDecimal grossSalary;
 
