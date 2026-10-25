@@ -68,6 +68,8 @@ public class PayrollCalculationServiceImpl implements PayrollCalculationService 
     private static final BigDecimal TAX_RATE = new BigDecimal("0.08");
     // Thu nhập cá nhân miễn giảm trừ gia cảnh (11tr/tháng)
     private static final BigDecimal PERSONAL_DEDUCTION = new BigDecimal("11000000");
+    // Phiên bản chính sách tính lương đang áp dụng
+    private static final String POLICY_VERSION = "v1";
 
     private final PayrollPeriodRepository periodRepository;
     private final PayrollRepository payrollRepository;
@@ -191,13 +193,16 @@ public class PayrollCalculationServiceImpl implements PayrollCalculationService 
         BigDecimal totalDeductions = insurance.add(tax);
         BigDecimal netSalary = gross.subtract(totalDeductions).max(BigDecimal.ZERO);
 
-        // 9. Lưu Payroll
+        // 9. Lưu Payroll (bao gồm snapshot đầu vào để audit)
         Payroll payroll = Payroll.builder()
                 .period(period)
                 .employee(employee)
                 .snapshotEmployeeName(employee.getFullName())
                 .snapshotContractSalary(contractSalary)
                 .snapshotStandardDays(standardDays)
+                .snapshotUnpaidLeaveDays(unpaidLeaveDays)
+                .snapshotTaxableIncome(taxableIncome.max(BigDecimal.ZERO))
+                .policyVersion(POLICY_VERSION)
                 .paidWorkDays(paidWorkDays)
                 .grossSalary(gross)
                 .totalDeductions(totalDeductions)
