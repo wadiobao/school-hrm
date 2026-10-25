@@ -72,6 +72,19 @@ public class Payroll extends BaseEntity {
     @Column(name = "snapshot_standard_days")
     private Integer snapshotStandardDays;
 
+    /** Số ngày nghỉ không lương đã trừ khỏi ngày công */
+    @Column(name = "snapshot_unpaid_leave_days", precision = 4, scale = 1)
+    private BigDecimal snapshotUnpaidLeaveDays;
+
+    /** Thu nhập chịu thuế TNCN = gross - giảm trừ gia cảnh - bảo hiểm */
+    @Column(name = "snapshot_taxable_income", precision = 15, scale = 2)
+    private BigDecimal snapshotTaxableIncome;
+
+    /** Phiên bản chính sách tính lương được áp dụng (ví dụ: "v1") */
+    @Column(name = "policy_version", length = 20)
+    private String policyVersion;
+
+
     // ── Kết quả tính lương ──
     /** Số ngày công thực tế được trả lương */
     @Column(name = "paid_work_days", precision = 4, scale = 1)
