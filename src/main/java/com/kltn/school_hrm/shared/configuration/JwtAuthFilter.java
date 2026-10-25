@@ -43,7 +43,7 @@ class JwtAuthFilter extends OncePerRequestFilter {
 			var principal = new CustomPrincipal(Long.valueOf(claims.getSubject()));
 			// Mọi người dùng đã đăng nhập chỉ có quyền chung ROLE_USER; quyền theo từng quỹ
 			// kiểm tra riêng (mục 6)
-			var authorities = List.of(new SimpleGrantedAuthority("ROLE_USER"));
+			var authorities = List.of(new SimpleGrantedAuthority(claims.get("role", String.class)));
 //			log.info("Principal type: {}", principal.getClass().getName());
 //			log.info("Principal value: {}", principal);
 			var auth = new UsernamePasswordAuthenticationToken(principal, null, authorities);
