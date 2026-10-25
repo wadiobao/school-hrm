@@ -1,4 +1,4 @@
-﻿package com.kltn.school_hrm.module.leave.repository;
+package com.kltn.school_hrm.module.leave.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -49,5 +49,16 @@ public interface LeaveRequestRepository extends JpaRepository<LeaveRequest, Long
 			@Param("statuses") Collection<RequestStatus> statuses,
 			@Param("newStart") LocalDate newStart,
 			@Param("newEnd") LocalDate newEnd);
+	@Query("""
+			    SELECT lr FROM LeaveRequest lr
+			    WHERE lr.employee.id = :employeeId
+			      AND lr.status = 'APPROVED'
+			      AND lr.startDate <= :endDate
+			      AND lr.endDate >= :startDate
+			""")
+	List<LeaveRequest> findApprovedByEmployeeAndDateRange(
+			@Param("employeeId") Long employeeId,
+			@Param("startDate") LocalDate startDate,
+			@Param("endDate") LocalDate endDate);
 }
 
