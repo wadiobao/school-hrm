@@ -1,53 +1,49 @@
-﻿package com.kltn.school_hrm.module.payroll.dto.request;
+package com.kltn.school_hrm.module.payroll.dto.request;
 
 import java.math.BigDecimal;
 import java.util.List;
 
+import com.kltn.school_hrm.shared.enums.Enums.PayrollItemType;
 import com.kltn.school_hrm.shared.enums.Enums.PayrollStatus;
 
-import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+/** Request để tạo hoặc cập nhật thủ công bảng lương của một nhân viên */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class PayrollCreateRequest {
-    @NotNull(message = "Employee ID is required")
+
+    @NotNull(message = "periodId không được để trống")
+    private Long periodId;
+
+    @NotNull(message = "employeeId không được để trống")
     private Long employeeId;
 
-    @NotNull(message = "Month is required")
-    @Min(1) @Max(12)
-    private Integer month;
-
-    @NotNull(message = "Year is required")
-    @Min(2000)
-    private Integer year;
-
-    private BigDecimal grossSalary;
-    private BigDecimal totalWorkDays;
+    private BigDecimal paidWorkDays;
     private BigDecimal totalTeachingHours;
-    private BigDecimal totalAllowances;
+    private BigDecimal grossSalary;
     private BigDecimal totalDeductions;
     private BigDecimal netSalary;
-
     private PayrollStatus status;
+    private String note;
 
-    /** Danh sách chi tiết các khoản lương */
-    private List<PayrollDetailItem> details;
+    /** Danh sách từng khoản lương chi tiết */
+    private List<PayrollItemRequest> items;
 
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
     @Builder
-    public static class PayrollDetailItem {
+    public static class PayrollItemRequest {
         @NotNull
-        private Long componentId;
+        private PayrollItemType type;
+        private String description;
         @NotNull
         private BigDecimal amount;
     }
