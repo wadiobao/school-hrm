@@ -314,7 +314,7 @@
                                     <div class="col-sm-6 text-sm-end">
                                         <div class="small text-muted">Trạng thái phiếu lương:</div>
                                         <div id="ps-status-badge">--</div>
-                                        <div class="small text-muted mt-1">Ngày lập: <span id="ps-created-at">--</span></div>
+                                        <div class="small text-muted mt-1">Ngày tính: <span id="ps-calculated-at-header">--</span></div>
                                     </div>
                                 </div>
                             </div>
@@ -389,9 +389,36 @@
                         </div>
 
                         <!-- NET SALARY HIGHLIGHT -->
-                        <div class="card border-0 bg-primary text-white p-3 text-center shadow">
+                        <div class="card border-0 bg-primary text-white p-3 text-center shadow mb-3">
                             <div class="text-white-50 text-uppercase fw-semibold small">Lương Thực Nhận (Net Salary)</div>
                             <h2 class="fw-bold mt-1 mb-0" id="ps-net-salary">0 ₫</h2>
+                        </div>
+
+                        <!-- CĂN CỨ TÍNH LƯƠNG (SNAPSHOT AUDIT) -->
+                        <div class="card border-0 bg-light mb-2">
+                            <div class="card-header bg-secondary bg-opacity-10 text-secondary fw-semibold py-2 small">
+                                <i class="bi bi-shield-check me-1"></i> CĂN CỨ TÍNH LƯƠNG
+                            </div>
+                            <div class="card-body py-2">
+                                <div class="row g-2 small">
+                                    <div class="col-sm-6 d-flex justify-content-between">
+                                        <span class="text-muted">Ngày nghỉ không lương đã trừ:</span>
+                                        <span class="fw-semibold" id="ps-unpaid-leave-days">0 ngày</span>
+                                    </div>
+                                    <div class="col-sm-6 d-flex justify-content-between">
+                                        <span class="text-muted">Thu nhập chịu thuế:</span>
+                                        <span class="fw-semibold" id="ps-taxable-income">0 ₫</span>
+                                    </div>
+                                    <div class="col-sm-6 d-flex justify-content-between">
+                                        <span class="text-muted">Phiên bản chính sách:</span>
+                                        <span class="fw-semibold" id="ps-policy-version">v1</span>
+                                    </div>
+                                    <div class="col-sm-6 d-flex justify-content-between">
+                                        <span class="text-muted">Thời điểm tính lương:</span>
+                                        <span class="fw-semibold" id="ps-calculated-at">--</span>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <div class="modal-footer border-0">
@@ -787,7 +814,9 @@
                     document.getElementById('ps-period-title').textContent = `Kỳ lương Tháng ${p.month}/${p.year}`;
                     document.getElementById('ps-emp-name').textContent = p.employeeName || 'N/A';
                     document.getElementById('ps-emp-code').textContent = `Mã NV: ${p.employeeCode || 'N/A'}`;
-                    document.getElementById('ps-created-at').textContent = formatDate(p.createdAt);
+                    const calcDate = p.calculatedAt || p.createdAt;
+                    const headerEl = document.getElementById('ps-calculated-at-header') || document.getElementById('ps-created-at');
+                    if (headerEl) headerEl.textContent = formatDate(calcDate);
 
                     let badgeClass = 'bg-secondary';
                     let statusText = 'Dự thảo';
@@ -837,6 +866,21 @@
                     document.getElementById('ps-total-gross').textContent = formatCurrency(p.grossSalary);
                     document.getElementById('ps-total-deductions').textContent = formatCurrency(p.totalDeductions);
                     document.getElementById('ps-net-salary').textContent = formatCurrency(p.netSalary);
+
+                    // Căn cứ tính lương (Snapshot Audit)
+                    const unpaidLeaveEl = document.getElementById('ps-unpaid-leave-days');
+                    if (unpaidLeaveEl) unpaidLeaveEl.textContent = `${p.snapshotUnpaidLeaveDays != null ? p.snapshotUnpaidLeaveDays : 0} ngày`;
+
+                    const taxableIncEl = document.getElementById('ps-taxable-income');
+                    if (taxableIncEl) taxableIncEl.textContent = formatCurrency(p.snapshotTaxableIncome);
+
+                    const policyVerEl = document.getElementById('ps-policy-version');
+                    if (policyVerEl) policyVerEl.textContent = p.policyVersion || 'v1';
+
+                    const calcAtEl = document.getElementById('ps-calculated-at');
+                    if (calcAtEl) {
+                        calcAtEl.textContent = calcDate ? new Date(calcDate).toLocaleString('vi-VN') : '--';
+                    }
 
                     openModal('payslipModal');
                 } catch (e) {
