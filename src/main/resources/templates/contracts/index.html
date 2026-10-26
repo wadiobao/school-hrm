@@ -223,6 +223,110 @@
                 </div>
             </div>
         </div>
+
+        <!-- MODAL 4: ĐIỀU CHỈNH LƯƠNG HỢP ĐỒNG (CHANGE SALARY) -->
+        <div class="modal fade" id="changeSalaryModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title fw-bold" id="changeSalaryModalTitle">
+                            <i class="bi bi-cash-coin text-warning me-2"></i>Điều chỉnh Lương Hợp đồng
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="alert alert-warning py-2 small d-flex align-items-center mb-3">
+                            <i class="bi bi-shield-lock-fill fs-5 me-2"></i>
+                            <div><strong>Cơ chế lưu vết:</strong> Mọi thay đổi lương sẽ được ghi lại trong <strong>Lịch sử diễn biến lương (SalaryHistory)</strong> cùng quyết định phê duyệt và ngày áp dụng.</div>
+                        </div>
+
+                        <form id="changeSalaryForm">
+                            <input type="hidden" id="cs-contract-id">
+
+                            <div class="mb-3">
+                                <label class="form-label text-muted small mb-1">Mức lương Gross hiện tại</label>
+                                <div class="fs-5 fw-bold text-secondary" id="cs-current-salary-display">0 ₫</div>
+                            </div>
+
+                            <div class="row g-3">
+                                <div class="col-md-7">
+                                    <label class="form-label required">Mức lương Gross mới (VND) *</label>
+                                    <input type="number" id="cs-new-salary" class="form-control" min="1" step="100000" placeholder="VD: 18000000" required>
+                                </div>
+                                <div class="col-md-5">
+                                    <label class="form-label required">Ngày hiệu lực *</label>
+                                    <input type="date" id="cs-effective-date" class="form-control" required>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label">Số quyết định</label>
+                                    <input type="text" id="cs-decision-number" class="form-control" placeholder="VD: QĐ-TL/2026/01">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label required">Lý do điều chỉnh *</label>
+                                    <select id="cs-reason" class="form-select" required>
+                                        <option value="ANNUAL_REVIEW">Đánh giá hàng năm</option>
+                                        <option value="PROMOTION">Thăng chức</option>
+                                        <option value="PROBATION_COMPLETED">Hoàn thành thử việc</option>
+                                        <option value="ADJUSTMENT" selected>Điều chỉnh định kỳ</option>
+                                        <option value="OTHER">Khác</option>
+                                    </select>
+                                </div>
+
+                                <div class="col-12">
+                                    <label class="form-label">Ghi chú / Căn cứ điều chỉnh</label>
+                                    <textarea id="cs-note" class="form-control" rows="2" placeholder="Ghi chú thêm về quyết định điều chỉnh lương này..."></textarea>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Hủy</button>
+                        <button type="button" class="btn btn-warning fw-semibold" onclick="saveSalaryChange()">
+                            <i class="bi bi-check-lg me-1"></i> Lưu & Áp dụng Mức lương mới
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL 5: LỊCH SỬ DIỄN BIẾN LƯƠNG (SALARY HISTORY) -->
+        <div class="modal fade" id="salaryHistoryModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title fw-bold">
+                            <i class="bi bi-graph-up text-primary me-2"></i>Lịch sử Diễn biến Lương: <span id="sh-modal-contract-num" class="text-primary">--</span>
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th class="ps-3">Ngày hiệu lực</th>
+                                        <th>Lương cũ ➔ Lương mới</th>
+                                        <th>Mức thay đổi</th>
+                                        <th>Lý do & Số QĐ</th>
+                                        <th>Người duyệt</th>
+                                        <th class="pe-3">Ghi chú</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="salary-history-table-body">
+                                    <tr>
+                                        <td colspan="6" class="text-center py-4 text-muted">Đang tải lịch sử lương...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div th:fragment="scripts">
@@ -373,14 +477,26 @@
                     return;
                 }
 
-                // Buttons cho HR/Admin
+                // Buttons cho HR/Admin & Nhân viên
                 if (canEdit) {
                     actionsContainer.innerHTML = `
+                        <button class="btn btn-sm btn-outline-warning" onclick="openChangeSalaryModal(${c.id}, ${c.grossSalary}, '${c.contractNumber}')">
+                            <i class="bi bi-cash-coin me-1"></i> Điều chỉnh lương
+                        </button>
+                        <button class="btn btn-sm btn-outline-info" onclick="viewSalaryHistory(${c.id}, '${c.contractNumber}')">
+                            <i class="bi bi-graph-up me-1"></i> Lịch sử lương
+                        </button>
                         <button class="btn btn-sm btn-outline-primary" onclick="openCreateContractModal(true)">
                             <i class="bi bi-arrow-repeat me-1"></i> Gia hạn / Ký mới HĐ
                         </button>
                         <button class="btn btn-sm btn-outline-danger" onclick="openTerminateModal(${c.id}, '${c.contractNumber}')">
                             <i class="bi bi-x-circle me-1"></i> Chấm dứt HĐ
+                        </button>
+                    `;
+                } else {
+                    actionsContainer.innerHTML = `
+                        <button class="btn btn-sm btn-outline-info" onclick="viewSalaryHistory(${c.id}, '${c.contractNumber}')">
+                            <i class="bi bi-graph-up me-1"></i> Lịch sử lương
                         </button>
                     `;
                 }
@@ -453,6 +569,9 @@
                             <td class="small">${dateText}</td>
                             <td>${statusBadge}</td>
                             <td class="text-end pe-4">
+                                <button class="btn btn-sm btn-outline-secondary me-1" title="Lịch sử điều chỉnh lương" onclick="viewSalaryHistory(${c.id}, '${c.contractNumber}')">
+                                    <i class="bi bi-graph-up"></i> Lương
+                                </button>
                                 <button class="btn btn-sm btn-outline-info" title="Xem chi tiết" onclick="viewContractDetail(${c.id})">
                                     <i class="bi bi-eye"></i> Xem
                                 </button>
@@ -681,6 +800,112 @@
             function formatVnd(amount) {
                 if (amount == null) return '0 ₫';
                 return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
+            }
+
+            // ================= SALARY ADJUSTMENT & HISTORY =================
+            function openChangeSalaryModal(contractId, currentGrossSalary, contractNumber) {
+                document.getElementById('changeSalaryForm').reset();
+                document.getElementById('cs-contract-id').value = contractId;
+                document.getElementById('changeSalaryModalTitle').innerHTML = 
+                    `<i class="bi bi-cash-coin text-warning me-2"></i>Điều chỉnh Lương Hợp đồng: <strong>${contractNumber}</strong>`;
+                document.getElementById('cs-current-salary-display').textContent = formatVnd(currentGrossSalary);
+                document.getElementById('cs-new-salary').value = currentGrossSalary;
+                document.getElementById('cs-effective-date').value = formatDateIso(new Date());
+                openModal('changeSalaryModal');
+            }
+
+            async function saveSalaryChange() {
+                const contractId = document.getElementById('cs-contract-id').value;
+                const newSalary = parseFloat(document.getElementById('cs-new-salary').value);
+                const effectiveDate = document.getElementById('cs-effective-date').value;
+                const decisionNumber = document.getElementById('cs-decision-number').value.trim();
+                const reason = document.getElementById('cs-reason').value;
+                const note = document.getElementById('cs-note').value.trim();
+
+                if (isNaN(newSalary) || newSalary <= 0 || !effectiveDate || !reason) {
+                    showAlert('Vui lòng điền đầy đủ các thông tin bắt buộc (*)', 'warning');
+                    return;
+                }
+
+                const payload = {
+                    newSalary: newSalary,
+                    effectiveDate: effectiveDate,
+                    decisionNumber: decisionNumber || null,
+                    reason: reason,
+                    note: note || null
+                };
+
+                try {
+                    await fetchApi(`/api/v1/contracts/${contractId}/change-salary`, {
+                        method: 'POST',
+                        body: JSON.stringify(payload)
+                    });
+                    showAlert('Điều chỉnh mức lương hợp đồng thành công! Đã lưu vết vào SalaryHistory.', 'success');
+                    closeModal('changeSalaryModal');
+                    if (isManager) {
+                        reloadCurrentEmployeeContracts();
+                    } else {
+                        loadMyContracts();
+                    }
+                } catch (e) {
+                    console.error('Save salary change error', e);
+                }
+            }
+
+            async function viewSalaryHistory(contractId, contractNumber) {
+                document.getElementById('sh-modal-contract-num').textContent = contractNumber;
+                const tbody = document.getElementById('salary-history-table-body');
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted"><div class="spinner-border spinner-border-sm text-primary me-2"></div>Đang tải lịch sử lương...</td></tr>';
+                openModal('salaryHistoryModal');
+
+                try {
+                    const res = await fetchApi(`/api/v1/contracts/${contractId}/salary-history`);
+                    const list = res.data || [];
+
+                    if (list.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted">Chưa có bản ghi điều chỉnh lương nào cho hợp đồng này</td></tr>';
+                        return;
+                    }
+
+                    tbody.innerHTML = list.map(sh => {
+                        let diffHtml = '<span class="text-muted">--</span>';
+                        if (sh.difference != null) {
+                            if (sh.difference > 0) {
+                                diffHtml = `<span class="badge bg-success bg-opacity-10 text-success"><i class="bi bi-arrow-up-right me-1"></i>+${formatVnd(sh.difference)}</span>`;
+                            } else if (sh.difference < 0) {
+                                diffHtml = `<span class="badge bg-danger bg-opacity-10 text-danger"><i class="bi bi-arrow-down-right me-1"></i>${formatVnd(sh.difference)}</span>`;
+                            } else {
+                                diffHtml = '<span class="badge bg-light text-dark">0 ₫</span>';
+                            }
+                        }
+
+                        const oldSal = sh.oldGrossSalary != null ? formatVnd(sh.oldGrossSalary) : '<span class="text-muted">Khởi điểm</span>';
+                        const newSal = formatVnd(sh.newGrossSalary);
+
+                        return `
+                            <tr>
+                                <td class="ps-3 fw-semibold text-dark">${formatDate(sh.effectiveDate)}</td>
+                                <td>
+                                    <div class="small text-muted">${oldSal} ➔</div>
+                                    <div class="fw-bold text-success">${newSal}</div>
+                                </td>
+                                <td>${diffHtml}</td>
+                                <td>
+                                    <div class="fw-semibold text-dark">${sh.reasonLabel || sh.reason}</div>
+                                    <small class="text-muted">${sh.decisionNumber ? 'Số QĐ: ' + sh.decisionNumber : 'Không có số QĐ'}</small>
+                                </td>
+                                <td>
+                                    <div class="small fw-semibold text-dark">${sh.approvedByName || '--'}</div>
+                                    <small class="text-muted">${formatDate(sh.createdAt)}</small>
+                                </td>
+                                <td class="pe-3 small text-muted">${sh.note || '--'}</td>
+                            </tr>
+                        `;
+                    }).join('');
+                } catch (e) {
+                    console.error('Error loading salary history', e);
+                    tbody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-danger">Lỗi tải lịch sử lương: ${e.message}</td></tr>`;
+                }
             }
         </script>
     </div>

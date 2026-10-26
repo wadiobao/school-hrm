@@ -17,10 +17,13 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.kltn.school_hrm.dto.common.ApiResponse;
 import com.kltn.school_hrm.module.employee.dto.request.ContractRequest;
+import com.kltn.school_hrm.module.employee.dto.request.SalaryChangeRequest;
 import com.kltn.school_hrm.module.employee.dto.response.ContractResponse;
+import com.kltn.school_hrm.module.employee.dto.response.SalaryHistoryResponse;
 import com.kltn.school_hrm.module.employee.entity.Employee;
 import com.kltn.school_hrm.module.employee.repository.EmployeeRepository;
 import com.kltn.school_hrm.module.employee.service.ContractService;
+import com.kltn.school_hrm.module.employee.service.SalaryHistoryService;
 import com.kltn.school_hrm.shared.configuration.dto.CustomPrincipal;
 import com.kltn.school_hrm.shared.exception.custom.NotFoundException;
 
@@ -33,6 +36,7 @@ import lombok.RequiredArgsConstructor;
 public class ContractController {
 
     private final ContractService contractService;
+    private final SalaryHistoryService salaryHistoryService;
     private final EmployeeRepository employeeRepository;
 
     /** Tạo hợp đồng mới (Chỉ HR_MANAGER, SUPER_ADMIN) */
@@ -123,4 +127,32 @@ public class ContractController {
         contractService.deleteContract(id);
         return ResponseEntity.ok(ApiResponse.success(null, "Xóa hợp đồng thành công"));
     }
+
+    /**
+     * Điều chỉnh mức lương của hợp đồng lao động và lưu vết SalaryHistory.
+     * Chỉ SUPER_ADMIN và HR_MANAGER có thẩm quyền phê duyệt tăng/giảm lương.
+     */
+    @PostMapping("/{id}/change-salary")
+    @PreAuthorize("@contractSecurity.canManageContracts()")
+    public ResponseEntity<ApiResponse<SalaryHistoryResponse>> changeSalary(
+            @PathVariable Long id,
+            @Valid @RequestBody SalaryChangeRequest request,
+            @AuthenticationPrincipal CustomPrincipal principal) {
+        Long approverId = (principal != null) ? principal.userId() : null;
+        SalaryHistoryResponse response = salaryHistoryService.changeSalary(id, request, approverId);
+        return ResponseEntity.ok(ApiResponse.success(response, "Điều chỉnh mức lương hợp đồng thành công"));
+    }
+
+    /**
+     * Xem toàn bộ lịch sử diễn biến lương của một hợp đồng lao động cụ thể.
+     * Nhân viên được phép xem lịch sử lương của hợp đồng thuộc sở hữu của mình.
+     */
+    @GetMapping("/{id}/salary-history")
+    @PreAuthorize("@contractSecurity.canViewContract(#id)")
+    public ResponseEntity<ApiResponse<List<SalaryHistoryResponse>>> getSalaryHistory(
+            @PathVariable Long id) {
+        List<SalaryHistoryResponse> history = salaryHistoryService.getHistoryByContract(id);
+        return ResponseEntity.ok(ApiResponse.success(history, "Lấy lịch sử điều chỉnh lương thành công"));
+    }
 }
+

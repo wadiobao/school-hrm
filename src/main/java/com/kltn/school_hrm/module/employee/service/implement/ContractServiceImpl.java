@@ -13,12 +13,15 @@ import com.kltn.school_hrm.module.employee.dto.request.ContractRequest;
 import com.kltn.school_hrm.module.employee.dto.response.ContractResponse;
 import com.kltn.school_hrm.module.employee.entity.Contract;
 import com.kltn.school_hrm.module.employee.entity.Employee;
+import com.kltn.school_hrm.module.employee.entity.SalaryHistory;
 import com.kltn.school_hrm.module.employee.repository.ContractRepository;
 import com.kltn.school_hrm.module.employee.repository.EmployeeRepository;
+import com.kltn.school_hrm.module.employee.repository.SalaryHistoryRepository;
 import com.kltn.school_hrm.module.employee.service.ContractService;
 import com.kltn.school_hrm.shared.enums.Enums.ContractStatus;
 import com.kltn.school_hrm.shared.enums.Enums.ContractType;
 import com.kltn.school_hrm.shared.enums.Enums.EmployeeStatus;
+import com.kltn.school_hrm.shared.enums.Enums.SalaryChangeReason;
 import com.kltn.school_hrm.shared.exception.custom.BusinessException;
 import com.kltn.school_hrm.shared.exception.custom.NotFoundException;
 
@@ -34,6 +37,7 @@ public class ContractServiceImpl implements ContractService {
     private final ContractRepository contractRepository;
     private final EmployeeRepository employeeRepository;
     private final PositionRepository positionRepository;
+    private final SalaryHistoryRepository salaryHistoryRepository;
 
     @Override
     public ContractResponse createInitialContract(ContractRequest request) {
@@ -105,6 +109,20 @@ public class ContractServiceImpl implements ContractService {
 
         contract.validate();
         Contract savedContract = contractRepository.save(contract);
+
+        // Lưu vết mức lương khởi điểm vào SalaryHistory
+        SalaryHistory initialHistory = SalaryHistory.builder()
+                .contract(savedContract)
+                .oldGrossSalary(null)
+                .newGrossSalary(savedContract.getGrossSalary())
+                .currency(savedContract.getCurrency())
+                .effectiveDate(savedContract.getStartDate())
+                .decisionNumber(savedContract.getContractNumber())
+                .reason(SalaryChangeReason.ADJUSTMENT)
+                .note("Mức lương khởi điểm theo Hợp đồng " + savedContract.getContractNumber())
+                .build();
+        salaryHistoryRepository.save(initialHistory);
+
         log.info("Tạo mới hợp đồng {} cho nhân viên {}", savedContract.getContractNumber(), employee.getFullName());
         return mapToResponse(savedContract);
     }
