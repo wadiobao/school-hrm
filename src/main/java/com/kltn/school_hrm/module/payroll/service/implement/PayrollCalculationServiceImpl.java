@@ -61,16 +61,6 @@ import lombok.extern.slf4j.Slf4j;
 @Transactional(rollbackFor = Exception.class)
 public class PayrollCalculationServiceImpl implements PayrollCalculationService {
 
-    // Tỷ lệ bảo hiểm người lao động đóng (BHXH 8% + BHYT 1.5% + BHTN 1%)
-    private static final BigDecimal INSURANCE_RATE = new BigDecimal("0.105");
-    // Thuế TNCN đơn giản hoá — bậc 1 (dưới 5tr): 5%, bậc 2 (5-10tr): 10%
-    // Ở đây dùng flat 8% cho demo; thay bằng bảng luỹ tiến khi cần.
-    private static final BigDecimal TAX_RATE = new BigDecimal("0.08");
-    // Thu nhập cá nhân miễn giảm trừ gia cảnh (11tr/tháng)
-    private static final BigDecimal PERSONAL_DEDUCTION = new BigDecimal("11000000");
-    // Phiên bản chính sách tính lương đang áp dụng
-    private static final String POLICY_VERSION = "v1";
-
     private final PayrollPeriodRepository periodRepository;
     private final PayrollRepository payrollRepository;
     private final PayrollItemRepository payrollItemRepository;
@@ -78,6 +68,10 @@ public class PayrollCalculationServiceImpl implements PayrollCalculationService 
     private final ContractRepository contractRepository;
     private final AttendanceRepository attendanceRepository;
     private final LeaveRequestRepository leaveRequestRepository;
+    private final com.kltn.school_hrm.module.payroll.service.TaxPolicyService taxPolicyService;
+    private final com.kltn.school_hrm.module.payroll.calculator.InsuranceCalculator insuranceCalculator;
+    private final com.kltn.school_hrm.module.payroll.calculator.TaxableIncomeCalculator taxableIncomeCalculator;
+    private final com.kltn.school_hrm.module.payroll.calculator.PITCalculator pitCalculator;
 
     @Override
     public List<PayrollResponse> calculateForPeriod(Long periodId) {
@@ -180,20 +174,27 @@ public class PayrollCalculationServiceImpl implements PayrollCalculationService 
         // 6. Gross = base + allowances
         BigDecimal gross = baseSalary.add(totalAllowances);
 
-        // 7. Bảo hiểm (tính trên lương hợp đồng, không phải gross toàn phần)
-        BigDecimal insurance = contractSalary.multiply(INSURANCE_RATE)
-                .setScale(0, RoundingMode.HALF_UP);
+        // 7. Lấy chính sách thuế TNCN hiệu lực tại thời điểm kết thúc kỳ lương
+        com.kltn.school_hrm.module.payroll.entity.TaxPolicy activeTaxPolicy = taxPolicyService.getActivePolicyEntity(end);
 
-        // 8. Thuế TNCN (gross - personal deduction - insurance)
-        BigDecimal taxableIncome = gross.subtract(PERSONAL_DEDUCTION).subtract(insurance);
-        BigDecimal tax = taxableIncome.compareTo(BigDecimal.ZERO) > 0
-                ? taxableIncome.multiply(TAX_RATE).setScale(0, RoundingMode.HALF_UP)
-                : BigDecimal.ZERO;
+        // 8. Bảo hiểm (tính trên lương hợp đồng theo tỷ lệ trong TaxPolicy)
+        BigDecimal insurance = insuranceCalculator.calculate(contractSalary, activeTaxPolicy);
+
+        // 9. Thu nhập chịu thuế (Taxable Income) = Lương công + các khoản phụ cấp chịu thuế
+        BigDecimal taxableIncome = taxableIncomeCalculator.calculate(baseSalary, contract, activeTaxPolicy);
+
+        // 10. Số người phụ thuộc từ hồ sơ nhân viên
+        int dependentCount = employee.getDependentCount() != null ? employee.getDependentCount() : 0;
+
+        // 11. Thuế TNCN lũy tiến theo Luật 2026 (hoặc chính sách đang cấu hình)
+        com.kltn.school_hrm.module.payroll.tax.TaxCalculationResult taxResult = pitCalculator.calculate(
+                taxableIncome, insurance, dependentCount, activeTaxPolicy);
+        BigDecimal tax = taxResult.getPitAmount();
 
         BigDecimal totalDeductions = insurance.add(tax);
         BigDecimal netSalary = gross.subtract(totalDeductions).max(BigDecimal.ZERO);
 
-        // 9. Lưu Payroll (bao gồm snapshot đầu vào để audit)
+        // 12. Lưu Payroll (bao gồm snapshot đầu vào và phiên bản chính sách để audit)
         Payroll payroll = Payroll.builder()
                 .period(period)
                 .employee(employee)
@@ -201,8 +202,8 @@ public class PayrollCalculationServiceImpl implements PayrollCalculationService 
                 .snapshotContractSalary(contractSalary)
                 .snapshotStandardDays(standardDays)
                 .snapshotUnpaidLeaveDays(unpaidLeaveDays)
-                .snapshotTaxableIncome(taxableIncome.max(BigDecimal.ZERO))
-                .policyVersion(POLICY_VERSION)
+                .snapshotTaxableIncome(taxResult.getTaxableBase())
+                .policyVersion(taxResult.getPolicyVersion())
                 .paidWorkDays(paidWorkDays)
                 .grossSalary(gross)
                 .totalDeductions(totalDeductions)
@@ -211,7 +212,7 @@ public class PayrollCalculationServiceImpl implements PayrollCalculationService 
                 .build();
         payroll = payrollRepository.save(payroll);
 
-        // 10. Lưu PayrollItems
+        // 13. Lưu PayrollItems
         List<PayrollItem> items = new ArrayList<>();
         items.add(item(payroll, PayrollItemType.BASE_SALARY,
                 "Lương theo công (" + paidWorkDays.toPlainString() + "/" + standardDays + " ngày)", baseSalary));
@@ -221,10 +222,15 @@ public class PayrollCalculationServiceImpl implements PayrollCalculationService 
             items.add(item(payroll, PayrollItemType.ALLOWANCE, "Phụ cấp đi lại", flightAllowance));
         if (relocationAllowance.signum() > 0)
             items.add(item(payroll, PayrollItemType.ALLOWANCE, "Phụ cấp di chuyển", relocationAllowance));
+
+        String insuranceRateText = activeTaxPolicy.getInsuranceRate() != null
+                ? activeTaxPolicy.getInsuranceRate().multiply(new BigDecimal("100")).stripTrailingZeros().toPlainString() + "%"
+                : "10.5%";
         items.add(item(payroll, PayrollItemType.INSURANCE,
-                "Bảo hiểm NLĐ (10.5% lương HĐ)", insurance));
+                "Bảo hiểm NLĐ (" + insuranceRateText + " lương HĐ)", insurance));
         if (tax.signum() > 0)
-            items.add(item(payroll, PayrollItemType.TAX, "Thuế TNCN (8% thu nhập chịu thuế)", tax));
+            items.add(item(payroll, PayrollItemType.TAX,
+                    "Thuế TNCN (" + taxResult.getPolicyVersion() + " lũy tiến)", tax));
 
         payrollItemRepository.saveAll(items);
         payroll.setItems(items);

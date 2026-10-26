@@ -35,6 +35,9 @@
                                 <button class="btn btn-outline-secondary btn-sm" onclick="loadPeriods()">
                                     <i class="bi bi-arrow-clockwise"></i> Làm mới
                                 </button>
+                                <button class="btn btn-warning btn-sm text-dark fw-semibold" data-roles="SUPER_ADMIN" onclick="openTaxPolicyModal()">
+                                    <i class="bi bi-sliders me-1"></i> Cấu hình Thuế TNCN (2026)
+                                </button>
                                 <button class="btn btn-primary btn-sm" data-roles="HR_MANAGER,SUPER_ADMIN" onclick="openCreatePeriodModal()">
                                     <i class="bi bi-plus-lg me-1"></i> Tạo kỳ lương mới
                                 </button>
@@ -427,6 +430,106 @@
                         </button>
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
                     </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL: CẤU HÌNH CHÍNH SÁCH THUẾ TNCN (SUPER_ADMIN ONLY) -->
+        <div class="modal fade" id="taxPolicyModal" tabindex="-1" aria-labelledby="taxPolicyModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content border-0 shadow">
+                    <div class="modal-header bg-dark text-white">
+                        <h5 class="modal-title fw-bold" id="taxPolicyModalLabel">
+                            <i class="bi bi-sliders text-warning me-2"></i>Cấu hình Chính sách Thuế TNCN & Giảm trừ
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <form id="taxPolicyForm" onsubmit="saveTaxPolicy(event)">
+                        <div class="modal-body p-4">
+                            <input type="hidden" id="tax-policy-id">
+                            
+                            <div class="alert alert-info py-2 px-3 small d-flex align-items-center mb-3">
+                                <i class="bi bi-shield-lock-fill fs-5 me-2 text-primary"></i>
+                                <div>Chỉ tài khoản <strong>SUPER_ADMIN</strong> mới có quyền cập nhật biểu thuế và các định mức giảm trừ gia cảnh.</div>
+                            </div>
+
+                            <div class="row g-3 mb-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold small">Tên chính sách</label>
+                                    <input type="text" class="form-control form-control-sm" id="tax-policy-name" required>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label fw-semibold small">Mã chính sách</label>
+                                    <input type="text" class="form-control form-control-sm bg-light" id="tax-policy-code" readonly>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label fw-semibold small">Phiên bản</label>
+                                    <input type="text" class="form-control form-control-sm" id="tax-policy-version" required>
+                                </div>
+                            </div>
+
+                            <div class="row g-3 mb-3">
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold small text-primary">Giảm trừ bản thân (VNĐ/tháng)</label>
+                                    <input type="number" class="form-control form-control-sm" id="tax-policy-personal" min="0" step="100000" required>
+                                    <div class="form-text small">Quy định 2026: 15.500.000 đ</div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold small text-primary">Giảm trừ người phụ thuộc (VNĐ/người/tháng)</label>
+                                    <input type="number" class="form-control form-control-sm" id="tax-policy-dependent" min="0" step="100000" required>
+                                    <div class="form-text small">Quy định 2026: 6.200.000 đ</div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold small text-danger">Tỷ lệ đóng BHXH/BHYT/BHTN NLĐ (%)</label>
+                                    <input type="number" class="form-control form-control-sm" id="tax-policy-insurance-rate" min="0" max="100" step="0.1" required>
+                                    <div class="form-text small">Mặc định: 10.5%</div>
+                                </div>
+                            </div>
+
+                            <div class="row g-3 mb-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold small">Ngày bắt đầu áp dụng</label>
+                                    <input type="date" class="form-control form-control-sm" id="tax-policy-effective-from" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold small">Ghi chú</label>
+                                    <input type="text" class="form-control form-control-sm" id="tax-policy-note">
+                                </div>
+                            </div>
+
+                            <hr class="my-3">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h6 class="fw-bold mb-0 text-dark"><i class="bi bi-bar-chart-steps text-success me-1"></i>Biểu thuế lũy tiến từng phần</h6>
+                                <button type="button" class="btn btn-outline-success btn-sm py-1 px-2" onclick="addTaxBracketRow()">
+                                    <i class="bi bi-plus-circle me-1"></i>Thêm bậc
+                                </button>
+                            </div>
+
+                            <div class="table-responsive">
+                                <table class="table table-sm table-bordered align-middle text-center mb-0">
+                                    <thead class="table-light small">
+                                        <tr>
+                                            <th style="width: 10%">Bậc</th>
+                                            <th style="width: 30%">Thu nhập từ (VNĐ)</th>
+                                            <th style="width: 30%">Thu nhập đến (VNĐ)</th>
+                                            <th style="width: 20%">Thuế suất (%)</th>
+                                            <th style="width: 10%">Xóa</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tax-bracket-tbody" class="small">
+                                        <!-- Dynamic Bracket Rows -->
+                                    </tbody>
+                                </table>
+                                <div class="form-text small mt-1">Để trống 'Thu nhập đến' ở bậc cao nhất nếu không giới hạn trần thu nhập.</div>
+                            </div>
+                        </div>
+                        <div class="modal-footer bg-light">
+                            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Đóng</button>
+                            <button type="submit" class="btn btn-warning btn-sm fw-semibold" id="btn-save-tax-policy">
+                                <i class="bi bi-check-lg me-1"></i>Lưu Chính Sách Thuế
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>
@@ -891,6 +994,191 @@
             function formatCurrency(amount) {
                 if (amount == null) return '0 ₫';
                 return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
+            }
+
+            // ================= TAX POLICY CONFIG (SUPER_ADMIN) =================
+            async function openTaxPolicyModal() {
+                try {
+                    const res = await fetchApi('/api/v1/tax-policies/active');
+                    const policy = res.data;
+                    if (!policy) {
+                        showAlert('Không tìm thấy chính sách thuế đang áp dụng', 'warning');
+                        return;
+                    }
+
+                    document.getElementById('tax-policy-id').value = policy.id || '';
+                    document.getElementById('tax-policy-name').value = policy.name || '';
+                    document.getElementById('tax-policy-code').value = policy.code || '';
+                    document.getElementById('tax-policy-version').value = policy.version || '';
+                    document.getElementById('tax-policy-personal').value = policy.personalDeduction || 15500000;
+                    document.getElementById('tax-policy-dependent').value = policy.dependentDeduction || 6200000;
+                    
+                    const insRate = policy.insuranceRate != null ? (policy.insuranceRate * 100).toFixed(1) : '10.5';
+                    document.getElementById('tax-policy-insurance-rate').value = insRate;
+                    document.getElementById('tax-policy-effective-from').value = policy.effectiveFrom || '2026-01-01';
+                    document.getElementById('tax-policy-note').value = policy.note || '';
+
+                    renderTaxBrackets(policy.brackets || []);
+                    openModal('taxPolicyModal');
+                } catch (e) {
+                    console.error('Error loading tax policy', e);
+                    showAlert('Không thể tải cấu hình chính sách thuế', 'danger');
+                }
+            }
+
+            function renderTaxBrackets(brackets) {
+                const tbody = document.getElementById('tax-bracket-tbody');
+                tbody.innerHTML = '';
+
+                // Sắp xếp theo bracketOrder
+                const sorted = [...brackets].sort((a, b) => a.bracketOrder - b.bracketOrder);
+                if (sorted.length === 0) {
+                    // Mặc định 5 bậc 2026 theo req.md
+                    sorted.push(
+                        { bracketOrder: 1, fromAmount: 0, toAmount: 10000000, taxRate: 0.05 },
+                        { bracketOrder: 2, fromAmount: 10000000, toAmount: 30000000, taxRate: 0.10 },
+                        { bracketOrder: 3, fromAmount: 30000000, toAmount: 60000000, taxRate: 0.20 },
+                        { bracketOrder: 4, fromAmount: 60000000, toAmount: 100000000, taxRate: 0.30 },
+                        { bracketOrder: 5, fromAmount: 100000000, toAmount: null, taxRate: 0.35 }
+                    );
+                }
+
+                sorted.forEach((b, index) => {
+                    const order = index + 1;
+                    const ratePercent = b.taxRate != null ? (b.taxRate * 100).toFixed(1) : 0;
+                    const toVal = b.toAmount != null ? b.toAmount : '';
+                    const tr = document.createElement('tr');
+                    tr.className = 'bracket-row';
+                    tr.innerHTML = `
+                        <td class="fw-bold bracket-order">${order}</td>
+                        <td>
+                            <input type="number" class="form-control form-control-sm text-end bracket-from" value="${b.fromAmount || 0}" min="0" step="100000" required>
+                        </td>
+                        <td>
+                            <input type="number" class="form-control form-control-sm text-end bracket-to" value="${toVal}" placeholder="Không giới hạn" min="0" step="100000">
+                        </td>
+                        <td>
+                            <div class="input-group input-group-sm">
+                                <input type="number" class="form-control text-end bracket-rate" value="${ratePercent}" min="0" max="100" step="0.5" required>
+                                <span class="input-group-text">%</span>
+                            </div>
+                        </td>
+                        <td>
+                            <button type="button" class="btn btn-outline-danger btn-sm py-0 px-2" onclick="removeTaxBracketRow(this)" title="Xóa bậc">
+                                <i class="bi bi-x-lg"></i>
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+
+            function addTaxBracketRow() {
+                const tbody = document.getElementById('tax-bracket-tbody');
+                const order = tbody.children.length + 1;
+                const tr = document.createElement('tr');
+                tr.className = 'bracket-row';
+                tr.innerHTML = `
+                    <td class="fw-bold bracket-order">${order}</td>
+                    <td>
+                        <input type="number" class="form-control form-control-sm text-end bracket-from" value="0" min="0" step="100000" required>
+                    </td>
+                    <td>
+                        <input type="number" class="form-control form-control-sm text-end bracket-to" value="" placeholder="Không giới hạn" min="0" step="100000">
+                    </td>
+                    <td>
+                        <div class="input-group input-group-sm">
+                            <input type="number" class="form-control text-end bracket-rate" value="5" min="0" max="100" step="0.5" required>
+                            <span class="input-group-text">%</span>
+                        </div>
+                    </td>
+                    <td>
+                        <button type="button" class="btn btn-outline-danger btn-sm py-0 px-2" onclick="removeTaxBracketRow(this)" title="Xóa bậc">
+                            <i class="bi bi-x-lg"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            }
+
+            function removeTaxBracketRow(btn) {
+                const row = btn.closest('tr');
+                const tbody = document.getElementById('tax-bracket-tbody');
+                if (tbody.children.length <= 1) {
+                    showAlert('Biểu thuế phải có ít nhất 1 bậc!', 'warning');
+                    return;
+                }
+                row.remove();
+                // Re-index orders
+                const rows = tbody.querySelectorAll('.bracket-row');
+                rows.forEach((r, idx) => {
+                    r.querySelector('.bracket-order').textContent = idx + 1;
+                });
+            }
+
+            async function saveTaxPolicy(e) {
+                e.preventDefault();
+                const id = document.getElementById('tax-policy-id').value;
+                if (!id) {
+                    showAlert('Không tìm thấy ID chính sách thuế để cập nhật', 'danger');
+                    return;
+                }
+
+                const rows = document.querySelectorAll('#tax-bracket-tbody .bracket-row');
+                const brackets = [];
+                for (let i = 0; i < rows.length; i++) {
+                    const r = rows[i];
+                    const order = parseInt(r.querySelector('.bracket-order').textContent, 10);
+                    const fromAmount = parseFloat(r.querySelector('.bracket-from').value) || 0;
+                    const toAmountStr = r.querySelector('.bracket-to').value;
+                    const toAmount = toAmountStr !== '' ? parseFloat(toAmountStr) : null;
+                    const ratePercent = parseFloat(r.querySelector('.bracket-rate').value) || 0;
+                    const taxRate = ratePercent / 100;
+
+                    if (toAmount !== null && toAmount <= fromAmount) {
+                        showAlert(`Bậc ${order}: Thu nhập đến (${toAmount}) phải lớn hơn thu nhập từ (${fromAmount})`, 'danger');
+                        return;
+                    }
+
+                    brackets.push({
+                        bracketOrder: order,
+                        fromAmount: fromAmount,
+                        toAmount: toAmount,
+                        taxRate: taxRate,
+                        description: `Bậc ${order}: ${taxRate * 100}%`
+                    });
+                }
+
+                const insRatePercent = parseFloat(document.getElementById('tax-policy-insurance-rate').value) || 10.5;
+                const payload = {
+                    name: document.getElementById('tax-policy-name').value,
+                    version: document.getElementById('tax-policy-version').value,
+                    effectiveFrom: document.getElementById('tax-policy-effective-from').value,
+                    personalDeduction: parseFloat(document.getElementById('tax-policy-personal').value) || 15500000,
+                    dependentDeduction: parseFloat(document.getElementById('tax-policy-dependent').value) || 6200000,
+                    insuranceRate: insRatePercent / 100,
+                    note: document.getElementById('tax-policy-note').value,
+                    brackets: brackets
+                };
+
+                const saveBtn = document.getElementById('btn-save-tax-policy');
+                saveBtn.disabled = true;
+                saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Đang lưu...';
+
+                try {
+                    await fetchApi(`/api/v1/tax-policies/${id}`, {
+                        method: 'PUT',
+                        body: JSON.stringify(payload)
+                    });
+                    showAlert('Đã cập nhật chính sách thuế TNCN và các định mức giảm trừ thành công!', 'success');
+                    closeModal('taxPolicyModal');
+                } catch (err) {
+                    console.error('Error saving tax policy', err);
+                    showAlert('Lỗi khi lưu chính sách thuế: ' + (err.message || 'Chỉ SUPER_ADMIN mới có quyền'), 'danger');
+                } finally {
+                    saveBtn.disabled = false;
+                    saveBtn.innerHTML = '<i class="bi bi-check-lg me-1"></i>Lưu Chính Sách Thuế';
+                }
             }
         </script>
     </div>
