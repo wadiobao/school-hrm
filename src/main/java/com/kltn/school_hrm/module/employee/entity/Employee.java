@@ -1,4 +1,4 @@
-﻿package com.kltn.school_hrm.module.employee.entity;
+package com.kltn.school_hrm.module.employee.entity;
 
 import java.time.LocalDate;
 
@@ -91,6 +91,10 @@ public class Employee extends BaseEntity {
 	@Enumerated(EnumType.STRING)
 	@Column(nullable = false, length = 20)
 	private EmployeeStatus status;
+
+	/** Số người phụ thuộc đăng ký giảm trừ gia cảnh thuế TNCN */
+	@Column(name = "dependent_count")
+	private Integer dependentCount;
 
 	@OneToOne(mappedBy = "employee", fetch = FetchType.LAZY)
 	private WorkPermitAndVisa workPermitAndVisa;
