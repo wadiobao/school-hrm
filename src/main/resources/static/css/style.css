@@ -241,3 +241,51 @@ body {
     border-top: 1px solid var(--border-color);
     padding: 16px 24px;
 }
+
+.formula-editor {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    font-size: 0.95rem;
+    line-height: 1.55;
+    background: #0f172a;
+    color: #e2e8f0;
+    border: 1px solid #1e293b;
+}
+
+.formula-editor:focus {
+    background: #0f172a;
+    color: #f8fafc;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 0.2rem rgba(67, 97, 238, 0.25);
+}
+
+.formula-preview {
+    font-size: 0.78rem;
+    color: #334155;
+    white-space: nowrap;
+}
+
+.formula-chip-wrap {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.formula-chip {
+    border: 1px solid var(--border-color);
+    background: #fff;
+    border-radius: 999px;
+    padding: 4px 10px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.78rem;
+}
+
+.formula-chip code {
+    color: var(--primary);
+}
+
+.formula-chip:hover {
+    border-color: var(--primary);
+    background: rgba(67, 97, 238, 0.06);
+}

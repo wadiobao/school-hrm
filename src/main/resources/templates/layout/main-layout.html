@@ -65,6 +65,11 @@
                                 <i class="bi bi-cash-stack"></i> Tiền lương
                             </a>
                         </li>
+                        <li class="nav-item" data-roles="SUPER_ADMIN,HR_MANAGER,BOARD_OF_DIRECTORS">
+                            <a class="nav-link" th:classappend="${pageTitle == 'Cấu hình công thức'} ? 'active' : ''" href="/formulas">
+                                <i class="bi bi-calculator-fill"></i> Công thức
+                            </a>
+                        </li>
                         <li class="nav-item" data-roles="SUPER_ADMIN,BOARD_OF_DIRECTORS,HEAD_OF_DEPARTMENT,TEACHER">
                             <a class="nav-link" th:classappend="${pageTitle == 'Quản lý Giảng dạy'} ? 'active' : ''" href="/teaching">
                                 <i class="bi bi-journal-bookmark-fill"></i> Giảng dạy

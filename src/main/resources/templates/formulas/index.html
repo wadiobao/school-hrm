@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>School HRM - Cấu hình công thức</title>
+</head>
+<html th:replace="~{layout/main-layout :: layout(~{::content}, ~{::scripts}, 'Cấu hình công thức')}">
+
+    <div th:fragment="content">
+        <div class="card mb-4 border-0 shadow-sm">
+            <div class="card-body d-flex flex-wrap justify-content-between align-items-center gap-3">
+                <div>
+                    <h5 class="fw-bold mb-1"><i class="bi bi-function text-primary me-2"></i>Danh mục công thức tính toán</h5>
+                    <p class="text-muted small mb-0">Admin cấu hình biểu thức từ UI. Backend parse thành AST và chỉ cho phép biến/toán tử đã whitelist.</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-outline-secondary btn-sm" onclick="loadFormulas()">
+                        <i class="bi bi-arrow-clockwise"></i> Làm mới
+                    </button>
+                    <button class="btn btn-primary btn-sm" data-roles="SUPER_ADMIN,HR_MANAGER" onclick="openCreateFormulaModal()">
+                        <i class="bi bi-plus-lg me-1"></i> Thêm công thức
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-3 mb-4">
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm bg-primary bg-opacity-10 h-100">
+                    <div class="card-body">
+                        <div class="text-primary fw-semibold small text-uppercase">Tổng công thức</div>
+                        <h3 class="fw-bold mt-1 mb-0" id="stat-formula-total">0</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm bg-success bg-opacity-10 h-100">
+                    <div class="card-body">
+                        <div class="text-success fw-semibold small text-uppercase">Đang áp dụng</div>
+                        <h3 class="fw-bold mt-1 mb-0" id="stat-formula-active">0</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm bg-secondary bg-opacity-10 h-100">
+                    <div class="card-body">
+                        <div class="text-secondary fw-semibold small text-uppercase">Nháp / ngưng</div>
+                        <h3 class="fw-bold mt-1 mb-0" id="stat-formula-other">0</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Mã</th>
+                                <th>Tên</th>
+                                <th>Biểu thức</th>
+                                <th>Phiên bản</th>
+                                <th>Hiệu lực</th>
+                                <th>Trạng thái</th>
+                                <th class="text-end pe-4">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody id="formula-table-body">
+                            <tr>
+                                <td colspan="7" class="text-center py-5 text-muted">Đang tải danh sách công thức...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="formulaModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-xl modal-dialog-scrollable">
+                <div class="modal-content border-0 shadow">
+                    <div class="modal-header bg-dark text-white">
+                        <h5 class="modal-title fw-bold" id="formulaModalTitle">
+                            <i class="bi bi-pencil-square text-warning me-2"></i>Sửa cấu hình công thức
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <form id="formulaForm" onsubmit="saveFormula(event)">
+                        <div class="modal-body p-4">
+                            <input type="hidden" id="formula-id">
+                            <div class="alert alert-info py-2 px-3 small mb-3">
+                                Chỉ dùng biến đã đăng ký và toán tử <code>+ - * / ( )</code>. Hệ thống parse AST, không eval mã tùy ý.
+                            </div>
+
+                            <div class="row g-3 mb-3">
+                                <div class="col-md-3">
+                                    <label class="form-label fw-semibold small">Mã công thức *</label>
+                                    <input type="text" class="form-control form-control-sm" id="formula-code" required placeholder="OVERTIME_PAY">
+                                </div>
+                                <div class="col-md-5">
+                                    <label class="form-label fw-semibold small">Tên hiển thị *</label>
+                                    <input type="text" class="form-control form-control-sm" id="formula-name" required placeholder="Tiền làm thêm giờ">
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label fw-semibold small">Phiên bản</label>
+                                    <input type="text" class="form-control form-control-sm" id="formula-version" placeholder="v1">
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label fw-semibold small">Trạng thái</label>
+                                    <select class="form-select form-select-sm" id="formula-status">
+                                        <option value="ACTIVE">Đang áp dụng</option>
+                                        <option value="DRAFT">Nháp</option>
+                                        <option value="INACTIVE">Ngưng áp dụng</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="row g-3 mb-3">
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold small">Hiệu lực từ *</label>
+                                    <input type="date" class="form-control form-control-sm" id="formula-effective-from" required>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold small">Hiệu lực đến</label>
+                                    <input type="date" class="form-control form-control-sm" id="formula-effective-to">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold small">Ghi chú</label>
+                                    <input type="text" class="form-control form-control-sm" id="formula-note" placeholder="Căn cứ / mô tả">
+                                </div>
+                            </div>
+
+                            <div class="mb-2 d-flex justify-content-between align-items-center">
+                                <label class="form-label fw-semibold small mb-0">Biểu thức *</label>
+                                <div class="btn-group btn-group-sm formula-op-group" role="group">
+                                    <button type="button" class="btn btn-outline-secondary" onclick="insertFormulaToken('+')">+</button>
+                                    <button type="button" class="btn btn-outline-secondary" onclick="insertFormulaToken('-')">−</button>
+                                    <button type="button" class="btn btn-outline-secondary" onclick="insertFormulaToken('*')">×</button>
+                                    <button type="button" class="btn btn-outline-secondary" onclick="insertFormulaToken('/')">÷</button>
+                                    <button type="button" class="btn btn-outline-secondary" onclick="insertFormulaToken('(')">(</button>
+                                    <button type="button" class="btn btn-outline-secondary" onclick="insertFormulaToken(')')">)</button>
+                                </div>
+                            </div>
+                            <textarea class="form-control formula-editor mb-2" id="formula-expression" rows="4" required
+                                      placeholder="baseSalary / standardWorkHours * overtimeHours * overtimeRate"
+                                      oninput="refreshTrialInputs()"></textarea>
+                            <div class="d-flex gap-2 mb-3">
+                                <button type="button" class="btn btn-outline-primary btn-sm" onclick="validateCurrentFormula()">
+                                    <i class="bi bi-check2-circle me-1"></i>Kiểm tra cú pháp
+                                </button>
+                                <span class="small align-self-center" id="formula-validate-msg"></span>
+                            </div>
+
+                            <h6 class="fw-bold small text-uppercase text-muted">Biến được phép dùng</h6>
+                            <div id="formula-variable-chips" class="formula-chip-wrap mb-4"></div>
+
+                            <div class="card border bg-light">
+                                <div class="card-header py-2 small fw-semibold">
+                                    <i class="bi bi-calculator me-1"></i>Tính thử với giá trị mẫu
+                                </div>
+                                <div class="card-body">
+                                    <div class="row g-2" id="formula-trial-inputs"></div>
+                                    <div class="d-flex align-items-center gap-3 mt-3">
+                                        <button type="button" class="btn btn-success btn-sm" onclick="evaluateCurrentFormula()">
+                                            Tính kết quả
+                                        </button>
+                                        <div class="fw-bold" id="formula-trial-result">Kết quả: —</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer bg-light">
+                            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Đóng</button>
+                            <button type="submit" class="btn btn-primary btn-sm fw-semibold" data-roles="SUPER_ADMIN,HR_MANAGER" id="btn-save-formula">
+                                <i class="bi bi-check-lg me-1"></i>Lưu cấu hình
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div th:fragment="scripts">
+        <script>
+            let formulaList = [];
+            let formulaVariables = [];
+
+            document.addEventListener('DOMContentLoaded', async () => {
+                await loadVariables();
+                await loadFormulas();
+            });
+
+            async function loadVariables() {
+                const res = await fetchApi('/api/v1/formulas/variables');
+                formulaVariables = res && res.data ? res.data : [];
+                renderVariableChips();
+            }
+
+            function renderVariableChips() {
+                const wrap = document.getElementById('formula-variable-chips');
+                wrap.innerHTML = formulaVariables.map(v => `
+                    <button type="button" class="formula-chip" title="${v.description || ''}"
+                            onclick="insertFormulaToken('${v.code}')">
+                        <code>${v.code}</code>
+                        <span>${v.name}</span>
+                    </button>
+                `).join('');
+            }
+
+            async function loadFormulas() {
+                const tbody = document.getElementById('formula-table-body');
+                try {
+                    const res = await fetchApi('/api/v1/formulas');
+                    formulaList = res && res.data ? res.data : [];
+                    document.getElementById('stat-formula-total').textContent = formulaList.length;
+                    const active = formulaList.filter(f => f.status === 'ACTIVE').length;
+                    document.getElementById('stat-formula-active').textContent = active;
+                    document.getElementById('stat-formula-other').textContent = formulaList.length - active;
+
+                    if (formulaList.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="7" class="text-center py-5 text-muted">Chưa có công thức nào</td></tr>';
+                        return;
+                    }
+
+                    const canDelete = hasRole('SUPER_ADMIN');
+                    tbody.innerHTML = formulaList.map(f => `
+                        <tr>
+                            <td><span class="badge bg-light text-primary border">${escapeHtml(f.code)}</span></td>
+                            <td class="fw-semibold">${escapeHtml(f.name)}</td>
+                            <td><code class="formula-preview">${escapeHtml(f.expression)}</code></td>
+                            <td>${escapeHtml(f.version || '')}</td>
+                            <td class="small">${formatDate(f.effectiveFrom)} → ${f.effectiveTo ? formatDate(f.effectiveTo) : 'Không hạn'}</td>
+                            <td>${statusBadge(f.status)}</td>
+                            <td class="text-end pe-4">
+                                <button class="btn btn-sm btn-outline-primary" title="Sửa cấu hình" onclick="editFormula(${f.id})">
+                                    <i class="bi bi-pencil"></i> Sửa
+                                </button>
+                                ${canDelete ? `<button class="btn btn-sm btn-outline-danger ms-1" onclick="deleteFormula(${f.id})"><i class="bi bi-trash"></i></button>` : ''}
+                            </td>
+                        </tr>
+                    `).join('');
+                    if (!canEdit) {
+                        applyRoleBasedUI(getCurrentUser());
+                    }
+                } catch (e) {
+                    tbody.innerHTML = '<tr><td colspan="7" class="text-center py-5 text-danger">Không tải được danh sách công thức</td></tr>';
+                }
+            }
+
+            function statusBadge(status) {
+                if (status === 'ACTIVE') return '<span class="badge bg-success">Đang áp dụng</span>';
+                if (status === 'DRAFT') return '<span class="badge bg-warning text-dark">Nháp</span>';
+                return '<span class="badge bg-secondary">Ngưng</span>';
+            }
+
+            function openCreateFormulaModal() {
+                document.getElementById('formulaForm').reset();
+                document.getElementById('formula-id').value = '';
+                document.getElementById('formula-status').value = 'DRAFT';
+                document.getElementById('formula-version').value = 'v1';
+                document.getElementById('formula-effective-from').value = new Date().toISOString().slice(0, 10);
+                document.getElementById('formulaModalTitle').innerHTML = '<i class="bi bi-plus-square text-warning me-2"></i>Thêm công thức';
+                document.getElementById('formula-validate-msg').textContent = '';
+                document.getElementById('formula-trial-result').textContent = 'Kết quả: —';
+                refreshTrialInputs();
+                openModal('formulaModal');
+            }
+
+            async function editFormula(id) {
+                const res = await fetchApi(`/api/v1/formulas/${id}`);
+                if (!res || !res.data) return;
+                const f = res.data;
+                document.getElementById('formula-id').value = f.id;
+                document.getElementById('formula-code').value = f.code || '';
+                document.getElementById('formula-name').value = f.name || '';
+                document.getElementById('formula-version').value = f.version || '';
+                document.getElementById('formula-status').value = f.status || 'ACTIVE';
+                document.getElementById('formula-effective-from').value = f.effectiveFrom || '';
+                document.getElementById('formula-effective-to').value = f.effectiveTo || '';
+                document.getElementById('formula-note').value = f.note || '';
+                document.getElementById('formula-expression').value = f.expression || '';
+                document.getElementById('formulaModalTitle').innerHTML = '<i class="bi bi-pencil-square text-warning me-2"></i>Sửa cấu hình công thức';
+                document.getElementById('formula-validate-msg').textContent = '';
+                document.getElementById('formula-trial-result').textContent = 'Kết quả: —';
+                refreshTrialInputs();
+                openModal('formulaModal');
+            }
+
+            function insertFormulaToken(token) {
+                const textarea = document.getElementById('formula-expression');
+                const start = textarea.selectionStart;
+                const end = textarea.selectionEnd;
+                const value = textarea.value;
+                const insert = token.match(/^[A-Za-z_]/) ? token : ` ${token} `;
+                textarea.value = value.slice(0, start) + insert + value.slice(end);
+                const pos = start + insert.length;
+                textarea.focus();
+                textarea.setSelectionRange(pos, pos);
+                refreshTrialInputs();
+            }
+
+            function extractUsedVariables(expression) {
+                const names = formulaVariables.map(v => v.code);
+                const found = [];
+                names.forEach(code => {
+                    const re = new RegExp('\\b' + code + '\\b');
+                    if (re.test(expression) && !found.includes(code)) found.push(code);
+                });
+                return found;
+            }
+
+            function refreshTrialInputs() {
+                const expression = document.getElementById('formula-expression').value || '';
+                const used = extractUsedVariables(expression);
+                const wrap = document.getElementById('formula-trial-inputs');
+                if (used.length === 0) {
+                    wrap.innerHTML = '<div class="text-muted small">Chèn biến vào biểu thức để nhập giá trị thử.</div>';
+                    return;
+                }
+                wrap.innerHTML = used.map(code => {
+                    const meta = formulaVariables.find(v => v.code === code);
+                    const sample = meta ? meta.sampleValue : '0';
+                    return `
+                        <div class="col-md-4">
+                            <label class="form-label small mb-1"><code>${code}</code></label>
+                            <input type="number" step="any" class="form-control form-control-sm formula-trial-input"
+                                   data-var="${code}" value="${sample}">
+                        </div>`;
+                }).join('');
+            }
+
+            async function validateCurrentFormula() {
+                const expression = document.getElementById('formula-expression').value.trim();
+                const msg = document.getElementById('formula-validate-msg');
+                if (!expression) {
+                    msg.innerHTML = '<span class="text-warning">Nhập biểu thức trước.</span>';
+                    return false;
+                }
+                try {
+                    const res = await fetchApi('/api/v1/formulas/validate', {
+                        method: 'POST',
+                        body: JSON.stringify({ expression })
+                    });
+                    if (res && res.data && res.data.valid) {
+                        msg.innerHTML = `<span class="text-success">${res.data.message}. Biến: ${(res.data.usedVariables || []).join(', ') || 'không'}</span>`;
+                        return true;
+                    }
+                    return false;
+                } catch (e) {
+                    msg.innerHTML = `<span class="text-danger">${e.message}</span>`;
+                    return false;
+                }
+            }
+
+            async function evaluateCurrentFormula() {
+                const expression = document.getElementById('formula-expression').value.trim();
+                const variables = {};
+                document.querySelectorAll('.formula-trial-input').forEach(input => {
+                    variables[input.dataset.var] = input.value === '' ? null : Number(input.value);
+                });
+                try {
+                    const res = await fetchApi('/api/v1/formulas/evaluate', {
+                        method: 'POST',
+                        body: JSON.stringify({ expression, variables })
+                    });
+                    if (res && res.data) {
+                        const formatted = Number(res.data.result).toLocaleString('vi-VN', { minimumFractionDigits: 2 });
+                        document.getElementById('formula-trial-result').textContent = 'Kết quả: ' + formatted;
+                    }
+                } catch (e) {
+                    document.getElementById('formula-trial-result').textContent = 'Lỗi: ' + e.message;
+                }
+            }
+
+            async function saveFormula(event) {
+                event.preventDefault();
+                const id = document.getElementById('formula-id').value;
+                const payload = {
+                    code: document.getElementById('formula-code').value.trim(),
+                    name: document.getElementById('formula-name').value.trim(),
+                    expression: document.getElementById('formula-expression').value.trim(),
+                    version: document.getElementById('formula-version').value.trim() || 'v1',
+                    effectiveFrom: document.getElementById('formula-effective-from').value,
+                    effectiveTo: document.getElementById('formula-effective-to').value || null,
+                    status: document.getElementById('formula-status').value,
+                    note: document.getElementById('formula-note').value.trim()
+                };
+                if (!payload.code || !payload.name || !payload.expression || !payload.effectiveFrom) {
+                    showAlert('Vui lòng nhập đủ mã, tên, biểu thức và ngày hiệu lực', 'warning');
+                    return;
+                }
+                const valid = await validateCurrentFormula();
+                if (!valid) return;
+                try {
+                    if (id) {
+                        await fetchApi(`/api/v1/formulas/${id}`, { method: 'PUT', body: JSON.stringify(payload) });
+                        showAlert('Cập nhật công thức thành công', 'success');
+                    } else {
+                        await fetchApi('/api/v1/formulas', { method: 'POST', body: JSON.stringify(payload) });
+                        showAlert('Tạo công thức thành công', 'success');
+                    }
+                    closeModal('formulaModal');
+                    await loadFormulas();
+                } catch (e) {
+                    // fetchApi đã hiện alert
+                }
+            }
+
+            async function deleteFormula(id) {
+                if (!confirm('Xóa công thức này?')) return;
+                await fetchApi(`/api/v1/formulas/${id}`, { method: 'DELETE' });
+                showAlert('Đã xóa công thức', 'success');
+                await loadFormulas();
+            }
+
+            function escapeHtml(value) {
+                return String(value == null ? '' : value)
+                    .replaceAll('&', '&amp;')
+                    .replaceAll('<', '&lt;')
+                    .replaceAll('>', '&gt;')
+                    .replaceAll('"', '&quot;');
+            }
+        </script>
+    </div>
+</html>

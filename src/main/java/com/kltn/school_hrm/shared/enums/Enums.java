@@ -405,6 +405,19 @@ public class Enums {
 	}
 
 	@Getter
+	public enum FormulaStatus {
+		DRAFT("Nháp"),
+		ACTIVE("Đang áp dụng"),
+		INACTIVE("Ngưng áp dụng");
+
+		private final String label;
+
+		FormulaStatus(String label) {
+			this.label = label;
+		}
+	}
+
+	@Getter
 	public enum PositionCode {
 		PRINCIPAL("Hiệu trưởng"),
 		HEAD_OF_HR("Trưởng phòng hành chính nhân sự"),

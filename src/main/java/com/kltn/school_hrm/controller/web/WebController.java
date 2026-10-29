@@ -48,6 +48,11 @@ public class WebController {
         return "payroll/index";
     }
 
+    @GetMapping("/formulas")
+    public String formulas() {
+        return "formulas/index";
+    }
+
     @GetMapping("/contracts")
     public String contracts() {
         return "contracts/index";

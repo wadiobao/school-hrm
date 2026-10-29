@@ -225,6 +225,7 @@ function enforcePageAccess(roleCode) {
         '/departments': ['SUPER_ADMIN', 'HR_MANAGER', 'BOARD_OF_DIRECTORS', 'HEAD_OF_DEPARTMENT'],
         '/positions': ['SUPER_ADMIN', 'HR_MANAGER', 'BOARD_OF_DIRECTORS'],
         '/payroll': ['SUPER_ADMIN', 'HR_MANAGER', 'BOARD_OF_DIRECTORS', 'TEACHER', 'STAFF'],
+        '/formulas': ['SUPER_ADMIN', 'HR_MANAGER', 'BOARD_OF_DIRECTORS'],
         '/teaching': ['SUPER_ADMIN', 'BOARD_OF_DIRECTORS', 'HEAD_OF_DEPARTMENT', 'TEACHER']
     };
 
