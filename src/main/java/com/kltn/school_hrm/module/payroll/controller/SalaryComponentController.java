@@ -1,4 +1,4 @@
-﻿package com.kltn.school_hrm.module.payroll.controller;
+package com.kltn.school_hrm.module.payroll.controller;
 
 import java.util.List;
 

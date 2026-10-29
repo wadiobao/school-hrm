@@ -1,4 +1,4 @@
-﻿package com.kltn.school_hrm.module.teaching.controller;
+package com.kltn.school_hrm.module.teaching.controller;
 
 import java.util.List;
 

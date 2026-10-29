@@ -1,4 +1,4 @@
-﻿package com.kltn.school_hrm.module.attendance.controller;
+package com.kltn.school_hrm.module.attendance.controller;
 
 import java.util.List;
 

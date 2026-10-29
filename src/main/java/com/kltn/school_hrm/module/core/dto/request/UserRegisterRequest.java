@@ -1,4 +1,4 @@
-﻿package com.kltn.school_hrm.module.core.dto.request;
+package com.kltn.school_hrm.module.core.dto.request;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;

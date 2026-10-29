@@ -1,4 +1,4 @@
-﻿package com.kltn.school_hrm.job;
+package com.kltn.school_hrm.job;
 
 import java.time.LocalDate;
 import java.util.List;

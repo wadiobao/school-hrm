@@ -1,4 +1,4 @@
-﻿package com.kltn.school_hrm.module.attendance.entity;
+package com.kltn.school_hrm.module.attendance.entity;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;

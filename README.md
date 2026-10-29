@@ -23,48 +23,7 @@ Hệ thống quản lý nhân sự trường học (`school-hrm`) được tổ 
 
 ---
 
-### 1. Sơ Đồ Thực Thể Liên Kết Tổng Thể (ERD - Entity Relationship Diagram)
 
-```mermaid
-erDiagram
-    %% Core & Authentication
-    Role ||--o{ User : "role_id"
-    User ||--o| Employee : "user_id"
-    Department ||--o{ Department : "parent_id"
-    Employee ||--o{ Department : "manager_id"
-
-    %% Employee Management
-    Department ||--o{ Employee : "department_id"
-    Position ||--o{ Employee : "position_id"
-    Employee ||--o| WorkPermitAndVisa : "employee_id"
-    Employee ||--o{ DegreeAndCertificate : "employee_id"
-    Employee ||--o{ Contract : "employee_id"
-    Position ||--o{ Contract : "position_id"
-    Employee ||--o{ EmployeeStatusHistory : "employee_id"
-    Contract ||--o{ SalaryHistory : "contract_id"
-    User ||--o{ SalaryHistory : "approved_by"
-
-    %% Attendance & Leave Management
-    Employee ||--o{ Attendance : "employee_id"
-    Employee ||--o{ LeaveBalance : "employee_id"
-    Employee ||--o{ LeaveRequest : "employee_id"
-    Employee ||--o{ LeaveRequest : "substitute_teacher_id"
-    LeaveRequest ||--o{ LeaveApproval : "request_id"
-    Employee ||--o{ LeaveApproval : "approver_id"
-
-    %% Teaching Management
-    Employee ||--o{ TeachingAssignment : "employee_id"
-    TeachingAssignment ||--o{ TeachingLog : "assignment_id"
-    Employee ||--o{ TeachingLog : "actual_teacher_id"
-    Position ||--o{ TeachingNorm : "position_id"
-
-    %% Payroll Management
-    Employee ||--o{ Payroll : "employee_id"
-    Payroll ||--o{ PayrollDetail : "payroll_id"
-    SalaryComponent ||--o{ PayrollDetail : "component_id"
-```
-
----
 
 ### 2. Chi Tiết Mối Liên Hệ Theo Từng Phân Hệ
 

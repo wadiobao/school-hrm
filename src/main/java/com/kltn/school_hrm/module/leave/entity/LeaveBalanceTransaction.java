@@ -1,4 +1,4 @@
-﻿package com.kltn.school_hrm.module.leave.entity;
+package com.kltn.school_hrm.module.leave.entity;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;

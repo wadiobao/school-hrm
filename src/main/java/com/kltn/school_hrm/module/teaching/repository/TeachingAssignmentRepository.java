@@ -1,4 +1,4 @@
-﻿package com.kltn.school_hrm.module.teaching.repository;
+package com.kltn.school_hrm.module.teaching.repository;
 
 import java.util.List;
 

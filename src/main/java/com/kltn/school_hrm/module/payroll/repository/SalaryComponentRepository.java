@@ -1,4 +1,4 @@
-﻿package com.kltn.school_hrm.module.payroll.repository;
+package com.kltn.school_hrm.module.payroll.repository;
 
 import java.util.Optional;
 

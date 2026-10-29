@@ -1,4 +1,4 @@
-﻿package com.kltn.school_hrm.module.leave.repository;
+package com.kltn.school_hrm.module.leave.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 

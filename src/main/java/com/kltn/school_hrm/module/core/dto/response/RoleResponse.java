@@ -1,4 +1,4 @@
-﻿package com.kltn.school_hrm.module.core.dto.response;
+package com.kltn.school_hrm.module.core.dto.response;
 
 import com.kltn.school_hrm.shared.enums.Enums.RoleCode;
 

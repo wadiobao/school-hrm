@@ -1,4 +1,4 @@
-﻿package com.kltn.school_hrm.module.employee.repository;
+package com.kltn.school_hrm.module.employee.repository;
 
 import java.util.List;
 import java.util.Optional;

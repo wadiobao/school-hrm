@@ -1,4 +1,4 @@
-﻿package com.kltn.school_hrm.shared.exception;
+package com.kltn.school_hrm.shared.exception;
 
 import java.util.HashMap;
 import java.util.Map;

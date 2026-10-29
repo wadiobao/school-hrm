@@ -1,4 +1,4 @@
-﻿package com.kltn.school_hrm.module.approval.repository;
+package com.kltn.school_hrm.module.approval.repository;
 
 import java.util.List;
 

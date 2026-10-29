@@ -1,4 +1,4 @@
-﻿package com.kltn.school_hrm.module.teaching.entity;
+package com.kltn.school_hrm.module.teaching.entity;
 
 import com.kltn.school_hrm.shared.entity.base.BaseEntity;
 import com.kltn.school_hrm.module.employee.entity.Employee;
