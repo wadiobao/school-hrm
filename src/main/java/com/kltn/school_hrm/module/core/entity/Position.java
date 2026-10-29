@@ -3,9 +3,12 @@
 import java.math.BigDecimal;
 
 import com.kltn.school_hrm.shared.entity.base.BaseEntity;
+import com.kltn.school_hrm.shared.enums.Enums.PositionCode;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -25,8 +28,9 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 public class Position extends BaseEntity {
 
+	@Enumerated(EnumType.STRING)
 	@Column(nullable = false, unique = true, length = 20)
-	private String code;
+	private PositionCode code;
 
 	@Column(nullable = false, length = 100)
 	private String name;

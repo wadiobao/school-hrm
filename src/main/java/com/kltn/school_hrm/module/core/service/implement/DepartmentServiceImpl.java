@@ -11,15 +11,17 @@ import com.kltn.school_hrm.module.core.dto.response.DepartmentResponse;
 import com.kltn.school_hrm.module.core.entity.Department;
 import com.kltn.school_hrm.module.employee.entity.Employee;
 import com.kltn.school_hrm.module.core.repository.DepartmentRepository;
+import com.kltn.school_hrm.module.core.repository.PositionRepository;
 import com.kltn.school_hrm.module.employee.repository.EmployeeRepository;
 import com.kltn.school_hrm.module.core.service.DepartmentService;
 import com.kltn.school_hrm.shared.utils.DepartmentChartValidationService;
 
-import com.kltn.school_hrm.module.core.entity.Role;
 import com.kltn.school_hrm.module.core.entity.User;
 import com.kltn.school_hrm.shared.enums.Enums.EmployeeStatus;
+import com.kltn.school_hrm.shared.enums.Enums.PositionCode;
 import com.kltn.school_hrm.shared.enums.Enums.RoleCode;
 import com.kltn.school_hrm.shared.exception.custom.BusinessException;
+import com.kltn.school_hrm.shared.exception.custom.NotFoundException;
 import com.kltn.school_hrm.shared.exception.custom.ResourceNotFoundException;
 import com.kltn.school_hrm.module.leave.repository.LeaveApprovalRepository;
 import com.kltn.school_hrm.module.core.repository.RoleRepository;
@@ -27,200 +29,248 @@ import com.kltn.school_hrm.module.core.repository.UserRepository;
 import com.kltn.school_hrm.module.approval.service.ApprovalEngineService;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(rollbackFor = Exception.class)
 public class DepartmentServiceImpl implements DepartmentService {
 
-    private final DepartmentRepository departmentRepository;
-    private final EmployeeRepository employeeRepository;
-    private final RoleRepository roleRepository;
-    private final UserRepository userRepository;
-    private final LeaveApprovalRepository leaveApprovalRepository;
-    private final DepartmentChartValidationService departmentChartValidationService;
-    private final ApprovalEngineService approvalEngineService;
+	private final DepartmentRepository departmentRepository;
+	private final EmployeeRepository employeeRepository;
+	private final RoleRepository roleRepository;
+	private final UserRepository userRepository;
+	private final LeaveApprovalRepository leaveApprovalRepository;
+	private final DepartmentChartValidationService departmentChartValidationService;
+	private final ApprovalEngineService approvalEngineService;
+	private final PositionRepository positionRepository;
 
-    @Override
-    @Transactional
-    public DepartmentResponse createDepartment(DepartmentCreateRequest request) {
-        if (departmentRepository.existsByCode(request.getCode())) {
-            throw new RuntimeException("Department code already exists: " + request.getCode());
-        }
+	@Override
+	@Transactional
+	public DepartmentResponse createDepartment(DepartmentCreateRequest request) {
+		if (departmentRepository.existsByCode(request.getCode())) {
+			throw new RuntimeException("Department code already exists: " + request.getCode());
+		}
 
-        Department department = Department.builder()
-                .code(request.getCode())
-                .name(request.getName())
-                .build();
+		Department department = Department.builder()
+				.code(request.getCode())
+				.name(request.getName())
+				.build();
 
-        if (request.getParentId() != null) {
-            Department parent = departmentRepository.findById(request.getParentId())
-                    .orElseThrow(() -> new RuntimeException("Parent department not found"));
-            department.setParentDepartment(parent);
-        }
+		if (request.getParentId() != null) {
+			Department parent = departmentRepository.findById(request.getParentId())
+					.orElseThrow(() -> new RuntimeException("Parent department not found"));
+			department.setParentDepartment(parent);
+		}
 
-        department.setManager(null);
+		department.setManager(null);
 
-        department = departmentRepository.save(department);
-        return mapToResponse(department);
-    }
+		department = departmentRepository.save(department);
+		return mapToResponse(department);
+	}
 
-    @Override
-    @Transactional
-    public DepartmentResponse updateDepartment(Long id, DepartmentCreateRequest request) {
-        Department department = departmentRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Department not found"));
+	@Override
+	@Transactional
+	public DepartmentResponse updateDepartment(Long id, DepartmentCreateRequest request) {
+		Department department = departmentRepository.findById(id)
+				.orElseThrow(() -> new RuntimeException("Department not found"));
 
-        if (!department.getCode().equals(request.getCode()) && departmentRepository.existsByCode(request.getCode())) {
-            throw new RuntimeException("Department code already exists: " + request.getCode());
-        }
+		if (!department.getCode().equals(request.getCode()) && departmentRepository.existsByCode(request.getCode())) {
+			throw new RuntimeException("Department code already exists: " + request.getCode());
+		}
 
-        department.setCode(request.getCode());
-        department.setName(request.getName());
+		department.setCode(request.getCode());
+		department.setName(request.getName());
 
-        if (request.getParentId() != null) {
-            Department parent = departmentRepository.findById(request.getParentId())
-                    .orElseThrow(() -> new RuntimeException("Parent department not found"));
-            department.setParentDepartment(parent);
-        } else {
-            department.setParentDepartment(null);
-        }
+		if (request.getParentId() != null) {
+			Department parent = departmentRepository.findById(request.getParentId())
+					.orElseThrow(() -> new RuntimeException("Parent department not found"));
+			department.setParentDepartment(parent);
+		} else {
+			department.setParentDepartment(null);
+		}
 
-        department = departmentRepository.save(department);
-        return mapToResponse(department);
-    }
+		department = departmentRepository.save(department);
+		return mapToResponse(department);
+	}
 
-    @Override
-    @Transactional
-    public DepartmentResponse updateDepartmentManager(Long departmentId, Long employeeId) {
-        Department department = departmentRepository.findById(departmentId)
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy phòng ban với id: " + departmentId));
+	@Override
+	@Transactional
+	public DepartmentResponse updateDepartmentManager(Long departmentId, Long employeeId) {
+		Department department = departmentRepository.findById(departmentId)
+				.orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy phòng ban với id: " + departmentId));
 
-        Employee oldManager = department.getManager();
+		Employee oldManager = department.getManager();
 
-        // 1. Nếu không có gì thay đổi
-        if (oldManager != null && oldManager.getId().equals(employeeId)) {
-            return mapToResponse(department);
-        }
-        if (oldManager == null && employeeId == null) {
-            return mapToResponse(department);
-        }
+		// 1. Nếu không có gì thay đổi
+		if (oldManager != null && oldManager.getId().equals(employeeId)) {
+			return mapToResponse(department);
+		}
+		if (oldManager == null && employeeId == null) {
+			return mapToResponse(department);
+		}
 
-        // 2. Thu hồi quyền quản lý của sếp cũ (nếu có và không còn quản lý phòng ban khác)
-        if (oldManager != null) {
-            demoteEmployeeUserRole(oldManager, departmentId);
-        }
+		// 2. Thu hồi quyền quản lý của sếp cũ (nếu có và không còn quản lý phòng ban
+		// khác)
+		if (oldManager != null) {
+			demoteEmployeeUserRole(oldManager, departmentId);
+			log.info("INFOR: Thu hồi quyền");
+		}
 
-        // 3. Trường hợp BÃI NHIỆM (employeeId == null)
-        if (employeeId == null) {
-            department.setManager(null);
-        } else {
-            // 4. Trường hợp BỔ NHIỆM / THAY THẾ (employeeId != null)
-            Employee newManager = validateAndGetManager(employeeId);
+		// 3. Trường hợp BÃI NHIỆM (employeeId == null)
+		if (employeeId == null) {
+			department.setManager(null);
+		} else {
+			// 4. Trường hợp BỔ NHIỆM / THAY THẾ (employeeId != null)
+			Employee newManager = validateAndGetManager(employeeId);
 
-            // Kiểm tra vòng lặp nếu trước đó đã có sếp cũ
-            if (oldManager != null) {
-                departmentChartValidationService.validateParentChildAssignment(oldManager.getId(), employeeId);
-            }
+			// Kiểm tra vòng lặp nếu trước đó đã có sếp cũ
+			if (oldManager != null) {
+				departmentChartValidationService.validateParentChildAssignment(oldManager.getId(), employeeId);
+			}
 
-            department.setManager(newManager);
-            promoteEmployeeUserRole(newManager);
+			department.setManager(newManager);
+			promoteEmployeeUserRole(newManager);
 
-            // Đồng bộ phòng ban làm việc của Manager về chính phòng ban đó
-            if (newManager.getDepartment() == null || !newManager.getDepartment().getId().equals(department.getId())) {
-                newManager.setDepartment(department);
-                employeeRepository.save(newManager);
-            }
+			// Đồng bộ phòng ban làm việc của Manager về chính phòng ban đó
+			if (newManager.getDepartment() == null || !newManager.getDepartment().getId().equals(department.getId())) {
+				newManager.setDepartment(department);
+				employeeRepository.save(newManager);
+			}
 
-            // Chuyển giao các đơn nghỉ phép PENDING từ sếp cũ sang sếp mới
-            if (oldManager != null) {
-                leaveApprovalRepository.transferPendingApprovals(oldManager.getId(), newManager.getId());
-                approvalEngineService.forwardPendingApprovals(
-                        oldManager.getId(),
-                        newManager.getId(),
-                        oldManager.getId(),
-                        "Bổ nhiệm quản lý phòng ban mới: " + newManager.getFullName());
-            }
-        }
+			// Chuyển giao các đơn nghỉ phép PENDING từ sếp cũ sang sếp mới
+			if (oldManager != null) {
+				leaveApprovalRepository.transferPendingApprovals(oldManager.getId(), newManager.getId());
+				approvalEngineService.forwardPendingApprovals(
+						oldManager.getId(),
+						newManager.getId(),
+						oldManager.getId(),
+						"Bổ nhiệm quản lý phòng ban mới: " + newManager.getFullName());
 
-        department = departmentRepository.save(department);
-        return mapToResponse(department);
-    }
+				Long tmp = oldManager.getPosition().getId();
 
-    private Employee validateAndGetManager(Long employeeId) {
-        Employee employee = employeeRepository.findById(employeeId)
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy nhân viên với id: " + employeeId));
+				oldManager.setPosition(newManager.getPosition());
 
-        if (employee.getStatus() != null && employee.getStatus() != EmployeeStatus.WORKING) {
-            throw new BusinessException(
-                    "Nhân viên phải đang ở trạng thái 'Đang làm việc' (WORKING) mới có thể đảm nhận vị trí quản lý");
-        }
+				newManager.setPosition(positionRepository.findById(tmp)
+						.orElseThrow(() -> new NotFoundException("Không tìm thấy vị trí")));
+			}
 
-        return employee;
-    }
+		}
 
-    private void promoteEmployeeUserRole(Employee manager) {
-        if (manager.getUser() != null) {
-            User user = manager.getUser();
-            // Nếu user chưa phải là SUPER_ADMIN hoặc BOARD_OF_DIRECTORS, nâng quyền lên HEAD_OF_DEPARTMENT
-            if (user.getRole() == null ||
-                    (user.getRole().getRoleCode() != RoleCode.SUPER_ADMIN &&
-                            user.getRole().getRoleCode() != RoleCode.BOARD_OF_DIRECTORS)) {
-                roleRepository.findByRoleCode(RoleCode.HEAD_OF_DEPARTMENT).ifPresent(role -> {
-                    user.setRole(role);
-                    userRepository.save(user);
-                });
-            }
-        }
-    }
+		department = departmentRepository.save(department);
 
-    private void demoteEmployeeUserRole(Employee oldManager, Long currentDepartmentId) {
-        // Chỉ hạ quyền nếu nhân viên không còn quản lý phòng ban nào khác
-        long otherDepartmentsManaged = departmentRepository.countByManagerIdAndIdNot(oldManager.getId(), currentDepartmentId);
-        if (otherDepartmentsManaged == 0 && oldManager.getUser() != null) {
-            User user = oldManager.getUser();
-            // Chỉ hạ quyền nếu role hiện tại là HEAD_OF_DEPARTMENT
-            if (user.getRole() != null && user.getRole().getRoleCode() == RoleCode.HEAD_OF_DEPARTMENT) {
-                RoleCode fallbackRole = (oldManager.getTeacherType() != null) ? RoleCode.TEACHER : RoleCode.STAFF;
-                roleRepository.findByRoleCode(fallbackRole).ifPresent(role -> {
-                    user.setRole(role);
-                    userRepository.save(user);
-                });
-            }
-        }
-    }
+		return mapToResponse(department);
+	}
 
+	private Employee validateAndGetManager(Long employeeId) {
+		Employee employee = employeeRepository.findById(employeeId)
+				.orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy nhân viên với id: " + employeeId));
 
-    @Override
-    public DepartmentResponse getDepartmentById(Long id) {
-        Department department = departmentRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Department not found"));
-        return mapToResponse(department);
-    }
+		if (employee.getStatus() != null && employee.getStatus() != EmployeeStatus.WORKING) {
+			throw new BusinessException(
+					"Nhân viên phải đang ở trạng thái 'Đang làm việc' (WORKING) mới có thể đảm nhận vị trí quản lý");
+		}
 
-    @Override
-    public List<DepartmentResponse> getAllDepartments() {
-        return departmentRepository.findAll().stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
-    }
+		return employee;
+	}
 
-    @Override
-    @Transactional
-    public void deleteDepartment(Long id) {
-        if (!departmentRepository.existsById(id)) {
-            throw new RuntimeException("Department not found");
-        }
-        departmentRepository.deleteById(id);
-    }
+	private void promoteEmployeeUserRole(Employee manager) {
+		if (manager.getUser() != null) {
+			User user = manager.getUser();
+			// Nếu user chưa phải là SUPER_ADMIN hoặc BOARD_OF_DIRECTORS, nâng quyền lên
+			// HEAD_OF_DEPARTMENT
+			if (user.getRole() == null ||
+					(user.getRole().getRoleCode() != RoleCode.SUPER_ADMIN &&
+							user.getRole().getRoleCode() != RoleCode.BOARD_OF_DIRECTORS)) {
+				roleRepository.findByRoleCode(RoleCode.HEAD_OF_DEPARTMENT).ifPresent(role -> {
+					user.setRole(role);
+					userRepository.save(user);
+				});
 
-    private DepartmentResponse mapToResponse(Department department) {
-        return DepartmentResponse.builder()
-                .id(department.getId())
-                .code(department.getCode())
-                .name(department.getName())
-                .parentId(department.getParentDepartment() != null ? department.getParentDepartment().getId() : null)
-                .managerId(department.getManager() != null ? department.getManager().getId() : null)
-                .build();
-    }
+				positionRepository.findByCode(PositionCode.HEAD_OF_DEPARTMENT).ifPresent(position -> {
+					manager.setPosition(position);
+					employeeRepository.save(manager);
+				});
+			}
+		}
+	}
+
+	private void demoteEmployeeUserRole(Employee oldManager, Long currentDepartmentId) {
+		// Chỉ hạ quyền nếu nhân viên không còn quản lý phòng ban nào khác
+		long otherDepartmentsManaged = departmentRepository.countByManagerIdAndIdNot(oldManager.getId(),
+				currentDepartmentId);
+		if (otherDepartmentsManaged == 0 && oldManager.getUser() != null) {
+			User user = oldManager.getUser();
+			// Chỉ hạ quyền nếu role hiện tại là HEAD_OF_DEPARTMENT
+			if (user.getRole() != null && user.getRole().getRoleCode() == RoleCode.HEAD_OF_DEPARTMENT) {
+				RoleCode fallbackRole = (oldManager.getTeacherType() != null) ? RoleCode.TEACHER : RoleCode.STAFF;
+				roleRepository.findByRoleCode(fallbackRole).ifPresent(role -> {
+					user.setRole(role);
+					userRepository.save(user);
+					log.info("INFOR: Hạ quyền của user");
+				});
+			}
+
+			if (oldManager.getPosition().getCode() == PositionCode.HEAD_OF_DEPARTMENT) {
+				positionRepository.findByCode(PositionCode.TEACHER).ifPresent(position -> {
+					oldManager.setPosition(position);
+					employeeRepository.save(oldManager);
+					log.info("INFOR: Hạ quyền của employee từ {}", PositionCode.HEAD_OF_DEPARTMENT.name());
+				});
+			} else if (oldManager.getPosition().getCode() == PositionCode.HEAD_OF_HR) {
+				positionRepository.findByCode(PositionCode.STAFF).ifPresent(position -> {
+					oldManager.setPosition(position);
+					employeeRepository.save(oldManager);
+					log.info("INFOR: Hạ quyền của employee từ {}", PositionCode.HEAD_OF_HR.name());
+				});
+			}
+
+		}
+	}
+
+	@Override
+	public DepartmentResponse getDepartmentById(Long id) {
+		Department department = departmentRepository.findById(id)
+				.orElseThrow(() -> new RuntimeException("Department not found"));
+		return mapToResponse(department);
+	}
+
+	@Override
+	public List<DepartmentResponse> getAllDepartments() {
+		return departmentRepository.findAllWithManagerAndDepartmentName().stream()
+				.map(this::mapToResponseV2)
+				.collect(Collectors.toList());
+	}
+
+	@Override
+	@Transactional
+	public void deleteDepartment(Long id) {
+		if (!departmentRepository.existsById(id)) {
+			throw new RuntimeException("Department not found");
+		}
+		departmentRepository.deleteById(id);
+	}
+
+	private DepartmentResponse mapToResponse(Department department) {
+		return DepartmentResponse.builder()
+				.id(department.getId())
+				.code(department.getCode())
+				.name(department.getName())
+				.parentId(department.getParentDepartment() != null ? department.getParentDepartment().getId() : null)
+				.managerId(department.getManager() != null ? department.getManager().getId() : null)
+				.build();
+	}
+
+	private DepartmentResponse mapToResponseV2(DepartmentRepository.DepartmentWithName departmentWithName) {
+		return DepartmentResponse.builder()
+				.id(departmentWithName.id())
+				.code(departmentWithName.code())
+				.name(departmentWithName.name())
+				.parentId(departmentWithName.parentId())
+				.managerId(departmentWithName.managerId())
+				.parentName(departmentWithName.parentName())
+				.managerName(departmentWithName.managerName())
+				.build();
+	}
 }

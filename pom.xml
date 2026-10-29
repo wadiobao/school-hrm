@@ -30,6 +30,8 @@
 	<properties>
 		<java.version>17</java.version>
 		<jjwt.version>0.12.6</jjwt.version>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -158,6 +160,32 @@
 									<artifactId>lombok</artifactId>
 								</path>
 							</annotationProcessorPaths>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-antrun-plugin</artifactId>
+				<version>3.1.0</version>
+				<executions>
+					<execution>
+						<phase>initialize</phase>
+						<goals>
+							<goal>run</goal>
+						</goals>
+						<configuration>
+							<exportAntProperties>true</exportAntProperties>
+							<target>
+								<echo message="Removing UTF-8 BOM from java files..." />
+								<!-- Tự động tìm và loại bỏ BOM 3 byte (EF BB BF) ở đầu các file .java -->
+								<fixcrlf srcdir="${basedir}/src"
+								         includes="**/*.java"
+								         encoding="UTF-8"
+								         outputencoding="UTF-8"
+								         eol="lf"
+								         fixlast="false" />
+							</target>
 						</configuration>
 					</execution>
 				</executions>

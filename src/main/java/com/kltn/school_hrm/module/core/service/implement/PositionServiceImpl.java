@@ -11,6 +11,7 @@ import com.kltn.school_hrm.module.core.dto.response.PositionResponse;
 import com.kltn.school_hrm.module.core.entity.Position;
 import com.kltn.school_hrm.module.core.repository.PositionRepository;
 import com.kltn.school_hrm.module.core.service.PositionService;
+import com.kltn.school_hrm.shared.enums.Enums.PositionCode;
 
 import lombok.RequiredArgsConstructor;
 
@@ -87,4 +88,5 @@ public class PositionServiceImpl implements PositionService {
                 .positionAllowanceRate(position.getPositionAllowanceRate())
                 .build();
     }
+
 }

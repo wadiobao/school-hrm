@@ -2,6 +2,8 @@
 
 import java.math.BigDecimal;
 
+import com.kltn.school_hrm.shared.enums.Enums;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -13,7 +15,7 @@ import lombok.NoArgsConstructor;
 @Builder
 public class PositionResponse {
     private Long id;
-    private String code;
+    private Enums.PositionCode code;
     private String name;
     private BigDecimal positionAllowanceRate;
 }

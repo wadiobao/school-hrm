@@ -2,6 +2,8 @@
 
 import java.math.BigDecimal;
 
+import com.kltn.school_hrm.shared.enums.Enums.PositionCode;
+
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -14,7 +16,7 @@ import lombok.NoArgsConstructor;
 @Builder
 public class PositionCreateRequest {
     @NotBlank(message = "Code is required")
-    private String code;
+    private PositionCode code;
 
     @NotBlank(message = "Name is required")
     private String name;

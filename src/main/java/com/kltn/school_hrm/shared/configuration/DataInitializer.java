@@ -23,6 +23,7 @@ import com.kltn.school_hrm.module.core.repository.UserRepository;
 import com.kltn.school_hrm.module.employee.entity.Employee;
 import com.kltn.school_hrm.module.employee.repository.EmployeeRepository;
 import com.kltn.school_hrm.module.leave.service.LeaveBalanceService;
+import com.kltn.school_hrm.shared.enums.Enums;
 import com.kltn.school_hrm.shared.enums.Enums.EmployeeStatus;
 import com.kltn.school_hrm.shared.enums.Enums.RoleCode;
 import com.kltn.school_hrm.shared.enums.Enums.UserStatus;
@@ -88,12 +89,12 @@ public class DataInitializer implements ApplicationRunner {
 		seedSubDepartment("BAN-LY", "Bộ môn Vật lý", adminDept);
 
 		// ── 3. Positions ──────────────────────────────────────────────────────
-		Position principalPos = seedPosition("HIEU-TRUONG", "Hiệu trưởng", new BigDecimal("0.50"));
-		Position hrManagerPos = seedPosition("TRUONG-NS", "Trưởng phòng NS", new BigDecimal("0.30"));
-		Position hodPos = seedPosition("TRUONG-BO-MON", "Trưởng Bộ môn", new BigDecimal("0.35"));
-		Position teacherPos = seedPosition("GIAO-VIEN", "Giáo viên", new BigDecimal("0.20"));
-		Position staffPos = seedPosition("NHAN-VIEN", "Nhân viên", new BigDecimal("0.10"));
-		Position itAdminPos = seedPosition("IT-ADMIN", "Quản trị hệ thống", new BigDecimal("0.25"));
+		Position principalPos = seedPosition(Enums.PositionCode.PRINCIPAL, "Hiệu trưởng", new BigDecimal("0.50"));
+		Position hrManagerPos = seedPosition(Enums.PositionCode.HEAD_OF_HR, "Trưởng phòng NS", new BigDecimal("0.30"));
+		Position hodPos = seedPosition(Enums.PositionCode.HEAD_OF_DEPARTMENT, "Trưởng Bộ môn", new BigDecimal("0.35"));
+		Position teacherPos = seedPosition(Enums.PositionCode.TEACHER, "Giáo viên", new BigDecimal("0.20"));
+		Position staffPos = seedPosition(Enums.PositionCode.STAFF, "Nhân viên", new BigDecimal("0.10"));
+		Position itAdminPos = seedPosition(Enums.PositionCode.IT_ADMIN, "Quản trị hệ thống", new BigDecimal("0.25"));
 
 		// ── 4. Users & Employees ──────────────────────────────────────────────
 		Employee adminEmp = seedAdminUser(adminRole, adminDept, itAdminPos);
@@ -104,7 +105,8 @@ public class DataInitializer implements ApplicationRunner {
 		Employee mathHeadEmp = seedMathHeadUser(hodRole, mathDept, hodPos);
 
 		// Gán trưởng đơn vị (Department Manager) cho các bộ phận
-		if (principalEmp != null && (adminDept.getManager() == null || !principalEmp.getId().equals(adminDept.getManager().getId()))) {
+		if (principalEmp != null
+				&& (adminDept.getManager() == null || !principalEmp.getId().equals(adminDept.getManager().getId()))) {
 			adminDept.setManager(principalEmp);
 			departmentRepository.save(adminDept);
 			log.info("  [+] Đã bổ nhiệm Hiệu trưởng làm trưởng đơn vị: {}", adminDept.getName());
@@ -114,7 +116,8 @@ public class DataInitializer implements ApplicationRunner {
 			departmentRepository.save(hrDept);
 			log.info("  [+] Đã bổ nhiệm Trưởng phòng NS làm trưởng đơn vị: {}", hrDept.getName());
 		}
-		if (mathHeadEmp != null && (mathDept.getManager() == null || !mathHeadEmp.getId().equals(mathDept.getManager().getId()))) {
+		if (mathHeadEmp != null
+				&& (mathDept.getManager() == null || !mathHeadEmp.getId().equals(mathDept.getManager().getId()))) {
 			mathDept.setManager(mathHeadEmp);
 			departmentRepository.save(mathDept);
 			log.info("  [+] Đã bổ nhiệm Trưởng ban Toán làm trưởng bộ môn: {}", mathDept.getName());
@@ -181,7 +184,7 @@ public class DataInitializer implements ApplicationRunner {
 	}
 
 	/** Tạo Position nếu chưa tồn tại (theo code). */
-	private Position seedPosition(String code, String name, BigDecimal allowanceRate) {
+	private Position seedPosition(Enums.PositionCode code, String name, BigDecimal allowanceRate) {
 		return positionRepository.findByCode(code).orElseGet(() -> {
 			Position pos = Position.builder()
 					.code(code)

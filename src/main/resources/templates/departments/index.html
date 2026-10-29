@@ -264,10 +264,14 @@
             async function saveManager() {
                 const deptId = document.getElementById('manager-dept-id').value;
                 const empId = document.getElementById('manager-employeeId').value;
+                const payload = {
+					id: parseInt(deptId),
+                	employeeId: parseInt(empId)			
+                };
                 try {
-                    let url = `/api/v1/departments/${deptId}/manager`;
-                    if (empId) url += `?employeeId=${empId}`;
-                    await fetchApi(url, { method: 'PUT' });
+                    let url = `/api/v1/departments/manager/update`;
+                    await fetchApi(url, { method: 'PUT' ,
+                    	body: JSON.stringify(payload)});
                     showAlert('Cập nhật Trưởng bộ phận thành công!', 'success');
                     closeModal('managerModal');
                     loadDepartments();
