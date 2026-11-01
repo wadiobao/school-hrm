@@ -19,9 +19,11 @@ import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -112,31 +114,35 @@ public class Payroll extends BaseEntity {
     @Column(columnDefinition = "TEXT")
     private String note;
 
+    @Builder.Default
     @OneToMany(mappedBy = "payroll", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PayrollItem> items = new ArrayList<>();
 
+    @Builder.Default
+    @OneToMany(mappedBy = "payroll", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<PayrollHistory> histories = new ArrayList<>();
+
+    @Builder.Default
+    @OneToMany(mappedBy = "payroll", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<PayrollPayment> payments = new ArrayList<>();
+
+    @OneToOne(mappedBy = "payroll", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private PayrollSnapshot snapshot;
+
     // ── Domain logic ──
 
-    /** Chỉ được sửa khi chưa PAID */
+    /** Kiểm tra xem bảng lương có được phép chỉnh sửa không */
     public void guardEditable() {
-        if (this.status == PayrollStatus.PAID) {
-            throw new BusinessException("Bảng lương đã chi trả, không thể sửa");
+        if (this.status == PayrollStatus.LOCKED || this.status == PayrollStatus.PAID) {
+            throw new BusinessException("Bảng lương đã chốt (LOCKED) hoặc đã chi trả (PAID), không thể chỉnh sửa");
+        }
+        if (this.status == PayrollStatus.CALCULATING) {
+            throw new BusinessException("Bảng lương đang trong tiến trình tính toán (CALCULATING), vui lòng chờ hoàn tất");
         }
     }
 
-    /** Approve bảng lương */
-    public void approve() {
-        if (this.status != PayrollStatus.DRAFT) {
-            throw new BusinessException("Chỉ bảng lương DRAFT mới có thể duyệt");
-        }
-        this.status = PayrollStatus.APPROVED;
-    }
-
-    /** Đánh dấu đã chi trả */
-    public void markPaid() {
-        if (this.status != PayrollStatus.APPROVED) {
-            throw new BusinessException("Chỉ bảng lương APPROVED mới có thể đánh dấu đã trả");
-        }
-        this.status = PayrollStatus.PAID;
+    /** Cập nhật trạng thái thông qua State Machine */
+    public void changeStatus(PayrollStatus target) {
+        this.status = target;
     }
 }

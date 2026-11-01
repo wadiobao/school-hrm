@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -11,8 +12,14 @@ import org.springframework.stereotype.Repository;
 import com.kltn.school_hrm.module.payroll.entity.Payroll;
 import com.kltn.school_hrm.shared.enums.Enums.PayrollStatus;
 
+import jakarta.persistence.LockModeType;
+
 @Repository
 public interface PayrollRepository extends JpaRepository<Payroll, Long> {
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT p FROM Payroll p WHERE p.id = :id")
+    Optional<Payroll> findByIdForUpdate(@Param("id") Long id);
 
     List<Payroll> findByEmployeeId(Long employeeId);
 

@@ -260,12 +260,39 @@ public class Enums {
 	@Getter
 	public enum PayrollStatus {
 		DRAFT("Bản nháp"),
-		APPROVED("Đã duyệt"),
+		CALCULATING("Đang tính toán"),
+		REVIEW("Chờ phê duyệt"),
+		LOCKED("Đã chốt"),
 		PAID("Đã chi trả");
 
 		private final String label;
 
 		PayrollStatus(String label) {
+			this.label = label;
+		}
+	}
+
+	@Getter
+	public enum PaymentMethod {
+		BANK_TRANSFER("Chuyển khoản"),
+		CASH("Tiền mặt");
+
+		private final String label;
+
+		PaymentMethod(String label) {
+			this.label = label;
+		}
+	}
+
+	@Getter
+	public enum PaymentStatus {
+		PENDING("Chờ xử lý"),
+		COMPLETED("Hoàn tất"),
+		FAILED("Thất bại");
+
+		private final String label;
+
+		PaymentStatus(String label) {
 			this.label = label;
 		}
 	}
