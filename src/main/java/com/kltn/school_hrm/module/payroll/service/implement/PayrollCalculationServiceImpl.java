@@ -64,6 +64,7 @@ public class PayrollCalculationServiceImpl implements PayrollCalculationService 
     private final PayrollPeriodRepository periodRepository;
     private final PayrollRepository payrollRepository;
     private final PayrollItemRepository payrollItemRepository;
+    private final com.kltn.school_hrm.module.payroll.repository.PayrollHistoryRepository payrollHistoryRepository;
     private final EmployeeRepository employeeRepository;
     private final ContractRepository contractRepository;
     private final AttendanceRepository attendanceRepository;
@@ -119,10 +120,13 @@ public class PayrollCalculationServiceImpl implements PayrollCalculationService 
         LocalDate end = period.getEndDate();
         int standardDays = period.getStandardWorkDays();
 
-        // 0. Upsert: xóa bản ghi cũ nếu tồn tại (trừ PAID)
+        // 0. Upsert: kiểm tra trạng thái và dọn dẹp bản ghi cũ nếu chưa chốt/chi trả
         payrollRepository.findByPeriodIdAndEmployeeId(period.getId(), employee.getId()).ifPresent(existing -> {
-            if (existing.getStatus() == PayrollStatus.PAID) {
-                throw new BusinessException("Bảng lương của " + employee.getFullName() + " đã chi trả, không thể tính lại");
+            if (existing.getStatus() == PayrollStatus.LOCKED || existing.getStatus() == PayrollStatus.PAID) {
+                throw new BusinessException("Bảng lương của " + employee.getFullName() + " đã chốt (LOCKED) hoặc chi trả (PAID), không thể tính lại");
+            }
+            if (existing.getStatus() == PayrollStatus.CALCULATING) {
+                throw new BusinessException("Bảng lương của " + employee.getFullName() + " đang được tính toán bởi tiến trình khác, vui lòng chờ");
             }
             payrollItemRepository.deleteByPayrollId(existing.getId());
             payrollRepository.delete(existing);
@@ -194,7 +198,7 @@ public class PayrollCalculationServiceImpl implements PayrollCalculationService 
         BigDecimal totalDeductions = insurance.add(tax);
         BigDecimal netSalary = gross.subtract(totalDeductions).max(BigDecimal.ZERO);
 
-        // 12. Lưu Payroll (bao gồm snapshot đầu vào và phiên bản chính sách để audit)
+        // 12. Lưu Payroll ở trạng thái CALCULATING
         Payroll payroll = Payroll.builder()
                 .period(period)
                 .employee(employee)
@@ -208,7 +212,7 @@ public class PayrollCalculationServiceImpl implements PayrollCalculationService 
                 .grossSalary(gross)
                 .totalDeductions(totalDeductions)
                 .netSalary(netSalary)
-                .status(PayrollStatus.DRAFT)
+                .status(PayrollStatus.CALCULATING)
                 .build();
         payroll = payrollRepository.save(payroll);
 
@@ -234,6 +238,19 @@ public class PayrollCalculationServiceImpl implements PayrollCalculationService 
 
         payrollItemRepository.saveAll(items);
         payroll.setItems(items);
+
+        // 14. Sau khi tất cả PayrollItem tính và lưu thành công, chuyển sang REVIEW (req 6.2)
+        payroll.setStatus(PayrollStatus.REVIEW);
+        payroll = payrollRepository.save(payroll);
+
+        payrollHistoryRepository.save(com.kltn.school_hrm.module.payroll.entity.PayrollHistory.of(
+                payroll,
+                PayrollStatus.CALCULATING,
+                PayrollStatus.REVIEW,
+                null,
+                "SYSTEM",
+                "Tính toán tự động hoàn tất cho kỳ " + period.getMonth() + "/" + period.getYear()
+        ));
 
         return toResponse(payroll);
     }
@@ -270,9 +287,11 @@ public class PayrollCalculationServiceImpl implements PayrollCalculationService 
                 .year(p.getPeriod().getYear())
                 .employeeId(p.getEmployee().getId())
                 .employeeName(p.getSnapshotEmployeeName())
+                .employeeCode(p.getEmployee() != null ? p.getEmployee().getEmployeeCode() : null)
                 .snapshotContractSalary(p.getSnapshotContractSalary())
                 .snapshotStandardDays(p.getSnapshotStandardDays())
                 .paidWorkDays(p.getPaidWorkDays())
+                .totalTeachingHours(p.getTotalTeachingHours())
                 .snapshotUnpaidLeaveDays(p.getSnapshotUnpaidLeaveDays())
                 .snapshotTaxableIncome(p.getSnapshotTaxableIncome())
                 .policyVersion(p.getPolicyVersion())

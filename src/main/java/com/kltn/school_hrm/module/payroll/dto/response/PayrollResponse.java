@@ -43,6 +43,11 @@ public class PayrollResponse {
     private BigDecimal totalDeductions;
     private BigDecimal netSalary;
 
+    // Payment progress
+    private BigDecimal totalPaidAmount;
+    private BigDecimal remainingAmount;
+    private Boolean isFullyPaid;
+
     private PayrollStatus status;
     private String note;
     private LocalDateTime calculatedAt;
