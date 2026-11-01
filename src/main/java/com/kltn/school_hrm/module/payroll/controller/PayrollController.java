@@ -130,8 +130,71 @@ public class PayrollController {
     @PreAuthorize("hasAnyAuthority('SUPER_ADMIN', 'HR_MANAGER', 'BOARD_OF_DIRECTORS')")
     public ResponseEntity<ApiResponse<PayrollResponse>> updateStatus(
             @PathVariable Long id,
-            @RequestParam PayrollStatus status) {
-        return ResponseEntity.ok(ApiResponse.success(payrollService.updatePayrollStatus(id, status), "Cập nhật trạng thái thành công"));
+            @RequestParam PayrollStatus status,
+            Authentication auth) {
+        Long userId = getCurrentUserId(auth);
+        String userName = auth != null ? auth.getName() : "SYSTEM";
+        PayrollResponse res = payrollService.transitionStatus(
+                id,
+                com.kltn.school_hrm.module.payroll.dto.request.PayrollTransitionRequest.builder()
+                        .targetStatus(status)
+                        .reason("Cập nhật trạng thái trực tiếp")
+                        .build(),
+                userId,
+                userName
+        );
+        return ResponseEntity.ok(ApiResponse.success(res, "Cập nhật trạng thái thành công"));
+    }
+
+    /**
+     * Chuyển đổi trạng thái bảng lương thông qua State Machine có kiểm soát và lưu vết audit
+     */
+    @PostMapping("/{id}/transition")
+    @PreAuthorize("hasAnyAuthority('SUPER_ADMIN', 'HR_MANAGER', 'BOARD_OF_DIRECTORS')")
+    public ResponseEntity<ApiResponse<PayrollResponse>> transitionStatus(
+            @PathVariable Long id,
+            @Valid @RequestBody com.kltn.school_hrm.module.payroll.dto.request.PayrollTransitionRequest request,
+            Authentication auth) {
+        Long userId = getCurrentUserId(auth);
+        String userName = auth != null ? auth.getName() : "SYSTEM";
+        PayrollResponse res = payrollService.transitionStatus(id, request, userId, userName);
+        return ResponseEntity.ok(ApiResponse.success(res, "Chuyển trạng thái bảng lương thành công"));
+    }
+
+    /**
+     * Ghi nhận đợt thanh toán từ bộ phận Tài chính
+     */
+    @PostMapping("/{id}/payments")
+    @PreAuthorize("hasAnyAuthority('SUPER_ADMIN', 'HR_MANAGER', 'BOARD_OF_DIRECTORS')")
+    public ResponseEntity<ApiResponse<com.kltn.school_hrm.module.payroll.dto.response.PayrollPaymentResponse>> recordPayment(
+            @PathVariable Long id,
+            @Valid @RequestBody com.kltn.school_hrm.module.payroll.dto.request.PayrollPaymentRequest request,
+            Authentication auth) {
+        Long userId = getCurrentUserId(auth);
+        String userName = auth != null ? auth.getName() : "SYSTEM";
+        var res = payrollService.recordPayment(id, request, userId, userName);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success(res, "Ghi nhận thanh toán thành công"));
+    }
+
+    /**
+     * Lấy lịch sử chuyển đổi trạng thái (Audit trail)
+     */
+    @GetMapping("/{id}/history")
+    @PreAuthorize("hasAnyAuthority('SUPER_ADMIN', 'HR_MANAGER', 'BOARD_OF_DIRECTORS')")
+    public ResponseEntity<ApiResponse<List<com.kltn.school_hrm.module.payroll.dto.response.PayrollHistoryResponse>>> getHistory(
+            @PathVariable Long id) {
+        return ResponseEntity.ok(ApiResponse.success(payrollService.getHistoriesByPayrollId(id), "OK"));
+    }
+
+    /**
+     * Lấy danh sách các lần thanh toán
+     */
+    @GetMapping("/{id}/payments")
+    @PreAuthorize("hasAnyAuthority('SUPER_ADMIN', 'HR_MANAGER', 'BOARD_OF_DIRECTORS')")
+    public ResponseEntity<ApiResponse<List<com.kltn.school_hrm.module.payroll.dto.response.PayrollPaymentResponse>>> getPayments(
+            @PathVariable Long id) {
+        return ResponseEntity.ok(ApiResponse.success(payrollService.getPaymentsByPayrollId(id), "OK"));
     }
 
     @DeleteMapping("/{id}")
@@ -156,6 +219,13 @@ public class PayrollController {
             return employeeRepository.findByUserId(principal.userId())
                     .map(Employee::getId)
                     .orElse(null);
+        }
+        return null;
+    }
+
+    private Long getCurrentUserId(Authentication auth) {
+        if (auth != null && auth.getPrincipal() instanceof CustomPrincipal principal) {
+            return principal.userId();
         }
         return null;
     }

@@ -533,6 +533,144 @@
                 </div>
             </div>
         </div>
+
+        <!-- MODAL: LỊCH SỬ CHUYỂN TRẠNG THÁI (AUDIT TRAIL) -->
+        <div class="modal fade" id="payrollHistoryModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content border-0 shadow">
+                    <div class="modal-header bg-light">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-clock-history fs-4 text-primary me-2"></i>
+                            <div>
+                                <h5 class="modal-title fw-bold mb-0">LỊCH SỬ CHUYỂN ĐỔI TRẠNG THÁI (AUDIT TRAIL)</h5>
+                                <small class="text-muted" id="ph-modal-subtitle">Bảng lương #--</small>
+                            </div>
+                        </div>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body p-3">
+                        <div class="table-responsive">
+                            <table class="table table-hover table-bordered align-middle text-center mb-0">
+                                <thead class="table-light small">
+                                    <tr>
+                                        <th>Thời gian</th>
+                                        <th>Trạng thái cũ</th>
+                                        <th>Trạng thái mới</th>
+                                        <th>Người thực hiện</th>
+                                        <th>Lý do / Giải trình</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="ph-table-tbody" class="small">
+                                    <!-- Dynamic Rows -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="modal-footer bg-light py-2">
+                        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Đóng</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL: GHI NHẬN THANH TOÁN LƯƠNG (FINANCE) -->
+        <div class="modal fade" id="payrollPaymentModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content border-0 shadow">
+                    <div class="modal-header bg-success text-white">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-cash-stack fs-4 me-2"></i>
+                            <div>
+                                <h5 class="modal-title fw-bold mb-0 text-white">CHI TRẢ & THANH TOÁN LƯƠNG</h5>
+                                <small class="text-white-50" id="pp-modal-subtitle">Nhân sự: --</small>
+                            </div>
+                        </div>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <form id="payroll-payment-form" onsubmit="submitPayrollPayment(event)">
+                        <input type="hidden" id="pp-payroll-id">
+                        <div class="modal-body p-4">
+                            <!-- Progress Summary Cards -->
+                            <div class="row g-2 mb-3 text-center">
+                                <div class="col-sm-4">
+                                    <div class="p-2 border rounded bg-light">
+                                        <div class="small text-muted">Lương thực nhận (Net)</div>
+                                        <div class="fw-bold text-dark fs-6" id="pp-net-salary">0 ₫</div>
+                                    </div>
+                                </div>
+                                <div class="col-sm-4">
+                                    <div class="p-2 border rounded bg-light">
+                                        <div class="small text-muted">Đã thanh toán</div>
+                                        <div class="fw-bold text-success fs-6" id="pp-total-paid">0 ₫</div>
+                                    </div>
+                                </div>
+                                <div class="col-sm-4">
+                                    <div class="p-2 border rounded bg-light">
+                                        <div class="small text-muted">Còn phải trả</div>
+                                        <div class="fw-bold text-danger fs-6" id="pp-remaining">0 ₫</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="card border-0 bg-light p-3 mb-3" id="pp-form-card">
+                                <h6 class="fw-bold text-success mb-3"><i class="bi bi-plus-circle me-1"></i>Thêm đợt thanh toán mới</h6>
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold small">Số tiền thanh toán (VNĐ) <span class="text-danger">*</span></label>
+                                        <input type="number" class="form-control form-control-sm" id="pp-amount" min="1" step="1000" required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold small">Ngày thanh toán <span class="text-danger">*</span></label>
+                                        <input type="date" class="form-control form-control-sm" id="pp-date" required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold small">Phương thức thanh toán <span class="text-danger">*</span></label>
+                                        <select class="form-select form-select-sm" id="pp-method" required>
+                                            <option value="BANK_TRANSFER">Chuyển khoản ngân hàng</option>
+                                            <option value="CASH">Tiền mặt</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold small">Mã giao dịch / Số tham chiếu</label>
+                                        <input type="text" class="form-control form-control-sm" id="pp-reference" placeholder="VD: FT240212345678">
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label fw-semibold small">Ghi chú thanh toán</label>
+                                        <input type="text" class="form-control form-control-sm" id="pp-note" placeholder="VD: Chuyển lương đợt 1">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Payment History Table -->
+                            <h6 class="fw-bold text-dark mb-2"><i class="bi bi-clock-history me-1"></i>Lịch sử các đợt đã thanh toán</h6>
+                            <div class="table-responsive">
+                                <table class="table table-sm table-bordered align-middle text-center mb-0">
+                                    <thead class="table-light small">
+                                        <tr>
+                                            <th>Ngày TT</th>
+                                            <th>Số tiền</th>
+                                            <th>Phương thức</th>
+                                            <th>Mã tham chiếu</th>
+                                            <th>Người TT</th>
+                                            <th>Ghi chú</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="pp-history-tbody" class="small">
+                                        <!-- Dynamic Payment History Rows -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="modal-footer bg-light py-2">
+                            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Đóng</button>
+                            <button type="submit" class="btn btn-success btn-sm fw-semibold" id="btn-submit-payment">
+                                <i class="bi bi-check-circle me-1"></i>Xác nhận thanh toán
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div th:fragment="scripts">
@@ -824,18 +962,75 @@
                 const canManage = hasRole('HR_MANAGER') || hasRole('SUPER_ADMIN');
 
                 tbody.innerHTML = payrolls.map(p => {
-                    let badgeClass = 'bg-secondary';
-                    let statusText = 'Dự thảo';
-                    if (p.status === 'CONFIRMED') {
-                        badgeClass = 'bg-primary';
-                        statusText = 'Đã duyệt';
-                    } else if (p.status === 'PAID') {
-                        badgeClass = 'bg-success';
-                        statusText = 'Đã thanh toán';
-                    }
-
                     const standardDays = p.snapshotStandardDays || 22;
                     const paidDays = p.paidWorkDays != null ? p.paidWorkDays : '--';
+                    const safeName = (p.employeeName || 'N/A').replace(/'/g, "\\'");
+
+                    let netSalaryHtml = `<strong class="text-primary fs-6">${formatCurrency(p.netSalary)}</strong>`;
+                    if (p.status === 'LOCKED' && p.totalPaidAmount > 0) {
+                        netSalaryHtml += `<div class="small text-muted">Đã trả: <span class="text-success fw-semibold">${formatCurrency(p.totalPaidAmount)}</span></div>`;
+                        netSalaryHtml += `<div class="small text-danger">Còn thiếu: ${formatCurrency(p.remainingAmount)}</div>`;
+                    } else if (p.status === 'PAID') {
+                        netSalaryHtml += `<div class="small text-success"><i class="bi bi-check-all me-1"></i>Đã thanh toán đủ</div>`;
+                    }
+
+                    // Điều phối nút bấm theo State Machine & Phân quyền (req 2 & 4)
+                    let actionButtons = `
+                        <button class="btn btn-sm btn-outline-info me-1" title="Xem phiếu lương chi tiết" onclick="viewPayslip(${p.id})">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-secondary me-1" title="Lịch sử chuyển trạng thái (Audit trail)" onclick="openHistoryModal(${p.id})">
+                            <i class="bi bi-clock-history"></i>
+                        </button>
+                    `;
+
+                    // Khi DRAFT hoặc REVIEW: Cho phép tính (lại)
+                    if (canManage && (p.status === 'DRAFT' || p.status === 'REVIEW')) {
+                        actionButtons += `
+                            <button class="btn btn-sm btn-outline-warning me-1" title="Tính (lại) lương cho nhân viên này" onclick="recalcEmployee(${p.periodId}, ${p.employeeId})">
+                                <i class="bi bi-arrow-repeat"></i>
+                            </button>
+                        `;
+                    }
+
+                    // Khi REVIEW: Người có thẩm quyền có thể Chốt (LOCKED) hoặc Trả lại (DRAFT)
+                    if (canApprove && p.status === 'REVIEW') {
+                        actionButtons += `
+                            <button class="btn btn-sm btn-outline-primary me-1" title="Phê duyệt và chốt bảng lương (LOCKED)" onclick="transitionPayroll(${p.id}, 'LOCKED', 'HRM/BOD phê duyệt và chốt bảng lương')">
+                                <i class="bi bi-lock me-1"></i>Chốt
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger me-1" title="Trả lại bản nháp (DRAFT)" onclick="promptTransition(${p.id}, 'DRAFT', 'Lý do trả lại bản nháp:')">
+                                <i class="bi bi-arrow-counterclockwise"></i> Trả lại
+                            </button>
+                        `;
+                    }
+
+                    // Khi LOCKED: Finance ghi nhận thanh toán hoặc Ban Giám Hiệu mở khóa điều chỉnh
+                    if (p.status === 'LOCKED') {
+                        if (canManage) {
+                            actionButtons += `
+                                <button class="btn btn-sm btn-outline-success me-1" title="Ghi nhận thanh toán chi trả" onclick="openPaymentModal(${p.id}, '${safeName}', ${p.netSalary || 0}, ${p.totalPaidAmount || 0}, ${p.remainingAmount || 0})">
+                                    <i class="bi bi-cash-stack me-1"></i>Chi trả
+                                </button>
+                            `;
+                        }
+                        if (canApprove) {
+                            actionButtons += `
+                                <button class="btn btn-sm btn-outline-warning me-1" title="Mở khóa điều chỉnh đặc biệt (REVIEW)" onclick="promptTransition(${p.id}, 'REVIEW', 'Lý do giải trình mở khóa bảng lương đã chốt:')">
+                                    <i class="bi bi-unlock"></i> Mở khóa
+                                </button>
+                            `;
+                        }
+                    }
+
+                    // Khi PAID: Đã hoàn tất thanh toán, cho phép xem phiếu chi
+                    if (p.status === 'PAID') {
+                        actionButtons += `
+                            <button class="btn btn-sm btn-outline-success me-1" title="Xem danh sách các lần thanh toán" onclick="openPaymentHistoryOnly(${p.id}, '${safeName}')">
+                                <i class="bi bi-receipt"></i> Đã trả
+                            </button>
+                        `;
+                    }
 
                     return `
                         <tr>
@@ -846,31 +1041,31 @@
                             <td>${p.totalTeachingHours ? p.totalTeachingHours + ' h' : '--'}</td>
                             <td class="text-success fw-semibold">+${formatCurrency(p.grossSalary)}</td>
                             <td class="text-danger fw-semibold">-${formatCurrency(p.totalDeductions)}</td>
-                            <td><strong class="text-primary fs-6">${formatCurrency(p.netSalary)}</strong></td>
-                            <td><span class="badge ${badgeClass}">${statusText}</span></td>
-                            <td class="text-end pe-4">
-                                <button class="btn btn-sm btn-outline-info me-1" title="Xem phiếu lương chi tiết" onclick="viewPayslip(${p.id})">
-                                    <i class="bi bi-eye"></i> Chi tiết
-                                </button>
-                                ${p.status !== 'PAID' && canManage ? `
-                                    <button class="btn btn-sm btn-outline-secondary me-1" title="Tính lại cho nhân sự này" onclick="recalcEmployee(${p.periodId}, ${p.employeeId})">
-                                        <i class="bi bi-arrow-repeat"></i>
-                                    </button>
-                                ` : ''}
-                                ${canApprove && p.status === 'DRAFT' ? `
-                                    <button class="btn btn-sm btn-outline-primary me-1" title="Duyệt phiếu lương" onclick="updatePayrollStatus(${p.id}, 'CONFIRMED')">
-                                        <i class="bi bi-check-circle"></i> Duyệt
-                                    </button>
-                                ` : ''}
-                                ${canApprove && p.status === 'CONFIRMED' ? `
-                                    <button class="btn btn-sm btn-outline-success me-1" title="Xác nhận thanh toán" onclick="updatePayrollStatus(${p.id}, 'PAID')">
-                                        <i class="bi bi-cash-stack"></i> Chi trả
-                                    </button>
-                                ` : ''}
+                            <td>${netSalaryHtml}</td>
+                            <td>${renderPayrollStatusBadge(p.status)}</td>
+                            <td class="text-end pe-3">
+                                ${actionButtons}
                             </td>
                         </tr>
                     `;
                 }).join('');
+            }
+
+            function renderPayrollStatusBadge(status) {
+                switch (status) {
+                    case 'DRAFT':
+                        return '<span class="badge bg-secondary-subtle text-secondary border border-secondary"><i class="bi bi-file-earmark me-1"></i>Bản nháp</span>';
+                    case 'CALCULATING':
+                        return '<span class="badge bg-warning-subtle text-warning-emphasis border border-warning"><span class="spinner-border spinner-border-sm me-1"></span>Đang tính</span>';
+                    case 'REVIEW':
+                        return '<span class="badge bg-info-subtle text-info-emphasis border border-info"><i class="bi bi-clock-history me-1"></i>Chờ duyệt (REVIEW)</span>';
+                    case 'LOCKED':
+                        return '<span class="badge bg-primary-subtle text-primary border border-primary"><i class="bi bi-lock-fill me-1"></i>Đã chốt (LOCKED)</span>';
+                    case 'PAID':
+                        return '<span class="badge bg-success-subtle text-success border border-success"><i class="bi bi-check2-circle me-1"></i>Đã chi trả (PAID)</span>';
+                    default:
+                        return `<span class="badge bg-secondary">${status || 'N/A'}</span>`;
+                }
             }
 
             function filterPayrollTable() {
@@ -898,12 +1093,163 @@
             }
 
             async function updatePayrollStatus(id, newStatus) {
+                transitionPayroll(id, newStatus, 'Cập nhật trạng thái');
+            }
+
+            async function transitionPayroll(id, targetStatus, reason) {
                 try {
-                    await fetchApi(`/api/v1/payrolls/${id}/status?status=${newStatus}`, { method: 'PUT' });
-                    showAlert('Đã cập nhật trạng thái phiếu lương!', 'success');
+                    showAlert('Đang chuyển trạng thái bảng lương...', 'info');
+                    await fetchApi(`/api/v1/payrolls/${id}/transition`, {
+                        method: 'POST',
+                        body: JSON.stringify({ targetStatus, reason })
+                    });
+                    showAlert(`Đã chuyển trạng thái bảng lương sang ${targetStatus}!`, 'success');
                     loadPayrollsForSelectedPeriod();
                 } catch (e) {
-                    console.error('Update status error', e);
+                    console.error('Transition error', e);
+                    showAlert(e.message || 'Lỗi khi chuyển trạng thái bảng lương', 'danger');
+                }
+            }
+
+            async function promptTransition(id, targetStatus, promptMessage) {
+                const reason = prompt(promptMessage);
+                if (reason === null) return; // Người dùng ấn Cancel
+                if (!reason.trim()) {
+                    showAlert('Vui lòng nhập lý do giải trình!', 'warning');
+                    return;
+                }
+                transitionPayroll(id, targetStatus, reason.trim());
+            }
+
+            // ================= AUDIT TRAIL MODAL =================
+            async function openHistoryModal(payrollId) {
+                try {
+                    document.getElementById('ph-modal-subtitle').textContent = `Bảng lương #${payrollId}`;
+                    const tbody = document.getElementById('ph-table-tbody');
+                    tbody.innerHTML = '<tr><td colspan="5" class="py-3 text-muted"><span class="spinner-border spinner-border-sm me-2"></span>Đang tải dữ liệu audit...</td></tr>';
+                    
+                    const modal = new bootstrap.Modal(document.getElementById('payrollHistoryModal'));
+                    modal.show();
+
+                    const res = await fetchApi(`/api/v1/payrolls/${payrollId}/history`);
+                    const histories = res.data || [];
+                    if (histories.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="5" class="py-4 text-muted">Chưa có lịch sử chuyển trạng thái nào cho bảng lương này.</td></tr>';
+                        return;
+                    }
+
+                    tbody.innerHTML = histories.map(h => `
+                        <tr>
+                            <td class="text-nowrap">${formatDate(h.changedAt)}</td>
+                            <td>${renderPayrollStatusBadge(h.fromStatus)}</td>
+                            <td>${renderPayrollStatusBadge(h.toStatus)}</td>
+                            <td class="fw-semibold text-dark">${h.changedByName || 'SYSTEM'}</td>
+                            <td class="text-start text-secondary">${h.reason || '--'}</td>
+                        </tr>
+                    `).join('');
+                } catch (e) {
+                    console.error('Error fetching audit history', e);
+                    showAlert(e.message || 'Không thể tải lịch sử kiểm toán', 'danger');
+                }
+            }
+
+            // ================= PAYMENT MODAL =================
+            async function openPaymentModal(payrollId, employeeName, netSalary, totalPaid, remaining) {
+                document.getElementById('pp-payroll-id').value = payrollId;
+                document.getElementById('pp-modal-subtitle').textContent = `Nhân sự: ${employeeName} (Bảng lương #${payrollId})`;
+                document.getElementById('pp-net-salary').textContent = formatCurrency(netSalary);
+                document.getElementById('pp-total-paid').textContent = formatCurrency(totalPaid);
+                document.getElementById('pp-remaining').textContent = formatCurrency(remaining);
+                
+                // Mặc định số tiền thanh toán là số tiền còn lại
+                document.getElementById('pp-amount').value = remaining > 0 ? remaining : '';
+                document.getElementById('pp-date').value = new Date().toISOString().split('T')[0];
+                document.getElementById('pp-reference').value = '';
+                document.getElementById('pp-note').value = '';
+                document.getElementById('pp-form-card').style.display = 'block';
+                document.getElementById('btn-submit-payment').style.display = 'inline-block';
+
+                loadPaymentHistoryTable(payrollId);
+
+                const modal = new bootstrap.Modal(document.getElementById('payrollPaymentModal'));
+                modal.show();
+            }
+
+            async function openPaymentHistoryOnly(payrollId, employeeName) {
+                document.getElementById('pp-payroll-id').value = payrollId;
+                document.getElementById('pp-modal-subtitle').textContent = `Nhân sự: ${employeeName} (Bảng lương #${payrollId})`;
+                document.getElementById('pp-form-card').style.display = 'none';
+                document.getElementById('btn-submit-payment').style.display = 'none';
+
+                // Lấy thông tin bảng lương để cập nhật thẻ thống kê
+                try {
+                    const pRes = await fetchApi(`/api/v1/payrolls/${payrollId}`);
+                    const p = pRes.data;
+                    document.getElementById('pp-net-salary').textContent = formatCurrency(p.netSalary);
+                    document.getElementById('pp-total-paid').textContent = formatCurrency(p.totalPaidAmount);
+                    document.getElementById('pp-remaining').textContent = formatCurrency(p.remainingAmount);
+                } catch (e) {
+                    console.warn(e);
+                }
+
+                loadPaymentHistoryTable(payrollId);
+
+                const modal = new bootstrap.Modal(document.getElementById('payrollPaymentModal'));
+                modal.show();
+            }
+
+            async function loadPaymentHistoryTable(payrollId) {
+                const tbody = document.getElementById('pp-history-tbody');
+                tbody.innerHTML = '<tr><td colspan="6" class="py-3 text-muted"><span class="spinner-border spinner-border-sm me-2"></span>Đang tải dữ liệu thanh toán...</td></tr>';
+                try {
+                    const res = await fetchApi(`/api/v1/payrolls/${payrollId}/payments`);
+                    const payments = res.data || [];
+                    if (payments.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="6" class="py-3 text-muted">Chưa có giao dịch chi trả nào được ghi nhận.</td></tr>';
+                        return;
+                    }
+                    tbody.innerHTML = payments.map(p => `
+                        <tr>
+                            <td>${formatDate(p.paymentDate)}</td>
+                            <td class="fw-bold text-success">${formatCurrency(p.amount)}</td>
+                            <td><span class="badge bg-light text-dark border">${p.paymentMethodLabel || p.paymentMethod}</span></td>
+                            <td><code>${p.referenceCode || '--'}</code></td>
+                            <td>${p.paidByName || '--'}</td>
+                            <td class="text-secondary small text-start">${p.note || '--'}</td>
+                        </tr>
+                    `).join('');
+                } catch (e) {
+                    console.error('Error fetching payments', e);
+                    tbody.innerHTML = '<tr><td colspan="6" class="py-3 text-danger">Lỗi khi tải lịch sử thanh toán</td></tr>';
+                }
+            }
+
+            async function submitPayrollPayment(event) {
+                event.preventDefault();
+                const payrollId = document.getElementById('pp-payroll-id').value;
+                const amount = parseFloat(document.getElementById('pp-amount').value);
+                const paymentDate = document.getElementById('pp-date').value;
+                const paymentMethod = document.getElementById('pp-method').value;
+                const referenceCode = document.getElementById('pp-reference').value;
+                const note = document.getElementById('pp-note').value;
+
+                if (!amount || amount <= 0) {
+                    showAlert('Vui lòng nhập số tiền thanh toán hợp lệ!', 'warning');
+                    return;
+                }
+
+                try {
+                    showAlert('Đang lưu thông tin thanh toán...', 'info');
+                    await fetchApi(`/api/v1/payrolls/${payrollId}/payments`, {
+                        method: 'POST',
+                        body: JSON.stringify({ amount, paymentDate, paymentMethod, referenceCode, note })
+                    });
+                    showAlert('Đã ghi nhận thanh toán thành công!', 'success');
+                    bootstrap.Modal.getInstance(document.getElementById('payrollPaymentModal')).hide();
+                    loadPayrollsForSelectedPeriod();
+                } catch (e) {
+                    console.error('Payment error', e);
+                    showAlert(e.message || 'Lỗi khi ghi nhận thanh toán', 'danger');
                 }
             }
 
@@ -921,16 +1267,7 @@
                     const headerEl = document.getElementById('ps-calculated-at-header') || document.getElementById('ps-created-at');
                     if (headerEl) headerEl.textContent = formatDate(calcDate);
 
-                    let badgeClass = 'bg-secondary';
-                    let statusText = 'Dự thảo';
-                    if (p.status === 'CONFIRMED') {
-                        badgeClass = 'bg-primary';
-                        statusText = 'Đã duyệt';
-                    } else if (p.status === 'PAID') {
-                        badgeClass = 'bg-success';
-                        statusText = 'Đã thanh toán';
-                    }
-                    document.getElementById('ps-status-badge').innerHTML = `<span class="badge ${badgeClass}">${statusText}</span>`;
+                    document.getElementById('ps-status-badge').innerHTML = renderPayrollStatusBadge(p.status);
 
                     document.getElementById('ps-contract-salary').textContent = formatCurrency(p.snapshotContractSalary);
                     document.getElementById('ps-work-days').textContent = `${p.paidWorkDays != null ? p.paidWorkDays : 0} / ${p.snapshotStandardDays || 22} ngày`;
