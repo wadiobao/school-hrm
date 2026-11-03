@@ -1,8 +1,9 @@
-﻿package com.kltn.school_hrm.module.teaching.service;
+package com.kltn.school_hrm.module.teaching.service;
 
 import java.util.List;
 
 import com.kltn.school_hrm.module.teaching.dto.request.TeachingAssignmentRequest;
+import com.kltn.school_hrm.module.teaching.dto.response.TeachingAssignmentHistoryResponse;
 import com.kltn.school_hrm.module.teaching.dto.response.TeachingAssignmentResponse;
 import com.kltn.school_hrm.shared.enums.Enums.Curriculum;
 
@@ -13,5 +14,7 @@ public interface TeachingAssignmentService {
     List<TeachingAssignmentResponse> getAll();
     List<TeachingAssignmentResponse> getByTeacherId(Long teacherId);
     List<TeachingAssignmentResponse> getByTeacherIdAndCurriculum(Long teacherId, Curriculum curriculum);
+    List<TeachingAssignmentResponse> getBySchoolClassId(Long schoolClassId);
+    List<TeachingAssignmentHistoryResponse> getAssignmentHistory(Long assignmentId);
     void delete(Long id);
 }

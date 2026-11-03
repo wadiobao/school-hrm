@@ -1,4 +1,4 @@
-﻿package com.kltn.school_hrm.module.teaching.controller;
+package com.kltn.school_hrm.module.teaching.controller;
 
 import java.util.List;
 
@@ -16,13 +16,17 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.kltn.school_hrm.dto.common.ApiResponse;
 import com.kltn.school_hrm.module.teaching.dto.request.TeachingAssignmentRequest;
+import com.kltn.school_hrm.module.teaching.dto.response.TeachingAssignmentHistoryResponse;
 import com.kltn.school_hrm.module.teaching.dto.response.TeachingAssignmentResponse;
-import com.kltn.school_hrm.shared.enums.Enums.Curriculum;
 import com.kltn.school_hrm.module.teaching.service.TeachingAssignmentService;
+import com.kltn.school_hrm.shared.enums.Enums.Curriculum;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
+/**
+ * Controller xử lý các yêu cầu liên quan đến Phân công giảng dạy.
+ */
 @RestController
 @RequestMapping("/api/v1/teaching-assignments")
 @RequiredArgsConstructor
@@ -52,20 +56,28 @@ public class TeachingAssignmentController {
         return ResponseEntity.ok(ApiResponse.success(response, "Lấy thông tin phân công thành công"));
     }
 
-    @GetMapping
-    public ResponseEntity<ApiResponse<List<TeachingAssignmentResponse>>> getAll() {
-        List<TeachingAssignmentResponse> response = teachingAssignmentService.getAll();
-        return ResponseEntity.ok(ApiResponse.success(response, "Lấy danh sách phân công thành công"));
+    @GetMapping("/{id}/history")
+    public ResponseEntity<ApiResponse<List<TeachingAssignmentHistoryResponse>>> getHistory(@PathVariable Long id) {
+        List<TeachingAssignmentHistoryResponse> response = teachingAssignmentService.getAssignmentHistory(id);
+        return ResponseEntity.ok(ApiResponse.success(response, "Lấy lịch sử phân công thành công"));
     }
 
-    @GetMapping("/teacher/{teacherId}")
-    public ResponseEntity<ApiResponse<List<TeachingAssignmentResponse>>> getByTeacher(
-            @PathVariable Long teacherId,
+    @GetMapping
+    public ResponseEntity<ApiResponse<List<TeachingAssignmentResponse>>> getAll(
+            @RequestParam(required = false) Long teacherId,
+            @RequestParam(required = false) Long classId,
             @RequestParam(required = false) Curriculum curriculum) {
-        List<TeachingAssignmentResponse> response = curriculum != null
-                ? teachingAssignmentService.getByTeacherIdAndCurriculum(teacherId, curriculum)
-                : teachingAssignmentService.getByTeacherId(teacherId);
-        return ResponseEntity.ok(ApiResponse.success(response, "Lấy danh sách phân công theo giáo viên thành công"));
+        List<TeachingAssignmentResponse> response;
+        if (classId != null) {
+            response = teachingAssignmentService.getBySchoolClassId(classId);
+        } else if (teacherId != null && curriculum != null) {
+            response = teachingAssignmentService.getByTeacherIdAndCurriculum(teacherId, curriculum);
+        } else if (teacherId != null) {
+            response = teachingAssignmentService.getByTeacherId(teacherId);
+        } else {
+            response = teachingAssignmentService.getAll();
+        }
+        return ResponseEntity.ok(ApiResponse.success(response, "Lấy danh sách phân công thành công"));
     }
 
     @DeleteMapping("/{id}")
