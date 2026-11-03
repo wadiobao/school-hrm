@@ -447,4 +447,109 @@ public class Enums {
 			this.label = label;
 		}
 	}
+
+	@Getter
+	public enum AcademicStatus {
+		PLANNING("Đang lập kế hoạch"),
+		ACTIVE("Đang hoạt động"),
+		COMPLETED("Đã kết thúc"),
+		ARCHIVED("Đã lưu trữ");
+
+		private final String label;
+
+		AcademicStatus(String label) {
+			this.label = label;
+		}
+	}
+
+	@Getter
+	public enum ClassStatus {
+		ACTIVE("Đang hoạt động"),
+		INACTIVE("Tạm ngừng"),
+		GRADUATED("Đã tốt nghiệp");
+
+		private final String label;
+
+		ClassStatus(String label) {
+			this.label = label;
+		}
+	}
+
+	@Getter
+	public enum SubjectStatus {
+		ACTIVE("Đang giảng dạy"),
+		INACTIVE("Ngừng giảng dạy");
+
+		private final String label;
+
+		SubjectStatus(String label) {
+			this.label = label;
+		}
+	}
+
+	@Getter
+	public enum ClassroomType {
+		STANDARD("Phòng học tiêu chuẩn"),
+		LAB("Phòng thực hành/Thí nghiệm"),
+		GYM("Nhà đa năng/Thể chất"),
+		AUDITORIUM("Hội trường");
+
+		private final String label;
+
+		ClassroomType(String label) {
+			this.label = label;
+		}
+	}
+
+	@Getter
+	public enum ClassroomStatus {
+		AVAILABLE("Sẵn sàng"),
+		MAINTENANCE("Đang bảo trì"),
+		INACTIVE("Ngừng sử dụng");
+
+		private final String label;
+
+		ClassroomStatus(String label) {
+			this.label = label;
+		}
+	}
+
+	@Getter
+	public enum TimeSlotSession {
+		MORNING("Buổi sáng"),
+		AFTERNOON("Buổi chiều");
+
+		private final String label;
+
+		TimeSlotSession(String label) {
+			this.label = label;
+		}
+	}
+
+	@Getter
+	public enum TimetableStatus {
+		DRAFT("Bản nháp"),
+		VALIDATING("Đang kiểm tra"),
+		REVIEW("Chờ phê duyệt"),
+		PUBLISHED("Đã công bố"),
+		ARCHIVED("Đã lưu trữ");
+
+		private final String label;
+
+		TimetableStatus(String label) {
+			this.label = label;
+		}
+	}
+
+	@Getter
+	public enum TeachingAssignmentStatus {
+		ACTIVE("Đang phân công"),
+		TERMINATED("Đã kết thúc");
+
+		private final String label;
+
+		TeachingAssignmentStatus(String label) {
+			this.label = label;
+		}
+	}
 }
