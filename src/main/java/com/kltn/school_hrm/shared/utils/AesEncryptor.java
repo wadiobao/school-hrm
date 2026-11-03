@@ -1,4 +1,4 @@
-﻿package com.kltn.school_hrm.shared.utils;
+package com.kltn.school_hrm.shared.utils;
 
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;

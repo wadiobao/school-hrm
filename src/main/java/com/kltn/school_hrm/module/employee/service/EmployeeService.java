@@ -1,4 +1,4 @@
-﻿package com.kltn.school_hrm.module.employee.service;
+package com.kltn.school_hrm.module.employee.service;
 
 import java.util.List;
 

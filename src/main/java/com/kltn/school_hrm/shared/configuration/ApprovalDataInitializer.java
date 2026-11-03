@@ -1,4 +1,4 @@
-﻿package com.kltn.school_hrm.shared.configuration;
+package com.kltn.school_hrm.shared.configuration;
 
 import java.util.ArrayList;
 

@@ -1,4 +1,4 @@
-﻿package com.kltn.school_hrm.module.attendance.service;
+package com.kltn.school_hrm.module.attendance.service;
 
 import com.kltn.school_hrm.module.attendance.dto.response.AttendanceCalculationResult;
 import com.kltn.school_hrm.module.attendance.entity.Attendance;

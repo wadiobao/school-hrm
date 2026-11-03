@@ -1,4 +1,4 @@
-﻿package com.kltn.school_hrm.module.core.repository;
+package com.kltn.school_hrm.module.core.repository;
 
 import java.util.Optional;
 

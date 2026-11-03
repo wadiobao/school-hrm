@@ -1,4 +1,4 @@
-﻿package com.kltn.school_hrm.module.core.entity;
+package com.kltn.school_hrm.module.core.entity;
 
 import com.kltn.school_hrm.shared.entity.base.BaseEntity;
 import com.kltn.school_hrm.shared.enums.Enums.RoleCode;

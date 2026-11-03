@@ -1,4 +1,4 @@
-﻿package com.kltn.school_hrm.shared.configuration;
+package com.kltn.school_hrm.shared.configuration;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
