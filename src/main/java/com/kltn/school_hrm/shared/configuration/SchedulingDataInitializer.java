@@ -201,12 +201,12 @@ public class SchedulingDataInitializer implements ApplicationRunner {
         Subject subPE = seedSubject("PE", "Giáo dục thể chất", "Môn Thể dục thể thao", SubjectStatus.ACTIVE);
 
         // 4. Khởi tạo Phòng học (Classrooms)
-        Classroom room101 = seedClassroom("P101", "Phòng học 101", 45, ClassroomType.THEORY, "Nhà A", 1);
-        Classroom room102 = seedClassroom("P102", "Phòng học 102", 45, ClassroomType.THEORY, "Nhà A", 1);
-        Classroom room103 = seedClassroom("P103", "Phòng học 103", 45, ClassroomType.THEORY, "Nhà A", 1);
+        Classroom room101 = seedClassroom("P101", "Phòng học 101", 45, ClassroomType.STANDARD, "Nhà A", 1);
+        Classroom room102 = seedClassroom("P102", "Phòng học 102", 45, ClassroomType.STANDARD, "Nhà A", 1);
+        Classroom room103 = seedClassroom("P103", "Phòng học 103", 45, ClassroomType.STANDARD, "Nhà A", 1);
         Classroom roomLabIT = seedClassroom("LAB-IT1", "Phòng máy tính 1", 40, ClassroomType.LAB, "Nhà B", 2);
         Classroom roomLabPhys = seedClassroom("LAB-PHYS", "Phòng thí nghiệm Lý", 40, ClassroomType.LAB, "Nhà B", 2);
-        Classroom roomSport = seedClassroom("SAN-GDTC", "Sân Thể thao ngoài trời", 100, ClassroomType.SPORT, "Khu Thể thao", 1);
+        Classroom roomSport = seedClassroom("SAN-GDTC", "Sân Thể thao ngoài trời", 100, ClassroomType.GYM, "Khu Thể thao", 1);
 
         // 5. Khởi tạo Lớp học (School Classes)
         SchoolClass class10A1 = seedSchoolClass("10A1", 10, academicYear, teacherMath, 45, ClassStatus.ACTIVE);
@@ -462,3 +462,4 @@ public class SchedulingDataInitializer implements ApplicationRunner {
         timetableEntryRepository.save(entry);
     }
 }
+
