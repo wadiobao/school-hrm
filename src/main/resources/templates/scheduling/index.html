@@ -36,6 +36,11 @@
                     <i class="bi bi-award me-1"></i> 4. Chuyên môn giáo viên
                 </button>
             </li>
+            <li class="nav-item" role="presentation" data-roles="SUPER_ADMIN,HR_MANAGER,BOARD_OF_DIRECTORS">
+                <button class="nav-link px-4 py-2 fw-semibold rounded-pill" id="tab-academic-btn" data-bs-toggle="pill" data-bs-target="#pane-academic" type="button" role="tab" onclick="loadAcademicCatalogData()">
+                    <i class="bi bi-mortarboard-fill me-1"></i> 5. Quản lý Học vụ (Năm học, Lớp, Môn, Phòng)
+                </button>
+            </li>
         </ul>
 
         <div class="tab-content" id="schedulingTabContent">
@@ -50,19 +55,34 @@
                     <div class="card-body">
                         <div class="row g-3 align-items-end">
                             <div class="col-md-3">
-                                <label class="form-label small fw-semibold text-muted">Năm học</label>
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <label class="form-label small fw-semibold text-muted m-0">Năm học</label>
+                                    <button class="btn btn-link btn-sm p-0 text-decoration-none fw-bold text-primary" data-roles="SUPER_ADMIN,HR_MANAGER,BOARD_OF_DIRECTORS" onclick="openCreateYearModal()" title="Thêm năm học mới">
+                                        <i class="bi bi-plus-circle me-1"></i>Thêm
+                                    </button>
+                                </div>
                                 <select id="filter-academic-year" class="form-select form-select-sm" onchange="onAcademicYearChanged()">
                                     <option value="">-- Chọn năm học --</option>
                                 </select>
                             </div>
                             <div class="col-md-3">
-                                <label class="form-label small fw-semibold text-muted">Học kỳ</label>
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <label class="form-label small fw-semibold text-muted m-0">Học kỳ</label>
+                                    <button class="btn btn-link btn-sm p-0 text-decoration-none fw-bold text-primary" data-roles="SUPER_ADMIN,HR_MANAGER,BOARD_OF_DIRECTORS" onclick="openCreateSemesterModal()" title="Thêm học kỳ mới">
+                                        <i class="bi bi-plus-circle me-1"></i>Thêm
+                                    </button>
+                                </div>
                                 <select id="filter-semester" class="form-select form-select-sm" onchange="onSemesterChanged()">
                                     <option value="">-- Chọn học kỳ --</option>
                                 </select>
                             </div>
                             <div class="col-md-3">
-                                <label class="form-label small fw-semibold text-muted">Lớp học</label>
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <label class="form-label small fw-semibold text-muted m-0">Lớp học</label>
+                                    <button class="btn btn-link btn-sm p-0 text-decoration-none fw-bold text-primary" data-roles="SUPER_ADMIN,HR_MANAGER,BOARD_OF_DIRECTORS" onclick="openCreateClassModal()" title="Thêm lớp học mới">
+                                        <i class="bi bi-plus-circle me-1"></i>Thêm
+                                    </button>
+                                </div>
                                 <select id="filter-class" class="form-select form-select-sm" onchange="onClassChanged()">
                                     <option value="">-- Chọn lớp học --</option>
                                 </select>
@@ -329,11 +349,403 @@
                 </div>
             </div>
 
+            <!-- ================================================================= -->
+            <!-- TAB 5: QUẢN LÝ HỌC VỤ (NĂM HỌC, HỌC KỲ, LỚP HỌC, MÔN, PHÒNG)    -->
+            <!-- ================================================================= -->
+            <div class="tab-pane fade" id="pane-academic" role="tabpanel">
+                <!-- Sub navigation for Academic Catalogs -->
+                <ul class="nav nav-tabs mb-3" id="academicSubTabs" role="tablist">
+                    <li class="nav-item">
+                        <button class="nav-link active fw-semibold" id="subtab-years-btn" data-bs-toggle="tab" data-bs-target="#subpane-years" type="button">
+                            <i class="bi bi-calendar-event me-1"></i> Năm học & Học kỳ
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link fw-semibold" id="subtab-classes-btn" data-bs-toggle="tab" data-bs-target="#subpane-classes" type="button">
+                            <i class="bi bi-people-fill me-1"></i> Lớp học (Classes)
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link fw-semibold" id="subtab-subjects-btn" data-bs-toggle="tab" data-bs-target="#subpane-subjects" type="button">
+                            <i class="bi bi-book-half me-1"></i> Môn học (Subjects)
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link fw-semibold" id="subtab-classrooms-btn" data-bs-toggle="tab" data-bs-target="#subpane-classrooms" type="button">
+                            <i class="bi bi-door-open-fill me-1"></i> Phòng học (Classrooms)
+                        </button>
+                    </li>
+                </ul>
+
+                <div class="tab-content" id="academicSubTabContent">
+                    <!-- SUBPANE 1: NĂM HỌC & HỌC KỲ -->
+                    <div class="tab-pane fade show active" id="subpane-years" role="tabpanel">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="fw-bold m-0 text-primary">Danh sách Năm học & Học kỳ tương ứng</h6>
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-sm btn-primary" onclick="openCreateYearModal()">
+                                    <i class="bi bi-plus-lg me-1"></i> Tạo Năm học mới
+                                </button>
+                                <button class="btn btn-sm btn-outline-primary" onclick="openCreateSemesterModal()">
+                                    <i class="bi bi-plus-lg me-1"></i> Tạo Học kỳ mới
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card border-0 shadow-sm mb-4">
+                            <div class="card-body p-0">
+                                <div class="table-responsive">
+                                    <table class="table table-hover align-middle mb-0">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Tên Năm học</th>
+                                                <th>Ngày bắt đầu</th>
+                                                <th>Ngày kết thúc</th>
+                                                <th>Trạng thái</th>
+                                                <th>Các học kỳ trực thuộc</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="tbl-years-body">
+                                            <tr><td colspan="5" class="text-center py-4 text-muted">Đang tải danh sách năm học...</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SUBPANE 2: LỚP HỌC -->
+                    <div class="tab-pane fade" id="subpane-classes" role="tabpanel">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="fw-bold m-0 text-primary">Danh sách Lớp học theo Năm học</h6>
+                            <button class="btn btn-sm btn-primary" onclick="openCreateClassModal()">
+                                <i class="bi bi-plus-lg me-1"></i> Tạo Lớp học mới
+                            </button>
+                        </div>
+                        <div class="card border-0 shadow-sm mb-4">
+                            <div class="card-body p-0">
+                                <div class="table-responsive">
+                                    <table class="table table-hover align-middle mb-0">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Tên Lớp</th>
+                                                <th>Khối</th>
+                                                <th>Năm học</th>
+                                                <th>Giáo viên Chủ nhiệm</th>
+                                                <th>Sĩ số tối đa</th>
+                                                <th>Trạng thái</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="tbl-classes-body">
+                                            <tr><td colspan="6" class="text-center py-4 text-muted">Đang tải danh sách lớp học...</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SUBPANE 3: MÔN HỌC -->
+                    <div class="tab-pane fade" id="subpane-subjects" role="tabpanel">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="fw-bold m-0 text-primary">Danh mục Môn học trong trường</h6>
+                            <button class="btn btn-sm btn-primary" onclick="openCreateSubjectModal()">
+                                <i class="bi bi-plus-lg me-1"></i> Tạo Môn học mới
+                            </button>
+                        </div>
+                        <div class="card border-0 shadow-sm mb-4">
+                            <div class="card-body p-0">
+                                <div class="table-responsive">
+                                    <table class="table table-hover align-middle mb-0">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Mã môn</th>
+                                                <th>Tên môn học</th>
+                                                <th>Mô tả</th>
+                                                <th>Trạng thái</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="tbl-subjects-body">
+                                            <tr><td colspan="4" class="text-center py-4 text-muted">Đang tải môn học...</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SUBPANE 4: PHÒNG HỌC -->
+                    <div class="tab-pane fade" id="subpane-classrooms" role="tabpanel">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="fw-bold m-0 text-primary">Danh sách Phòng học & Cơ sở vật chất</h6>
+                            <button class="btn btn-sm btn-primary" onclick="openCreateClassroomModal()">
+                                <i class="bi bi-plus-lg me-1"></i> Tạo Phòng học mới
+                            </button>
+                        </div>
+                        <div class="card border-0 shadow-sm mb-4">
+                            <div class="card-body p-0">
+                                <div class="table-responsive">
+                                    <table class="table table-hover align-middle mb-0">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Mã phòng</th>
+                                                <th>Tên phòng</th>
+                                                <th>Sức chứa</th>
+                                                <th>Loại phòng</th>
+                                                <th>Trạng thái</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="tbl-classrooms-body">
+                                            <tr><td colspan="5" class="text-center py-4 text-muted">Đang tải phòng học...</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </div> <!-- /tab-content -->
 
         <!-- ================================================================= -->
-        <!-- MODALS                                                            -->
+        <!-- MODALS: HỌC VỤ & DANH MỤC                                         -->
         <!-- ================================================================= -->
+
+        <!-- Modal: Tạo Năm học mới -->
+        <div class="modal fade" id="modalCreateAcademicYear" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content border-0 shadow">
+                    <div class="modal-header">
+                        <h5 class="modal-title fw-bold">Tạo Năm học Mới</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="formCreateAcademicYear">
+                            <div class="mb-3">
+                                <label class="form-label required small fw-semibold">Tên năm học *</label>
+                                <input type="text" id="year-name" class="form-control" placeholder="VD: Năm học 2026-2027" required>
+                            </div>
+                            <div class="row g-2 mb-3">
+                                <div class="col-6">
+                                    <label class="form-label required small fw-semibold">Ngày bắt đầu *</label>
+                                    <input type="date" id="year-startDate" class="form-control" required>
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label required small fw-semibold">Ngày kết thúc *</label>
+                                    <input type="date" id="year-endDate" class="form-control" required>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label required small fw-semibold">Trạng thái *</label>
+                                <select id="year-status" class="form-select" required>
+                                    <option value="ACTIVE">Đang hoạt động (ACTIVE)</option>
+                                    <option value="PLANNING">Lập kế hoạch (PLANNING)</option>
+                                    <option value="COMPLETED">Đã kết thúc (COMPLETED)</option>
+                                </select>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Đóng</button>
+                        <button type="button" class="btn btn-primary btn-sm" onclick="submitCreateAcademicYear()">Lưu Năm học</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal: Tạo Học kỳ mới -->
+        <div class="modal fade" id="modalCreateSemester" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content border-0 shadow">
+                    <div class="modal-header">
+                        <h5 class="modal-title fw-bold">Tạo Học kỳ Mới</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="formCreateSemester">
+                            <div class="mb-3">
+                                <label class="form-label required small fw-semibold">Năm học trực thuộc *</label>
+                                <select id="sem-yearId" class="form-select" required>
+                                    <option value="">-- Chọn năm học --</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label required small fw-semibold">Tên học kỳ *</label>
+                                <input type="text" id="sem-name" class="form-control" placeholder="VD: Học kỳ 1 (2026-2027)" required>
+                            </div>
+                            <div class="row g-2 mb-3">
+                                <div class="col-6">
+                                    <label class="form-label required small fw-semibold">Ngày bắt đầu *</label>
+                                    <input type="date" id="sem-startDate" class="form-control" required>
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label required small fw-semibold">Ngày kết thúc *</label>
+                                    <input type="date" id="sem-endDate" class="form-control" required>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label required small fw-semibold">Trạng thái *</label>
+                                <select id="sem-status" class="form-select" required>
+                                    <option value="ACTIVE">Đang áp dụng (ACTIVE)</option>
+                                    <option value="PLANNING">Lập kế hoạch (PLANNING)</option>
+                                    <option value="COMPLETED">Đã kết thúc (COMPLETED)</option>
+                                </select>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Đóng</button>
+                        <button type="button" class="btn btn-primary btn-sm" onclick="submitCreateSemester()">Lưu Học kỳ</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal: Tạo Lớp học mới -->
+        <div class="modal fade" id="modalCreateSchoolClass" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content border-0 shadow">
+                    <div class="modal-header">
+                        <h5 class="modal-title fw-bold">Tạo Lớp học Mới</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="formCreateSchoolClass">
+                            <div class="mb-3">
+                                <label class="form-label required small fw-semibold">Năm học *</label>
+                                <select id="class-yearId" class="form-select" required>
+                                    <option value="">-- Chọn năm học --</option>
+                                </select>
+                            </div>
+                            <div class="row g-2 mb-3">
+                                <div class="col-6">
+                                    <label class="form-label required small fw-semibold">Tên lớp *</label>
+                                    <input type="text" id="class-name" class="form-control" placeholder="VD: 10A3" required>
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label required small fw-semibold">Khối lớp (1-12) *</label>
+                                    <input type="number" id="class-gradeLevel" class="form-control" min="1" max="12" value="10" required>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label small fw-semibold">Giáo viên Chủ nhiệm</label>
+                                <select id="class-homeroomTeacherId" class="form-select">
+                                    <option value="">-- Chưa phân công GVCN --</option>
+                                </select>
+                            </div>
+                            <div class="row g-2 mb-3">
+                                <div class="col-6">
+                                    <label class="form-label small fw-semibold">Sĩ số tối đa</label>
+                                    <input type="number" id="class-capacity" class="form-control" value="45" min="1">
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label required small fw-semibold">Trạng thái *</label>
+                                    <select id="class-status" class="form-select" required>
+                                        <option value="ACTIVE">Hoạt động (ACTIVE)</option>
+                                        <option value="ARCHIVED">Lưu trữ (ARCHIVED)</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Đóng</button>
+                        <button type="button" class="btn btn-primary btn-sm" onclick="submitCreateSchoolClass()">Lưu Lớp học</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal: Tạo Môn học mới -->
+        <div class="modal fade" id="modalCreateSubject" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content border-0 shadow">
+                    <div class="modal-header">
+                        <h5 class="modal-title fw-bold">Tạo Môn học Mới</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="formCreateSubject">
+                            <div class="mb-3">
+                                <label class="form-label required small fw-semibold">Mã môn học *</label>
+                                <input type="text" id="sub-code" class="form-control" placeholder="VD: HIST" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label required small fw-semibold">Tên môn học *</label>
+                                <input type="text" id="sub-name" class="form-control" placeholder="VD: Lịch sử" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label small fw-semibold">Mô tả chi tiết</label>
+                                <textarea id="sub-desc" class="form-control" rows="2" placeholder="Chương trình giáo dục phổ thông"></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label required small fw-semibold">Trạng thái *</label>
+                                <select id="sub-status" class="form-select" required>
+                                    <option value="ACTIVE">Đang giảng dạy (ACTIVE)</option>
+                                    <option value="INACTIVE">Tạm ngưng (INACTIVE)</option>
+                                </select>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Đóng</button>
+                        <button type="button" class="btn btn-primary btn-sm" onclick="submitCreateSubject()">Lưu Môn học</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal: Tạo Phòng học mới -->
+        <div class="modal fade" id="modalCreateClassroom" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content border-0 shadow">
+                    <div class="modal-header">
+                        <h5 class="modal-title fw-bold">Tạo Phòng học Mới</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="formCreateClassroom">
+                            <div class="row g-2 mb-3">
+                                <div class="col-6">
+                                    <label class="form-label required small fw-semibold">Mã phòng *</label>
+                                    <input type="text" id="room-code" class="form-control" placeholder="VD: P201" required>
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label required small fw-semibold">Tên phòng *</label>
+                                    <input type="text" id="room-name" class="form-control" placeholder="VD: Phòng học 201" required>
+                                </div>
+                            </div>
+                            <div class="row g-2 mb-3">
+                                <div class="col-6">
+                                    <label class="form-label required small fw-semibold">Loại phòng</label>
+                                    <select id="room-type" class="form-select">
+                                        <option value="THEORY">Lý thuyết (THEORY)</option>
+                                        <option value="LAB">Phòng thực hành (LAB)</option>
+                                        <option value="SPORT">Thể thao (SPORT)</option>
+                                        <option value="MULTIPURPOSE">Đa năng</option>
+                                    </select>
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label small fw-semibold">Sức chứa (chỗ ngồi)</label>
+                                    <input type="number" id="room-capacity" class="form-control" value="45" min="1">
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label required small fw-semibold">Trạng thái *</label>
+                                <select id="room-status" class="form-select" required>
+                                    <option value="AVAILABLE">Sẵn sàng sử dụng (AVAILABLE)</option>
+                                    <option value="MAINTENANCE">Đang bảo trì (MAINTENANCE)</option>
+                                </select>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Đóng</button>
+                        <button type="button" class="btn btn-primary btn-sm" onclick="submitCreateClassroom()">Lưu Phòng học</button>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <!-- Modal: Tạo Thời khóa biểu mới -->
         <div class="modal fade" id="modalCreateTimetable" tabindex="-1" aria-hidden="true">
@@ -594,8 +1006,10 @@
                     // Tải năm học
                     const resYears = await fetchApi('/api/v1/academic-years');
                     cachedYears = resYears.data || [];
-                    populateSelect('filter-academic-year', cachedYears, 'id', (y) => `${y.name} (${y.code})`);
-                    populateSelect('create-tt-year', cachedYears, 'id', (y) => `${y.name} (${y.code})`);
+                    populateSelect('filter-academic-year', cachedYears, 'id', (y) => `${y.name}`);
+                    populateSelect('create-tt-year', cachedYears, 'id', (y) => `${y.name}`);
+                    populateSelect('sem-yearId', cachedYears, 'id', (y) => `${y.name}`);
+                    populateSelect('class-yearId', cachedYears, 'id', (y) => `${y.name}`);
 
                     // Tải môn học
                     const resSubjects = await fetchApi('/api/v1/subjects');
@@ -606,7 +1020,7 @@
                     // Tải phòng học
                     const resRooms = await fetchApi('/api/v1/classrooms');
                     cachedClassrooms = resRooms.data || [];
-                    populateSelect('entry-classroomId', cachedClassrooms, 'id', (r) => `${r.roomNumber} - ${r.name}`);
+                    populateSelect('entry-classroomId', cachedClassrooms, 'id', (r) => `${r.code} - ${r.name}`);
 
                     // Tải danh sách giáo viên/nhân viên
                     const resTeachers = await fetchApi('/api/v1/employees?size=200');
@@ -614,6 +1028,7 @@
                     populateSelect('asg-teacherId', cachedTeachers, 'id', (t) => `${t.fullName} (${t.employeeCode})`);
                     populateSelect('entry-substituteTeacherId', cachedTeachers, 'id', (t) => `${t.fullName} (${t.employeeCode})`);
                     populateSelect('qual-teacherId', cachedTeachers, 'id', (t) => `${t.fullName} (${t.employeeCode})`);
+                    populateSelect('class-homeroomTeacherId', cachedTeachers, 'id', (t) => `${t.fullName} (${t.employeeCode})`);
 
                     // Tải khung giờ / tiết học
                     const resSlots = await fetchApi('/api/v1/time-slots');
@@ -633,7 +1048,6 @@
             function populateSelect(selectId, items, valueProp, labelFn) {
                 const select = document.getElementById(selectId);
                 if (!select) return;
-                // Giữ lại option đầu tiên
                 const firstOption = select.options[0];
                 select.innerHTML = '';
                 if (firstOption) select.appendChild(firstOption);
@@ -653,8 +1067,8 @@
                 // Tải học kỳ theo năm học
                 const resSem = await fetchApi(`/api/v1/semesters?academicYearId=${yearId}`);
                 cachedSemesters = resSem.data || [];
-                populateSelect('filter-semester', cachedSemesters, 'id', (s) => `${s.name} (${s.semesterNumber === 1 ? 'HK1' : 'HK2'})`);
-                populateSelect('workload-semester-select', cachedSemesters, 'id', (s) => `${s.name} (${s.semesterNumber === 1 ? 'HK1' : 'HK2'})`);
+                populateSelect('filter-semester', cachedSemesters, 'id', (s) => `${s.name}`);
+                populateSelect('workload-semester-select', cachedSemesters, 'id', (s) => `${s.name}`);
 
                 // Tải lớp theo năm học
                 const resClasses = await fetchApi(`/api/v1/classes?academicYearId=${yearId}`);
@@ -683,7 +1097,6 @@
             }
 
             function onSemesterChanged() {
-                // Auto reload if class already selected
                 if (document.getElementById('filter-class').value) {
                     loadTimetableForSelectedClass();
                 }
@@ -706,7 +1119,6 @@
                 }
 
                 try {
-                    // Lấy danh sách các bản TKB của lớp này trong học kỳ
                     const resTTList = await fetchApi(`/api/v1/timetables?schoolClassId=${classId}&semesterId=${semesterId}`);
                     const timetables = resTTList.data || [];
 
@@ -718,18 +1130,15 @@
                         return;
                     }
 
-                    // Ưu tiên chọn TKB đang PUBLISHED, nếu không thì lấy bản có version cao nhất
                     let targetTT = timetables.find(t => t.status === 'PUBLISHED');
                     if (!targetTT) {
                         targetTT = timetables[timetables.length - 1];
                     }
                     currentTimetable = targetTT;
 
-                    // Tải dữ liệu ma trận TKB
                     const resMatrix = await fetchApi(`/api/v1/timetables/${currentTimetable.id}/matrix`);
                     currentMatrixData = resMatrix.data;
 
-                    // Tải luôn danh sách phân công môn của lớp này (để phục vụ dropdown thêm tiết)
                     const resAsg = await fetchApi(`/api/v1/teaching-assignments?classId=${classId}`);
                     cachedClassAssignments = resAsg.data || [];
                     populateSelect('entry-teachingAssignmentId', cachedClassAssignments, 'id', (a) => `${a.subjectName} - GV: ${a.teacherName}`);
@@ -766,10 +1175,8 @@
                     badge.textContent = status;
                 }
 
-                // Cập nhật trạng thái kích hoạt của các nút hành động
                 const isDraft = (status === 'DRAFT');
                 const isReview = (status === 'REVIEW' || status === 'VALIDATING');
-                const isPublished = (status === 'PUBLISHED');
 
                 const btnAdd = document.getElementById('btn-add-entry');
                 const btnVal = document.getElementById('btn-validate');
@@ -798,11 +1205,9 @@
                 const gridEntries = currentMatrixData.gridEntries || {};
                 const isDraft = (currentMatrixData.status === 'DRAFT');
 
-                // Render từng hàng theo từng tiết học (TimeSlot)
                 slots.forEach(slot => {
                     const tr = document.createElement('tr');
 
-                    // Cột thông tin Tiết học
                     const tdSlot = document.createElement('td');
                     tdSlot.className = 'text-start ps-3 bg-light fw-semibold';
                     tdSlot.innerHTML = `
@@ -811,7 +1216,6 @@
                     `;
                     tr.appendChild(tdSlot);
 
-                    // 6 Cột từ Thứ 2 (dayOfWeek=1) đến Thứ 7 (dayOfWeek=6)
                     for (let day = 1; day <= 6; day++) {
                         const td = document.createElement('td');
                         td.className = 'p-1';
@@ -868,7 +1272,6 @@
                     tbody.appendChild(tr);
                 });
 
-                // Áp dụng lại Role-Based UI cho các nút vừa sinh ra
                 const currentUser = getCurrentUser();
                 if (currentUser) applyRoleBasedUI(currentUser);
             }
@@ -914,9 +1317,7 @@
                     document.getElementById('filter-class').value = classId;
                     document.getElementById('filter-semester').value = semesterId;
                     await loadTimetableForSelectedClass();
-                } catch (e) {
-                    // Lỗi đã được hiển thị qua showAlert ở fetchApi
-                }
+                } catch (e) {}
             }
 
             async function validateCurrentTimetable() {
@@ -996,7 +1397,7 @@
                 }
 
                 try {
-                    const res = await fetchApi(`/api/v1/timetables/${currentTimetable.id}/new-version`, {
+                    await fetchApi(`/api/v1/timetables/${currentTimetable.id}/new-version`, {
                         method: 'POST'
                     });
                     showAlert('Đã nhân bản phiên bản mới thành công!');
@@ -1209,7 +1610,6 @@
 
             async function filterTeachersBySubjectQualification() {
                 const subjectId = document.getElementById('asg-subjectId').value;
-                const teacherSelect = document.getElementById('asg-teacherId');
                 const hint = document.getElementById('asg-qualification-hint');
 
                 if (!subjectId) {
@@ -1219,7 +1619,6 @@
                 }
 
                 try {
-                    // Lấy danh sách giáo viên có chuyên môn về môn học này (BR-09)
                     const res = await fetchApi(`/api/v1/teacher-qualifications?subjectId=${subjectId}`);
                     const qualifiedTeachers = res.data || [];
 
@@ -1281,7 +1680,6 @@
                     const tbody = document.getElementById('qualifications-table-body');
                     tbody.innerHTML = '';
 
-                    // Lấy tất cả môn học và duyệt danh sách chuyên môn
                     let allQuals = [];
                     for (const sub of cachedSubjects) {
                         const res = await fetchApi(`/api/v1/teacher-qualifications?subjectId=${sub.id}`);
@@ -1359,7 +1757,291 @@
             }
 
             // =================================================================
-            // 8. KHỞI TẠO 9 TIẾT HỌC CHUẨN (UTILITY)
+            // 8. TAB 5: QUẢN LÝ HỌC VỤ & DANH MỤC (ACADEMIC CATALOGS)
+            // =================================================================
+            async function loadAcademicCatalogData() {
+                await Promise.all([
+                    loadYearsTable(),
+                    loadClassesTable(),
+                    loadSubjectsTable(),
+                    loadClassroomsTable()
+                ]);
+            }
+
+            async function loadYearsTable() {
+                try {
+                    const res = await fetchApi('/api/v1/academic-years');
+                    const years = res.data || [];
+                    const tbody = document.getElementById('tbl-years-body');
+                    tbody.innerHTML = '';
+
+                    if (years.length === 0) {
+                        tbody.innerHTML = `<tr><td colspan="5" class="text-center py-4 text-muted">Chưa có năm học nào.</td></tr>`;
+                        return;
+                    }
+
+                    for (const y of years) {
+                        const semRes = await fetchApi(`/api/v1/semesters?academicYearId=${y.id}`);
+                        const sems = semRes.data || [];
+                        const semBadges = sems.map(s => `<span class="badge bg-light text-dark border me-1">${s.name} (${formatDate(s.startDate)} - ${formatDate(s.endDate)})</span>`).join(' ') || '<span class="text-muted small">Chưa có học kỳ</span>';
+
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td class="fw-bold text-primary">${y.name}</td>
+                            <td>${formatDate(y.startDate)}</td>
+                            <td>${formatDate(y.endDate)}</td>
+                            <td><span class="badge ${y.status === 'ACTIVE' ? 'bg-success' : 'bg-secondary'}">${y.status}</span></td>
+                            <td>${semBadges}</td>
+                        `;
+                        tbody.appendChild(tr);
+                    }
+                } catch (e) {}
+            }
+
+            async function loadClassesTable() {
+                try {
+                    const res = await fetchApi('/api/v1/classes');
+                    const classes = res.data || [];
+                    const tbody = document.getElementById('tbl-classes-body');
+                    tbody.innerHTML = '';
+
+                    if (classes.length === 0) {
+                        tbody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-muted">Chưa có lớp học nào.</td></tr>`;
+                        return;
+                    }
+
+                    classes.forEach(c => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td class="fw-bold text-primary">${c.name}</td>
+                            <td>Khối ${c.gradeLevel}</td>
+                            <td>${c.academicYearName || '--'}</td>
+                            <td><i class="bi bi-person me-1"></i>${c.homeroomTeacherName || '<span class="text-muted">Chưa có</span>'}</td>
+                            <td>${c.capacity || 45} học sinh</td>
+                            <td><span class="badge ${c.status === 'ACTIVE' ? 'bg-success' : 'bg-secondary'}">${c.status}</span></td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                } catch (e) {}
+            }
+
+            async function loadSubjectsTable() {
+                try {
+                    const res = await fetchApi('/api/v1/subjects');
+                    const subjects = res.data || [];
+                    const tbody = document.getElementById('tbl-subjects-body');
+                    tbody.innerHTML = '';
+
+                    if (subjects.length === 0) {
+                        tbody.innerHTML = `<tr><td colspan="4" class="text-center py-4 text-muted">Chưa có môn học nào.</td></tr>`;
+                        return;
+                    }
+
+                    subjects.forEach(s => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td class="fw-bold text-primary">${s.code}</td>
+                            <td class="fw-semibold">${s.name}</td>
+                            <td class="small text-muted">${s.description || '--'}</td>
+                            <td><span class="badge ${s.status === 'ACTIVE' ? 'bg-success' : 'bg-secondary'}">${s.status}</span></td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                } catch (e) {}
+            }
+
+            async function loadClassroomsTable() {
+                try {
+                    const res = await fetchApi('/api/v1/classrooms');
+                    const rooms = res.data || [];
+                    const tbody = document.getElementById('tbl-classrooms-body');
+                    tbody.innerHTML = '';
+
+                    if (rooms.length === 0) {
+                        tbody.innerHTML = `<tr><td colspan="5" class="text-center py-4 text-muted">Chưa có phòng học nào.</td></tr>`;
+                        return;
+                    }
+
+                    rooms.forEach(r => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td class="fw-bold text-primary">${r.code}</td>
+                            <td class="fw-semibold">${r.name}</td>
+                            <td>${r.capacity || '--'} chỗ</td>
+                            <td><span class="badge bg-light text-dark border">${r.roomType || 'THEORY'}</span></td>
+                            <td><span class="badge ${r.status === 'AVAILABLE' ? 'bg-success' : 'bg-warning text-dark'}">${r.status}</span></td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                } catch (e) {}
+            }
+
+            // =================================================================
+            // 9. MODAL HANDLERS CHO HỌC VỤ (CREATE YEAR, SEMESTER, CLASS, ...)
+            // =================================================================
+            function openCreateYearModal() {
+                document.getElementById('formCreateAcademicYear').reset();
+                openModal('modalCreateAcademicYear');
+            }
+
+            async function submitCreateAcademicYear() {
+                const payload = {
+                    name: document.getElementById('year-name').value.trim(),
+                    startDate: document.getElementById('year-startDate').value,
+                    endDate: document.getElementById('year-endDate').value,
+                    status: document.getElementById('year-status').value
+                };
+
+                if (!payload.name || !payload.startDate || !payload.endDate) {
+                    showAlert('Vui lòng điền đầy đủ các thông tin bắt buộc (*)', 'warning');
+                    return;
+                }
+
+                try {
+                    await fetchApi('/api/v1/academic-years', {
+                        method: 'POST',
+                        body: JSON.stringify(payload)
+                    });
+                    closeModal('modalCreateAcademicYear');
+                    showAlert('Tạo Năm học mới thành công!');
+                    await loadInitialCatalogs();
+                    await loadYearsTable();
+                } catch (e) {}
+            }
+
+            function openCreateSemesterModal() {
+                document.getElementById('formCreateSemester').reset();
+                if (cachedYears.length > 0) {
+                    document.getElementById('sem-yearId').value = document.getElementById('filter-academic-year').value || cachedYears[0].id;
+                }
+                openModal('modalCreateSemester');
+            }
+
+            async function submitCreateSemester() {
+                const payload = {
+                    academicYearId: Number(document.getElementById('sem-yearId').value),
+                    name: document.getElementById('sem-name').value.trim(),
+                    startDate: document.getElementById('sem-startDate').value,
+                    endDate: document.getElementById('sem-endDate').value,
+                    status: document.getElementById('sem-status').value
+                };
+
+                if (!payload.academicYearId || !payload.name || !payload.startDate || !payload.endDate) {
+                    showAlert('Vui lòng điền đầy đủ các thông tin bắt buộc (*)', 'warning');
+                    return;
+                }
+
+                try {
+                    await fetchApi('/api/v1/semesters', {
+                        method: 'POST',
+                        body: JSON.stringify(payload)
+                    });
+                    closeModal('modalCreateSemester');
+                    showAlert('Tạo Học kỳ mới thành công!');
+                    await onAcademicYearChanged();
+                    await loadYearsTable();
+                } catch (e) {}
+            }
+
+            function openCreateClassModal() {
+                document.getElementById('formCreateSchoolClass').reset();
+                if (cachedYears.length > 0) {
+                    document.getElementById('class-yearId').value = document.getElementById('filter-academic-year').value || cachedYears[0].id;
+                }
+                openModal('modalCreateSchoolClass');
+            }
+
+            async function submitCreateSchoolClass() {
+                const teacherVal = document.getElementById('class-homeroomTeacherId').value;
+                const payload = {
+                    academicYearId: Number(document.getElementById('class-yearId').value),
+                    name: document.getElementById('class-name').value.trim(),
+                    gradeLevel: Number(document.getElementById('class-gradeLevel').value),
+                    homeroomTeacherId: teacherVal ? Number(teacherVal) : null,
+                    capacity: Number(document.getElementById('class-capacity').value) || 45,
+                    status: document.getElementById('class-status').value
+                };
+
+                if (!payload.academicYearId || !payload.name || !payload.gradeLevel) {
+                    showAlert('Vui lòng điền đầy đủ các thông tin bắt buộc (*)', 'warning');
+                    return;
+                }
+
+                try {
+                    await fetchApi('/api/v1/classes', {
+                        method: 'POST',
+                        body: JSON.stringify(payload)
+                    });
+                    closeModal('modalCreateSchoolClass');
+                    showAlert('Tạo Lớp học mới thành công!');
+                    await onAcademicYearChanged();
+                    await loadClassesTable();
+                } catch (e) {}
+            }
+
+            function openCreateSubjectModal() {
+                document.getElementById('formCreateSubject').reset();
+                openModal('modalCreateSubject');
+            }
+
+            async function submitCreateSubject() {
+                const payload = {
+                    code: document.getElementById('sub-code').value.trim().toUpperCase(),
+                    name: document.getElementById('sub-name').value.trim(),
+                    description: document.getElementById('sub-desc').value.trim(),
+                    status: document.getElementById('sub-status').value
+                };
+
+                if (!payload.code || !payload.name) {
+                    showAlert('Vui lòng điền mã và tên môn học (*)', 'warning');
+                    return;
+                }
+
+                try {
+                    await fetchApi('/api/v1/subjects', {
+                        method: 'POST',
+                        body: JSON.stringify(payload)
+                    });
+                    closeModal('modalCreateSubject');
+                    showAlert('Tạo Môn học mới thành công!');
+                    await loadInitialCatalogs();
+                    await loadSubjectsTable();
+                } catch (e) {}
+            }
+
+            function openCreateClassroomModal() {
+                document.getElementById('formCreateClassroom').reset();
+                openModal('modalCreateClassroom');
+            }
+
+            async function submitCreateClassroom() {
+                const payload = {
+                    code: document.getElementById('room-code').value.trim().toUpperCase(),
+                    name: document.getElementById('room-name').value.trim(),
+                    roomType: document.getElementById('room-type').value,
+                    capacity: Number(document.getElementById('room-capacity').value) || 45,
+                    status: document.getElementById('room-status').value
+                };
+
+                if (!payload.code || !payload.name) {
+                    showAlert('Vui lòng điền mã và tên phòng học (*)', 'warning');
+                    return;
+                }
+
+                try {
+                    await fetchApi('/api/v1/classrooms', {
+                        method: 'POST',
+                        body: JSON.stringify(payload)
+                    });
+                    closeModal('modalCreateClassroom');
+                    showAlert('Tạo Phòng học mới thành công!');
+                    await loadInitialCatalogs();
+                    await loadClassroomsTable();
+                } catch (e) {}
+            }
+
+            // =================================================================
+            // 10. KHỞI TẠO 9 TIẾT HỌC CHUẨN (UTILITY)
             // =================================================================
             async function initDefaultTimeSlots() {
                 if (!confirm('Khởi tạo danh mục 9 tiết học chuẩn (5 tiết sáng từ 07:00, 4 tiết chiều từ 13:00)?')) return;
@@ -1378,4 +2060,3 @@
         </script>
     </div>
 </html>
-
