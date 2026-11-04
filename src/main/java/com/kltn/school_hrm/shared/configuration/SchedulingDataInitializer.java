@@ -231,13 +231,13 @@ public class SchedulingDataInitializer implements ApplicationRunner {
         }
 
         // 8. Khởi tạo Định mức giảng dạy (Teaching Norms - BR-07, BR-08)
-        seedTeachingNorm(teacherPos, Curriculum.NATIONAL, 17);
+        seedTeachingNorm(teacherPos, Curriculum.MOET, 17);
 
         // 9. Phân công giảng dạy Lớp - Môn (Teaching Assignments - 1 năm học)
-        TeachingAssignment asgMath = seedAssignment(class10A1, subMath, teacherMath, "Toán 10", 4.0, Curriculum.NATIONAL);
-        TeachingAssignment asgLit = seedAssignment(class10A1, subLit, teacherVan, "Ngữ văn 10", 4.0, Curriculum.NATIONAL);
-        TeachingAssignment asgEng = seedAssignment(class10A1, subEng, teacherAnh, "Tiếng Anh 10", 3.0, Curriculum.NATIONAL);
-        TeachingAssignment asgPhys = seedAssignment(class10A1, subPhys, teacherLy, "Vật lý 10", 2.0, Curriculum.NATIONAL);
+        TeachingAssignment asgMath = seedAssignment(class10A1, subMath, teacherMath, "Toán 10", 4.0, Curriculum.MOET);
+        TeachingAssignment asgLit = seedAssignment(class10A1, subLit, teacherVan, "Ngữ văn 10", 4.0, Curriculum.MOET);
+        TeachingAssignment asgEng = seedAssignment(class10A1, subEng, teacherAnh, "Tiếng Anh 10", 3.0, Curriculum.MOET);
+        TeachingAssignment asgPhys = seedAssignment(class10A1, subPhys, teacherLy, "Vật lý 10", 2.0, Curriculum.MOET);
 
         // 10. Khởi tạo Thời khóa biểu mẫu cho lớp 10A1 (Học kỳ 1)
         seedSampleTimetable(class10A1, semester1, asgMath, asgLit, asgEng, asgPhys, room101, teacherLy);
