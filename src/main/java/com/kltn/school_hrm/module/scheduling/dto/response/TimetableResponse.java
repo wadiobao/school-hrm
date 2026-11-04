@@ -28,3 +28,4 @@ public class TimetableResponse {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }
+

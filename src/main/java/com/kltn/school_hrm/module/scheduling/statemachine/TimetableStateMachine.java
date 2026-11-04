@@ -51,3 +51,4 @@ public class TimetableStateMachine {
         return status == TimetableStatus.DRAFT;
     }
 }
+

@@ -15,3 +15,4 @@ public interface TimeSlotService {
     void delete(Long id);
     void initDefaultSlotsIfEmpty();
 }
+

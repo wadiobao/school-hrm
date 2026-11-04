@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -35,6 +36,7 @@ public class TeachingAssignmentController {
     private final TeachingAssignmentService teachingAssignmentService;
 
     @PostMapping
+    @PreAuthorize("@schedulingSecurity.canManageSchedule()")
     public ResponseEntity<ApiResponse<TeachingAssignmentResponse>> create(
             @Valid @RequestBody TeachingAssignmentRequest request) {
         TeachingAssignmentResponse response = teachingAssignmentService.create(request);
@@ -43,6 +45,7 @@ public class TeachingAssignmentController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("@schedulingSecurity.canManageSchedule()")
     public ResponseEntity<ApiResponse<TeachingAssignmentResponse>> update(
             @PathVariable Long id,
             @Valid @RequestBody TeachingAssignmentRequest request) {
@@ -81,6 +84,7 @@ public class TeachingAssignmentController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("@schedulingSecurity.canManageSchedule()")
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long id) {
         teachingAssignmentService.delete(id);
         return ResponseEntity.ok(ApiResponse.success(null, "Xóa phân công giảng dạy thành công"));

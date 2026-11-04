@@ -23,3 +23,4 @@ public class TimeSlotResponse {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }
+

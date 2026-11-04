@@ -32,3 +32,4 @@ public class TimetableEntryRequest {
 
     private Long classroomId; // ID phòng học (tùy chọn)
 }
+

@@ -32,3 +32,4 @@ public class TimetableEntryResponse {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }
+

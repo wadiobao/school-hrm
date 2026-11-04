@@ -18,3 +18,4 @@ public class TimetableRequest {
     @NotNull(message = "ID học kỳ không được để trống")
     private Long semesterId;
 }
+

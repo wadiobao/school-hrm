@@ -12,3 +12,4 @@ public interface TimetableEntryService {
     List<TimetableEntryResponse> getByTimetableId(Long timetableId);
     void delete(Long id);
 }
+

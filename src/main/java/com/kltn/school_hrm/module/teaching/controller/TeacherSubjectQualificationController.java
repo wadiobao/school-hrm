@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -33,6 +34,7 @@ public class TeacherSubjectQualificationController {
     private final TeacherSubjectQualificationService qualificationService;
 
     @PostMapping
+    @PreAuthorize("@schedulingSecurity.canManageSchedule()")
     public ResponseEntity<ApiResponse<TeacherSubjectQualificationResponse>> create(
             @Valid @RequestBody TeacherSubjectQualificationRequest request) {
         TeacherSubjectQualificationResponse response = qualificationService.create(request);
@@ -41,6 +43,7 @@ public class TeacherSubjectQualificationController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("@schedulingSecurity.canManageSchedule()")
     public ResponseEntity<ApiResponse<TeacherSubjectQualificationResponse>> update(
             @PathVariable Long id,
             @Valid @RequestBody TeacherSubjectQualificationRequest request) {
@@ -70,6 +73,7 @@ public class TeacherSubjectQualificationController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("@schedulingSecurity.canManageSchedule()")
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long id) {
         qualificationService.delete(id);
         return ResponseEntity.ok(ApiResponse.success(null, "Xóa chuyên môn giáo viên thành công"));

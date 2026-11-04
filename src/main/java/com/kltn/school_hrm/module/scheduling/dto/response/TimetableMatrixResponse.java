@@ -30,3 +30,4 @@ public class TimetableMatrixResponse {
     // Map theo key "dayOfWeek:timeSlotId" -> TimetableEntryResponse
     private Map<String, TimetableEntryResponse> gridEntries;
 }
+

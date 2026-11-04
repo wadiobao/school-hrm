@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -33,6 +34,7 @@ public class TimetableEntryController {
     private final TimetableEntryService entryService;
 
     @PostMapping
+    @PreAuthorize("@schedulingSecurity.canManageSchedule()")
     public ResponseEntity<ApiResponse<TimetableEntryResponse>> create(@Valid @RequestBody TimetableEntryRequest request) {
         TimetableEntryResponse response = entryService.create(request);
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -40,6 +42,7 @@ public class TimetableEntryController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("@schedulingSecurity.canManageSchedule()")
     public ResponseEntity<ApiResponse<TimetableEntryResponse>> update(
             @PathVariable Long id,
             @Valid @RequestBody TimetableEntryRequest request) {
@@ -61,8 +64,10 @@ public class TimetableEntryController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("@schedulingSecurity.canManageSchedule()")
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long id) {
         entryService.delete(id);
         return ResponseEntity.ok(ApiResponse.success(null, "Xóa tiết học thành công"));
     }
 }
+

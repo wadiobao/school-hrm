@@ -237,3 +237,4 @@ public class TimetableEntryServiceImpl implements TimetableEntryService {
                 .build();
     }
 }
+

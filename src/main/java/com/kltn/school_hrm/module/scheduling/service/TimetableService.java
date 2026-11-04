@@ -18,3 +18,4 @@ public interface TimetableService {
     TimetableResponse createNewVersionFromExisting(Long timetableId);
     void delete(Long id);
 }
+

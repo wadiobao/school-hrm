@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -34,6 +35,7 @@ public class TimetableController {
     private final TimetableService timetableService;
 
     @PostMapping
+    @PreAuthorize("@schedulingSecurity.canManageSchedule()")
     public ResponseEntity<ApiResponse<TimetableResponse>> create(@Valid @RequestBody TimetableRequest request) {
         TimetableResponse response = timetableService.create(request);
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -77,12 +79,14 @@ public class TimetableController {
     }
 
     @PostMapping("/{id}/publish")
+    @PreAuthorize("@schedulingSecurity.canManageSchedule()")
     public ResponseEntity<ApiResponse<TimetableResponse>> publish(@PathVariable Long id) {
         TimetableResponse response = timetableService.publish(id);
         return ResponseEntity.ok(ApiResponse.success(response, "Công bố thời khóa biểu thành công"));
     }
 
     @PostMapping("/{id}/new-version")
+    @PreAuthorize("@schedulingSecurity.canManageSchedule()")
     public ResponseEntity<ApiResponse<TimetableResponse>> cloneNewVersion(@PathVariable Long id) {
         TimetableResponse response = timetableService.createNewVersionFromExisting(id);
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -90,8 +94,10 @@ public class TimetableController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("@schedulingSecurity.canManageSchedule()")
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long id) {
         timetableService.delete(id);
         return ResponseEntity.ok(ApiResponse.success(null, "Xóa thời khóa biểu thành công"));
     }
 }
+
