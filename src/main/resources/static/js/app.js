@@ -226,7 +226,7 @@ function enforcePageAccess(roleCode) {
         '/positions': ['SUPER_ADMIN', 'HR_MANAGER', 'BOARD_OF_DIRECTORS'],
         '/payroll': ['SUPER_ADMIN', 'HR_MANAGER', 'BOARD_OF_DIRECTORS', 'TEACHER', 'STAFF'],
         '/teaching': ['SUPER_ADMIN', 'BOARD_OF_DIRECTORS', 'HEAD_OF_DEPARTMENT', 'TEACHER'],
-        '/scheduling': ['SUPER_ADMIN', 'HR_MANAGER', 'BOARD_OF_DIRECTORS', 'HEAD_OF_DEPARTMENT', 'TEACHER']
+        '/scheduling': ['SUPER_ADMIN', 'HR_MANAGER', 'BOARD_OF_DIRECTORS', 'HEAD_OF_DEPARTMENT', 'TEACHER', 'STAFF']
     };
 
     for (const [route, roles] of Object.entries(pagePermissions)) {

@@ -25,6 +25,7 @@ public class SecurityConfig {
 						.requestMatchers("/api/v1/users/register", "/api/v1/users/login", "/api/v1/auth/login",
 								"/", "/login", "/employees/**", "/departments/**", "/positions/**",
 								"/attendance/**", "/leaves/**", "/payroll/**", "/contracts/**", "/teaching/**",
+								"/scheduling/**", "/scheduling",
 								"/api/v1/**",
 								"/api/attendance-records/**",
 								"/css/**", "/js/**", "/images/**", "/webjars/**")
