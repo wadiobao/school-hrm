@@ -231,7 +231,7 @@ public class SchedulingDataInitializer implements ApplicationRunner {
         }
 
         // 8. Khởi tạo Định mức giảng dạy (Teaching Norms - BR-07, BR-08)
-        seedTeachingNorm(teacherPos, Curriculum.MOET, 17);
+        seedTeachingNorm(teacherPos, "2025-2026", 17);
 
         // 9. Phân công giảng dạy Lớp - Môn (Teaching Assignments - 1 năm học)
         TeachingAssignment asgMath = seedAssignment(class10A1, subMath, teacherMath, "Toán 10", 4.0, Curriculum.MOET);
@@ -355,14 +355,14 @@ public class SchedulingDataInitializer implements ApplicationRunner {
         }
     }
 
-    private void seedTeachingNorm(Position pos, Curriculum curriculum, int hours) {
+    private void seedTeachingNorm(Position pos, String academicYear, int hours) {
         if (pos == null) return;
-        if (!teachingNormRepository.existsByPositionIdAndCurriculum(pos.getId(), curriculum)) {
+        if (teachingNormRepository.findByPositionIdAndAcademicYear(pos.getId(), academicYear).isEmpty()) {
             TeachingNorm norm = TeachingNorm.builder()
                     .position(pos)
-                    .curriculum(curriculum)
+                    .academicYear(academicYear)
                     .standardHours(hours)
-                    .effectiveDate(LocalDate.of(2025, 9, 1))
+                    .reductionPercentage(BigDecimal.ZERO)
                     .build();
             teachingNormRepository.save(norm);
         }
