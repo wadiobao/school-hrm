@@ -1,0 +1,1380 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>School HRM - Thời khóa biểu & Lịch giảng dạy</title>
+</head>
+<html th:replace="~{layout/main-layout :: layout(~{::content}, ~{::scripts}, 'Thời khóa biểu & Lịch giảng dạy')}">
+
+    <div th:fragment="content">
+        <!-- Banner thông báo quyền hạn -->
+        <div class="alert alert-info border-0 shadow-sm d-flex align-items-center mb-4 py-2 px-3 bg-primary bg-opacity-10 text-primary">
+            <i class="bi bi-shield-lock-fill fs-5 me-2"></i>
+            <div class="small">
+                <strong>Phân quyền quản lý:</strong> Chỉ có <strong>Trưởng ban nhân sự (HEAD_OF_HR)</strong> hoặc <strong>Phó hiệu trưởng / Ban Giám hiệu (VICE_PRINCIPAL)</strong> mới có thẩm quyền thiết lập, xếp lịch, kiểm tra ràng buộc và công bố thời khóa biểu.
+            </div>
+        </div>
+
+        <!-- Module Navigation Tabs -->
+        <ul class="nav nav-pills mb-4 gap-2" id="schedulingNavTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active px-4 py-2 fw-semibold rounded-pill" id="tab-timetable-btn" data-bs-toggle="pill" data-bs-target="#pane-timetable" type="button" role="tab">
+                    <i class="bi bi-calendar3-week me-1"></i> 1. Thời khóa biểu theo lớp
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link px-4 py-2 fw-semibold rounded-pill" id="tab-workload-btn" data-bs-toggle="pill" data-bs-target="#pane-workload" type="button" role="tab" onclick="loadWorkloadData()">
+                    <i class="bi bi-bar-chart-line me-1"></i> 2. Định mức & Khối lượng GV
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link px-4 py-2 fw-semibold rounded-pill" id="tab-assignments-btn" data-bs-toggle="pill" data-bs-target="#pane-assignments" type="button" role="tab" onclick="loadAssignmentsData()">
+                    <i class="bi bi-person-badge me-1"></i> 3. Phân công Lớp - Môn (1 năm học)
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link px-4 py-2 fw-semibold rounded-pill" id="tab-qualifications-btn" data-bs-toggle="pill" data-bs-target="#pane-qualifications" type="button" role="tab" onclick="loadQualificationsData()">
+                    <i class="bi bi-award me-1"></i> 4. Chuyên môn giáo viên
+                </button>
+            </li>
+        </ul>
+
+        <div class="tab-content" id="schedulingTabContent">
+
+            <!-- ================================================================= -->
+            <!-- TAB 1: THỜI KHÓA BIỂU THEO LỚP (TIMETABLE GRID MATRIX)            -->
+            <!-- ================================================================= -->
+            <div class="tab-pane fade show active" id="pane-timetable" role="tabpanel">
+
+                <!-- Thanh công cụ lọc & chọn Lớp / Học kỳ -->
+                <div class="card mb-4 border-0 shadow-sm">
+                    <div class="card-body">
+                        <div class="row g-3 align-items-end">
+                            <div class="col-md-3">
+                                <label class="form-label small fw-semibold text-muted">Năm học</label>
+                                <select id="filter-academic-year" class="form-select form-select-sm" onchange="onAcademicYearChanged()">
+                                    <option value="">-- Chọn năm học --</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label small fw-semibold text-muted">Học kỳ</label>
+                                <select id="filter-semester" class="form-select form-select-sm" onchange="onSemesterChanged()">
+                                    <option value="">-- Chọn học kỳ --</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label small fw-semibold text-muted">Lớp học</label>
+                                <select id="filter-class" class="form-select form-select-sm" onchange="onClassChanged()">
+                                    <option value="">-- Chọn lớp học --</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3 d-flex gap-2">
+                                <button class="btn btn-primary btn-sm flex-grow-1" onclick="loadTimetableForSelectedClass()">
+                                    <i class="bi bi-search me-1"></i> Xem TKB
+                                </button>
+                                <button class="btn btn-outline-success btn-sm" data-roles="SUPER_ADMIN,HR_MANAGER,BOARD_OF_DIRECTORS" onclick="openCreateTimetableModal()" title="Tạo thời khóa biểu cho lớp này">
+                                    <i class="bi bi-plus-lg me-1"></i> Tạo TKB
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Thẻ thông tin Thời khóa biểu & Hành động State Machine -->
+                <div class="card mb-3 border-0 shadow-sm" id="timetable-header-card" style="display: none;">
+                    <div class="card-body py-3">
+                        <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+                            <div>
+                                <div class="d-flex align-items-center gap-2 mb-1">
+                                    <h5 class="fw-bold m-0" id="tt-title">Thời khóa biểu Lớp</h5>
+                                    <span class="badge" id="tt-status-badge">DRAFT</span>
+                                    <span class="badge bg-light text-dark border" id="tt-version-badge">Phiên bản: v1</span>
+                                </div>
+                                <div class="text-muted small" id="tt-meta-info">Học kỳ: -- | Năm học: --</div>
+                            </div>
+                            <!-- Nhóm nút hành động dành riêng cho Trưởng ban nhân sự & Phó hiệu trưởng -->
+                            <div class="d-flex flex-wrap gap-2" data-roles="SUPER_ADMIN,HR_MANAGER,BOARD_OF_DIRECTORS">
+                                <button class="btn btn-sm btn-outline-primary" id="btn-add-entry" onclick="openAddEntryModal()">
+                                    <i class="bi bi-calendar-plus me-1"></i> Thêm tiết học
+                                </button>
+                                <button class="btn btn-sm btn-warning text-dark fw-semibold" id="btn-validate" onclick="validateCurrentTimetable()">
+                                    <i class="bi bi-check2-circle me-1"></i> Kiểm tra xung đột
+                                </button>
+                                <button class="btn btn-sm btn-success" id="btn-publish" onclick="publishCurrentTimetable()">
+                                    <i class="bi bi-send-check me-1"></i> Công bố (Publish)
+                                </button>
+                                <button class="btn btn-sm btn-outline-secondary" id="btn-clone" onclick="cloneCurrentTimetable()" title="Tạo phiên bản mới từ bản hiện tại">
+                                    <i class="bi bi-copy me-1"></i> Tạo v+1
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger" id="btn-delete-tt" onclick="deleteCurrentTimetable()" title="Xóa thời khóa biểu bản nháp">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Ma trận Thời khóa biểu (Grid View) -->
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-bordered align-middle text-center mb-0 timetable-grid-table">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th style="width: 130px;" class="text-start ps-3">Tiết / Buổi</th>
+                                        <th style="width: 14%;">Thứ 2 (Mon)</th>
+                                        <th style="width: 14%;">Thứ 3 (Tue)</th>
+                                        <th style="width: 14%;">Thứ 4 (Wed)</th>
+                                        <th style="width: 14%;">Thứ 5 (Thu)</th>
+                                        <th style="width: 14%;">Thứ 6 (Fri)</th>
+                                        <th style="width: 14%;">Thứ 7 (Sat)</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="timetable-matrix-body">
+                                    <tr>
+                                        <td colspan="7" class="py-5 text-center text-muted">
+                                            <i class="bi bi-calendar-x fs-1 d-block mb-2 opacity-50"></i>
+                                            Vui lòng chọn Năm học, Học kỳ và Lớp học để xem hoặc thiết lập thời khóa biểu.
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Nút hỗ trợ khởi tạo Tiết học chuẩn nếu hệ thống chưa có dữ liệu -->
+                <div class="mt-3 text-end" data-roles="SUPER_ADMIN,HR_MANAGER,BOARD_OF_DIRECTORS">
+                    <button class="btn btn-sm btn-link text-muted text-decoration-none" onclick="initDefaultTimeSlots()">
+                        <i class="bi bi-gear-fill me-1"></i> Khởi tạo khung giờ 9 tiết chuẩn (Sáng 1-5, Chiều 6-9)
+                    </button>
+                </div>
+            </div>
+
+            <!-- ================================================================= -->
+            <!-- TAB 2: ĐỊNH MỨC & KHỐI LƯỢNG GIẢNG DẠY (TEACHER WORKLOAD)         -->
+            <!-- ================================================================= -->
+            <div class="tab-pane fade" id="pane-workload" role="tabpanel">
+                <div class="card mb-4 border-0 shadow-sm">
+                    <div class="card-body">
+                        <div class="row g-3 align-items-center justify-content-between">
+                            <div class="col-md-5">
+                                <h5 class="fw-bold mb-1"><i class="bi bi-speedometer2 text-primary me-2"></i>Cân bằng Khối lượng & Định mức Giảng dạy</h5>
+                                <p class="text-muted small mb-0">Theo dõi số tiết/tuần thực tế so với Định mức chuẩn (Teaching Norm) và xác định Quá tải / Cân bằng / Thiếu tiết.</p>
+                            </div>
+                            <div class="col-md-4 d-flex gap-2">
+                                <select id="workload-semester-select" class="form-select form-select-sm" onchange="loadWorkloadData()">
+                                    <option value="">-- Chọn học kỳ --</option>
+                                </select>
+                                <button class="btn btn-outline-secondary btn-sm" onclick="loadWorkloadData()">
+                                    <i class="bi bi-arrow-clockwise"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Thống kê tổng hợp Workload -->
+                <div class="row g-3 mb-4">
+                    <div class="col-md-4">
+                        <div class="card border-0 shadow-sm bg-danger bg-opacity-10 h-100">
+                            <div class="card-body d-flex align-items-center justify-content-between">
+                                <div>
+                                    <div class="text-danger fw-semibold small text-uppercase">Giáo viên Quá tải (> Định mức)</div>
+                                    <h3 class="fw-bold mt-1 mb-0 text-danger" id="stat-workload-overload">0</h3>
+                                </div>
+                                <i class="bi bi-exclamation-triangle text-danger fs-1 opacity-50"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card border-0 shadow-sm bg-success bg-opacity-10 h-100">
+                            <div class="card-body d-flex align-items-center justify-content-between">
+                                <div>
+                                    <div class="text-success fw-semibold small text-uppercase">Giáo viên Cân bằng (Chuẩn)</div>
+                                    <h3 class="fw-bold mt-1 mb-0 text-success" id="stat-workload-balanced">0</h3>
+                                </div>
+                                <i class="bi bi-check-circle text-success fs-1 opacity-50"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card border-0 shadow-sm bg-warning bg-opacity-10 h-100">
+                            <div class="card-body d-flex align-items-center justify-content-between">
+                                <div>
+                                    <div class="text-warning fw-semibold small text-uppercase">Giáo viên Thiếu tiết (< Định mức)</div>
+                                    <h3 class="fw-bold mt-1 mb-0 text-dark" id="stat-workload-underload">0</h3>
+                                </div>
+                                <i class="bi bi-hourglass-split text-warning fs-1 opacity-50"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bảng danh sách Khối lượng Giảng dạy -->
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Giáo viên</th>
+                                        <th>Chức vụ</th>
+                                        <th>Học kỳ</th>
+                                        <th class="text-center">Số tiết phân công / tuần</th>
+                                        <th class="text-center">Định mức chuẩn</th>
+                                        <th class="text-center">Định mức áp dụng</th>
+                                        <th class="text-center">Chênh lệch</th>
+                                        <th class="text-center">Trạng thái tải</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="workload-table-body">
+                                    <tr>
+                                        <td colspan="8" class="text-center py-4 text-muted">Vui lòng chọn học kỳ để xem báo cáo định mức.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================================================================= -->
+            <!-- TAB 3: PHÂN CÔNG GIẢNG DẠY (1 NĂM HỌC - BR MỖI LỚP 1 GV/MÔN)     -->
+            <!-- ================================================================= -->
+            <div class="tab-pane fade" id="pane-assignments" role="tabpanel">
+                <div class="card mb-4 border-0 shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+                            <div>
+                                <h5 class="fw-bold mb-1"><i class="bi bi-diagram-3 text-primary me-2"></i>Phân công Giáo viên theo Lớp & Môn</h5>
+                                <p class="text-muted small mb-0">Quy tắc nghiệp vụ: Mỗi Lớp - Môn học chỉ có duy nhất <strong>1 giáo viên phụ trách trong 1 năm học</strong>.</p>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-primary btn-sm" data-roles="SUPER_ADMIN,HR_MANAGER,BOARD_OF_DIRECTORS" onclick="openAssignTeacherModal()">
+                                    <i class="bi bi-person-plus me-1"></i> Phân công giáo viên
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Lớp học</th>
+                                        <th>Môn học</th>
+                                        <th>Giáo viên phụ trách</th>
+                                        <th>Trạng thái</th>
+                                        <th>Ngày phân công</th>
+                                        <th>Người phân công</th>
+                                        <th class="text-end pe-4" data-roles="SUPER_ADMIN,HR_MANAGER,BOARD_OF_DIRECTORS">Thao tác</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="assignments-table-body">
+                                    <tr>
+                                        <td colspan="7" class="text-center py-4 text-muted">Đang tải danh sách phân công...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================================================================= -->
+            <!-- TAB 4: CHUYÊN MÔN GIÁO VIÊN THEO MÔN HỌC (QUALIFICATIONS)         -->
+            <!-- ================================================================= -->
+            <div class="tab-pane fade" id="pane-qualifications" role="tabpanel">
+                <div class="card mb-4 border-0 shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+                            <div>
+                                <h5 class="fw-bold mb-1"><i class="bi bi-mortarboard text-primary me-2"></i>Chuyên môn & Chứng chỉ Giảng dạy (BR-09)</h5>
+                                <p class="text-muted small mb-0">Giáo viên chỉ được phân công giảng dạy các môn học phù hợp với chuyên môn đã được xác thực.</p>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-primary btn-sm" data-roles="SUPER_ADMIN,HR_MANAGER,BOARD_OF_DIRECTORS" onclick="openAddQualificationModal()">
+                                    <i class="bi bi-plus-lg me-1"></i> Khai báo chuyên môn
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Giáo viên</th>
+                                        <th>Môn học chuyên môn</th>
+                                        <th>Trình độ / Chứng chỉ</th>
+                                        <th>Trạng thái</th>
+                                        <th>Ngày cập nhật</th>
+                                        <th class="text-end pe-4" data-roles="SUPER_ADMIN,HR_MANAGER,BOARD_OF_DIRECTORS">Thao tác</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="qualifications-table-body">
+                                    <tr>
+                                        <td colspan="6" class="text-center py-4 text-muted">Đang tải danh sách chuyên môn...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div> <!-- /tab-content -->
+
+        <!-- ================================================================= -->
+        <!-- MODALS                                                            -->
+        <!-- ================================================================= -->
+
+        <!-- Modal: Tạo Thời khóa biểu mới -->
+        <div class="modal fade" id="modalCreateTimetable" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content border-0 shadow">
+                    <div class="modal-header">
+                        <h5 class="modal-title fw-bold">Tạo Thời khóa biểu Mới</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="formCreateTimetable">
+                            <div class="mb-3">
+                                <label class="form-label required small fw-semibold">Năm học *</label>
+                                <select id="create-tt-year" class="form-select" required onchange="onModalYearChanged()">
+                                    <option value="">-- Chọn năm học --</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label required small fw-semibold">Học kỳ *</label>
+                                <select id="create-tt-semester" class="form-select" required>
+                                    <option value="">-- Chọn học kỳ --</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label required small fw-semibold">Lớp học *</label>
+                                <select id="create-tt-class" class="form-select" required>
+                                    <option value="">-- Chọn lớp học --</option>
+                                </select>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Đóng</button>
+                        <button type="button" class="btn btn-primary btn-sm" onclick="submitCreateTimetable()">Tạo bản nháp (DRAFT)</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal: Thêm / Sửa Tiết học trong Thời khóa biểu -->
+        <div class="modal fade" id="modalTimetableEntry" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content border-0 shadow">
+                    <div class="modal-header">
+                        <h5 class="modal-title fw-bold" id="modalEntryTitle">Thêm Tiết học</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="formTimetableEntry">
+                            <input type="hidden" id="entry-id">
+                            <div class="row g-2 mb-3">
+                                <div class="col-6">
+                                    <label class="form-label required small fw-semibold">Thứ trong tuần *</label>
+                                    <select id="entry-dayOfWeek" class="form-select" required>
+                                        <option value="1">Thứ 2 (Thứ Hai)</option>
+                                        <option value="2">Thứ 3 (Thứ Ba)</option>
+                                        <option value="3">Thứ 4 (Thứ Tư)</option>
+                                        <option value="4">Thứ 5 (Thứ Năm)</option>
+                                        <option value="5">Thứ 6 (Thứ Sáu)</option>
+                                        <option value="6">Thứ 7 (Thứ Bảy)</option>
+                                    </select>
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label required small fw-semibold">Tiết học *</label>
+                                    <select id="entry-timeSlotId" class="form-select" required>
+                                        <option value="">-- Chọn tiết --</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label required small fw-semibold">Môn học & Giáo viên phụ trách *</label>
+                                <select id="entry-teachingAssignmentId" class="form-select" required>
+                                    <option value="">-- Chọn phân công môn học --</option>
+                                </select>
+                                <div class="form-text small">Danh sách dựa trên các môn đã phân công giáo viên cho lớp này.</div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label small fw-semibold">Giáo viên dạy thay (nếu có)</label>
+                                <select id="entry-substituteTeacherId" class="form-select">
+                                    <option value="">-- Không có (Giáo viên chính dạy) --</option>
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label small fw-semibold">Phòng học (Classroom)</label>
+                                <select id="entry-classroomId" class="form-select">
+                                    <option value="">-- Chọn phòng học (Tùy chọn) --</option>
+                                </select>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Đóng</button>
+                        <button type="button" class="btn btn-primary btn-sm" onclick="submitSaveEntry()">Lưu tiết học</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal: Kết quả Kiểm tra Ràng buộc / Xung đột (Validation Result) -->
+        <div class="modal fade" id="modalValidationResult" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-lg">
+                <div class="modal-content border-0 shadow">
+                    <div class="modal-header" id="val-modal-header">
+                        <h5 class="modal-title fw-bold" id="val-modal-title">Kết quả kiểm tra xung đột</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body" id="val-modal-body">
+                        <!-- Nội dung render bằng JS -->
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Đóng</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal: Phân công Giáo viên phụ trách Môn - Lớp -->
+        <div class="modal fade" id="modalAssignTeacher" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content border-0 shadow">
+                    <div class="modal-header">
+                        <h5 class="modal-title fw-bold">Phân công Giảng dạy theo Lớp</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="formAssignTeacher">
+                            <div class="mb-3">
+                                <label class="form-label required small fw-semibold">Lớp học *</label>
+                                <select id="asg-classId" class="form-select" required>
+                                    <option value="">-- Chọn lớp học --</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label required small fw-semibold">Môn học *</label>
+                                <select id="asg-subjectId" class="form-select" required onchange="filterTeachersBySubjectQualification()">
+                                    <option value="">-- Chọn môn học --</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label required small fw-semibold">Giáo viên phụ trách *</label>
+                                <select id="asg-teacherId" class="form-select" required>
+                                    <option value="">-- Chọn giáo viên --</option>
+                                </select>
+                                <div class="form-text small text-info" id="asg-qualification-hint">
+                                    <i class="bi bi-info-circle me-1"></i>Hệ thống tự động lọc giáo viên có chuyên môn đạt chuẩn (BR-09).
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Đóng</button>
+                        <button type="button" class="btn btn-primary btn-sm" onclick="submitAssignTeacher()">Lưu phân công</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal: Khai báo Chuyên môn Giáo viên -->
+        <div class="modal fade" id="modalTeacherQualification" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content border-0 shadow">
+                    <div class="modal-header">
+                        <h5 class="modal-title fw-bold">Khai báo Chuyên môn Giáo viên</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="formTeacherQualification">
+                            <div class="mb-3">
+                                <label class="form-label required small fw-semibold">Giáo viên *</label>
+                                <select id="qual-teacherId" class="form-select" required>
+                                    <option value="">-- Chọn giáo viên --</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label required small fw-semibold">Môn học *</label>
+                                <select id="qual-subjectId" class="form-select" required>
+                                    <option value="">-- Chọn môn học --</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label small fw-semibold">Trình độ / Bằng cấp / Chứng chỉ</label>
+                                <input type="text" id="qual-level" class="form-control" placeholder="VD: Cử nhân ĐHSP, Thạc sĩ, IELTS 8.0">
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Đóng</button>
+                        <button type="button" class="btn btn-primary btn-sm" onclick="submitQualification()">Lưu chuyên môn</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div> <!-- /th:fragment="content" -->
+
+    <!-- ================================================================= -->
+    <!-- JAVASCRIPT LOGIC                                                  -->
+    <!-- ================================================================= -->
+    <div th:fragment="scripts">
+        <style>
+            .timetable-grid-table th, .timetable-grid-table td {
+                vertical-align: middle;
+            }
+            .timetable-cell {
+                min-height: 90px;
+                padding: 6px;
+                border-radius: 8px;
+                transition: all 0.2s ease-in-out;
+            }
+            .timetable-entry-card {
+                background: #ffffff;
+                border: 1px solid #e2e8f0;
+                border-left: 4px solid #0d6efd;
+                border-radius: 6px;
+                padding: 6px 8px;
+                box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+                text-align: left;
+                font-size: 0.8rem;
+            }
+            .timetable-entry-card:hover {
+                box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+                border-color: #0d6efd;
+            }
+            .empty-cell-btn {
+                opacity: 0.3;
+                transition: opacity 0.2s;
+            }
+            .empty-cell-btn:hover {
+                opacity: 1;
+            }
+        </style>
+
+        <script>
+            // Biến trạng thái toàn cục
+            let currentTimetable = null;
+            let currentMatrixData = null;
+            let cachedYears = [];
+            let cachedSemesters = [];
+            let cachedClasses = [];
+            let cachedSubjects = [];
+            let cachedTeachers = [];
+            let cachedClassrooms = [];
+            let cachedTimeSlots = [];
+            let cachedClassAssignments = [];
+
+            document.addEventListener('DOMContentLoaded', async () => {
+                await loadInitialCatalogs();
+            });
+
+            // =================================================================
+            // 1. TẢI DANH MỤC BAN ĐẦU (CATALOGS)
+            // =================================================================
+            async function loadInitialCatalogs() {
+                try {
+                    // Tải năm học
+                    const resYears = await fetchApi('/api/v1/academic-years');
+                    cachedYears = resYears.data || [];
+                    populateSelect('filter-academic-year', cachedYears, 'id', (y) => `${y.name} (${y.code})`);
+                    populateSelect('create-tt-year', cachedYears, 'id', (y) => `${y.name} (${y.code})`);
+
+                    // Tải môn học
+                    const resSubjects = await fetchApi('/api/v1/subjects');
+                    cachedSubjects = resSubjects.data || [];
+                    populateSelect('asg-subjectId', cachedSubjects, 'id', (s) => `${s.name} (${s.code})`);
+                    populateSelect('qual-subjectId', cachedSubjects, 'id', (s) => `${s.name} (${s.code})`);
+
+                    // Tải phòng học
+                    const resRooms = await fetchApi('/api/v1/classrooms');
+                    cachedClassrooms = resRooms.data || [];
+                    populateSelect('entry-classroomId', cachedClassrooms, 'id', (r) => `${r.roomNumber} - ${r.name}`);
+
+                    // Tải danh sách giáo viên/nhân viên
+                    const resTeachers = await fetchApi('/api/v1/employees?size=200');
+                    cachedTeachers = (resTeachers.data && resTeachers.data.content) ? resTeachers.data.content : (resTeachers.data || []);
+                    populateSelect('asg-teacherId', cachedTeachers, 'id', (t) => `${t.fullName} (${t.employeeCode})`);
+                    populateSelect('entry-substituteTeacherId', cachedTeachers, 'id', (t) => `${t.fullName} (${t.employeeCode})`);
+                    populateSelect('qual-teacherId', cachedTeachers, 'id', (t) => `${t.fullName} (${t.employeeCode})`);
+
+                    // Tải khung giờ / tiết học
+                    const resSlots = await fetchApi('/api/v1/time-slots');
+                    cachedTimeSlots = resSlots.data || [];
+                    populateSelect('entry-timeSlotId', cachedTimeSlots, 'id', (slot) => `Tiết ${slot.periodNumber} (${slot.session} : ${formatTime(slot.startTime)} - ${formatTime(slot.endTime)})`);
+
+                    // Tự động chọn năm học đầu tiên nếu có
+                    if (cachedYears.length > 0) {
+                        document.getElementById('filter-academic-year').value = cachedYears[0].id;
+                        await onAcademicYearChanged();
+                    }
+                } catch (e) {
+                    console.error('Lỗi khi tải danh mục:', e);
+                }
+            }
+
+            function populateSelect(selectId, items, valueProp, labelFn) {
+                const select = document.getElementById(selectId);
+                if (!select) return;
+                // Giữ lại option đầu tiên
+                const firstOption = select.options[0];
+                select.innerHTML = '';
+                if (firstOption) select.appendChild(firstOption);
+
+                items.forEach(item => {
+                    const opt = document.createElement('option');
+                    opt.value = item[valueProp];
+                    opt.textContent = labelFn(item);
+                    select.appendChild(opt);
+                });
+            }
+
+            async function onAcademicYearChanged() {
+                const yearId = document.getElementById('filter-academic-year').value;
+                if (!yearId) return;
+
+                // Tải học kỳ theo năm học
+                const resSem = await fetchApi(`/api/v1/semesters?academicYearId=${yearId}`);
+                cachedSemesters = resSem.data || [];
+                populateSelect('filter-semester', cachedSemesters, 'id', (s) => `${s.name} (${s.semesterNumber === 1 ? 'HK1' : 'HK2'})`);
+                populateSelect('workload-semester-select', cachedSemesters, 'id', (s) => `${s.name} (${s.semesterNumber === 1 ? 'HK1' : 'HK2'})`);
+
+                // Tải lớp theo năm học
+                const resClasses = await fetchApi(`/api/v1/classes?academicYearId=${yearId}`);
+                cachedClasses = resClasses.data || [];
+                populateSelect('filter-class', cachedClasses, 'id', (c) => `${c.name} (Khối ${c.gradeLevel})`);
+                populateSelect('asg-classId', cachedClasses, 'id', (c) => `${c.name} (Khối ${c.gradeLevel})`);
+
+                if (cachedSemesters.length > 0) {
+                    document.getElementById('filter-semester').value = cachedSemesters[0].id;
+                    document.getElementById('workload-semester-select').value = cachedSemesters[0].id;
+                }
+                if (cachedClasses.length > 0) {
+                    document.getElementById('filter-class').value = cachedClasses[0].id;
+                }
+            }
+
+            async function onModalYearChanged() {
+                const yearId = document.getElementById('create-tt-year').value;
+                if (!yearId) return;
+
+                const resSem = await fetchApi(`/api/v1/semesters?academicYearId=${yearId}`);
+                populateSelect('create-tt-semester', resSem.data || [], 'id', (s) => `${s.name}`);
+
+                const resClasses = await fetchApi(`/api/v1/classes?academicYearId=${yearId}`);
+                populateSelect('create-tt-class', resClasses.data || [], 'id', (c) => `${c.name} (Khối ${c.gradeLevel})`);
+            }
+
+            function onSemesterChanged() {
+                // Auto reload if class already selected
+                if (document.getElementById('filter-class').value) {
+                    loadTimetableForSelectedClass();
+                }
+            }
+
+            function onClassChanged() {
+                loadTimetableForSelectedClass();
+            }
+
+            // =================================================================
+            // 2. TẢI & HIỂN THỊ THỜI KHÓA BIỂU THEO LỚP (MATRIX GRID)
+            // =================================================================
+            async function loadTimetableForSelectedClass() {
+                const classId = document.getElementById('filter-class').value;
+                const semesterId = document.getElementById('filter-semester').value;
+
+                if (!classId || !semesterId) {
+                    showAlert('Vui lòng chọn đầy đủ Học kỳ và Lớp học.', 'warning');
+                    return;
+                }
+
+                try {
+                    // Lấy danh sách các bản TKB của lớp này trong học kỳ
+                    const resTTList = await fetchApi(`/api/v1/timetables?schoolClassId=${classId}&semesterId=${semesterId}`);
+                    const timetables = resTTList.data || [];
+
+                    if (timetables.length === 0) {
+                        currentTimetable = null;
+                        currentMatrixData = null;
+                        document.getElementById('timetable-header-card').style.display = 'none';
+                        renderEmptyMatrix("Lớp học chưa có thời khóa biểu trong học kỳ này. Bạn có thể nhấn 'Tạo TKB' để thiết lập.");
+                        return;
+                    }
+
+                    // Ưu tiên chọn TKB đang PUBLISHED, nếu không thì lấy bản có version cao nhất
+                    let targetTT = timetables.find(t => t.status === 'PUBLISHED');
+                    if (!targetTT) {
+                        targetTT = timetables[timetables.length - 1];
+                    }
+                    currentTimetable = targetTT;
+
+                    // Tải dữ liệu ma trận TKB
+                    const resMatrix = await fetchApi(`/api/v1/timetables/${currentTimetable.id}/matrix`);
+                    currentMatrixData = resMatrix.data;
+
+                    // Tải luôn danh sách phân công môn của lớp này (để phục vụ dropdown thêm tiết)
+                    const resAsg = await fetchApi(`/api/v1/teaching-assignments?classId=${classId}`);
+                    cachedClassAssignments = resAsg.data || [];
+                    populateSelect('entry-teachingAssignmentId', cachedClassAssignments, 'id', (a) => `${a.subjectName} - GV: ${a.teacherName}`);
+
+                    renderTimetableHeader();
+                    renderTimetableGrid();
+                } catch (e) {
+                    console.error('Lỗi khi tải thời khóa biểu:', e);
+                }
+            }
+
+            function renderTimetableHeader() {
+                const headerCard = document.getElementById('timetable-header-card');
+                headerCard.style.display = 'block';
+
+                document.getElementById('tt-title').textContent = `Thời khóa biểu: ${currentMatrixData.schoolClassName}`;
+                document.getElementById('tt-version-badge').textContent = `Phiên bản: v${currentMatrixData.version}`;
+                document.getElementById('tt-meta-info').textContent = `Học kỳ: ${currentMatrixData.semesterName} | Trạng thái: ${currentMatrixData.status}`;
+
+                const badge = document.getElementById('tt-status-badge');
+                badge.className = 'badge';
+                const status = currentMatrixData.status;
+                if (status === 'DRAFT') {
+                    badge.classList.add('bg-secondary');
+                    badge.textContent = 'BẢN NHÁP (DRAFT)';
+                } else if (status === 'VALIDATING' || status === 'REVIEW') {
+                    badge.classList.add('bg-warning', 'text-dark');
+                    badge.textContent = 'CHỜ DUYỆT (REVIEW)';
+                } else if (status === 'PUBLISHED') {
+                    badge.classList.add('bg-success');
+                    badge.textContent = 'ĐANG ÁP DỤNG (PUBLISHED)';
+                } else {
+                    badge.classList.add('bg-dark');
+                    badge.textContent = status;
+                }
+
+                // Cập nhật trạng thái kích hoạt của các nút hành động
+                const isDraft = (status === 'DRAFT');
+                const isReview = (status === 'REVIEW' || status === 'VALIDATING');
+                const isPublished = (status === 'PUBLISHED');
+
+                const btnAdd = document.getElementById('btn-add-entry');
+                const btnVal = document.getElementById('btn-validate');
+                const btnPub = document.getElementById('btn-publish');
+                const btnDel = document.getElementById('btn-delete-tt');
+
+                if (btnAdd) btnAdd.disabled = !isDraft;
+                if (btnVal) btnVal.disabled = !isDraft;
+                if (btnPub) btnPub.disabled = (!isReview && !isDraft);
+                if (btnDel) btnDel.disabled = !isDraft;
+            }
+
+            function renderTimetableGrid() {
+                const tbody = document.getElementById('timetable-matrix-body');
+                tbody.innerHTML = '';
+
+                const slots = (currentMatrixData.timeSlots && currentMatrixData.timeSlots.length > 0)
+                    ? currentMatrixData.timeSlots
+                    : cachedTimeSlots;
+
+                if (!slots || slots.length === 0) {
+                    renderEmptyMatrix("Chưa có danh mục tiết học. Vui lòng bấm 'Khởi tạo khung giờ 9 tiết chuẩn' bên dưới.");
+                    return;
+                }
+
+                const gridEntries = currentMatrixData.gridEntries || {};
+                const isDraft = (currentMatrixData.status === 'DRAFT');
+
+                // Render từng hàng theo từng tiết học (TimeSlot)
+                slots.forEach(slot => {
+                    const tr = document.createElement('tr');
+
+                    // Cột thông tin Tiết học
+                    const tdSlot = document.createElement('td');
+                    tdSlot.className = 'text-start ps-3 bg-light fw-semibold';
+                    tdSlot.innerHTML = `
+                        <div>Tiết ${slot.periodNumber}</div>
+                        <div class="text-muted fw-normal" style="font-size: 0.72rem;">${slot.session} (${formatTime(slot.startTime)} - ${formatTime(slot.endTime)})</div>
+                    `;
+                    tr.appendChild(tdSlot);
+
+                    // 6 Cột từ Thứ 2 (dayOfWeek=1) đến Thứ 7 (dayOfWeek=6)
+                    for (let day = 1; day <= 6; day++) {
+                        const td = document.createElement('td');
+                        td.className = 'p-1';
+
+                        const key = `${day}:${slot.id}`;
+                        const entry = gridEntries[key];
+
+                        if (entry) {
+                            td.innerHTML = `
+                                <div class="timetable-entry-card">
+                                    <div class="fw-bold text-primary mb-1 d-flex justify-content-between align-items-center">
+                                        <span>${entry.subjectName}</span>
+                                        ${isDraft ? `
+                                            <div class="d-inline-flex gap-1" data-roles="SUPER_ADMIN,HR_MANAGER,BOARD_OF_DIRECTORS">
+                                                <button class="btn btn-link text-secondary p-0" onclick="editEntry(${entry.id})" title="Sửa"><i class="bi bi-pencil-square"></i></button>
+                                                <button class="btn btn-link text-danger p-0" onclick="deleteEntry(${entry.id})" title="Xóa"><i class="bi bi-x-circle"></i></button>
+                                            </div>
+                                        ` : ''}
+                                    </div>
+                                    <div class="text-secondary small mb-1">
+                                        <i class="bi bi-person-fill"></i> ${entry.teacherName}
+                                    </div>
+                                    ${entry.substituteTeacherName ? `
+                                        <div class="mb-1">
+                                            <span class="badge bg-warning bg-opacity-75 text-dark" style="font-size: 0.68rem;" title="Giáo viên dạy thay">
+                                                <i class="bi bi-arrow-repeat me-1"></i>Thay: ${entry.substituteTeacherName}
+                                            </span>
+                                        </div>
+                                    ` : ''}
+                                    <div>
+                                        <span class="badge bg-light text-muted border" style="font-size: 0.68rem;">
+                                            <i class="bi bi-geo-alt"></i> ${entry.classroomCode || entry.classroomName || 'P.Học'}
+                                        </span>
+                                    </div>
+                                </div>
+                            `;
+                        } else {
+                            if (isDraft) {
+                                td.innerHTML = `
+                                    <div class="text-center py-2 empty-cell-btn" data-roles="SUPER_ADMIN,HR_MANAGER,BOARD_OF_DIRECTORS">
+                                        <button class="btn btn-sm btn-outline-primary border-0 rounded-circle" onclick="quickAddEntry(${day}, ${slot.id})" title="Thêm tiết học">
+                                            <i class="bi bi-plus fs-5"></i>
+                                        </button>
+                                    </div>
+                                `;
+                            } else {
+                                td.innerHTML = `<span class="text-muted opacity-25">--</span>`;
+                            }
+                        }
+
+                        tr.appendChild(td);
+                    }
+
+                    tbody.appendChild(tr);
+                });
+
+                // Áp dụng lại Role-Based UI cho các nút vừa sinh ra
+                const currentUser = getCurrentUser();
+                if (currentUser) applyRoleBasedUI(currentUser);
+            }
+
+            function renderEmptyMatrix(msg) {
+                const tbody = document.getElementById('timetable-matrix-body');
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="py-5 text-center text-muted">
+                            <i class="bi bi-info-circle fs-1 d-block mb-2 opacity-50"></i>
+                            ${msg}
+                        </td>
+                    </tr>
+                `;
+            }
+
+            // =================================================================
+            // 3. THAO TÁC STATE MACHINE & TIMETABLE (CREATE, VALIDATE, PUBLISH)
+            // =================================================================
+            function openCreateTimetableModal() {
+                openModal('modalCreateTimetable');
+            }
+
+            async function submitCreateTimetable() {
+                const classId = document.getElementById('create-tt-class').value;
+                const semesterId = document.getElementById('create-tt-semester').value;
+
+                if (!classId || !semesterId) {
+                    showAlert('Vui lòng chọn đầy đủ Lớp học và Học kỳ', 'warning');
+                    return;
+                }
+
+                try {
+                    await fetchApi('/api/v1/timetables', {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            schoolClassId: Number(classId),
+                            semesterId: Number(semesterId)
+                        })
+                    });
+                    closeModal('modalCreateTimetable');
+                    showAlert('Tạo Thời khóa biểu bản nháp thành công!');
+                    document.getElementById('filter-class').value = classId;
+                    document.getElementById('filter-semester').value = semesterId;
+                    await loadTimetableForSelectedClass();
+                } catch (e) {
+                    // Lỗi đã được hiển thị qua showAlert ở fetchApi
+                }
+            }
+
+            async function validateCurrentTimetable() {
+                if (!currentTimetable) return;
+
+                try {
+                    const res = await fetchApi(`/api/v1/timetables/${currentTimetable.id}/validate`, {
+                        method: 'POST'
+                    });
+                    const valResult = res.data;
+
+                    const modalHeader = document.getElementById('val-modal-header');
+                    const modalTitle = document.getElementById('val-modal-title');
+                    const modalBody = document.getElementById('val-modal-body');
+
+                    if (valResult.valid) {
+                        modalHeader.className = 'modal-header bg-success text-white';
+                        modalTitle.innerHTML = '<i class="bi bi-check-circle-fill me-2"></i>Kiểm tra Hợp lệ thành công!';
+                        modalBody.innerHTML = `
+                            <div class="text-center py-4">
+                                <i class="bi bi-shield-check text-success display-3 mb-3"></i>
+                                <h5 class="fw-bold text-success">Thời khóa biểu hoàn toàn hợp lệ!</h5>
+                                <p class="text-muted">Không phát hiện bất kỳ xung đột nào về Trùng lịch Giáo viên (kể cả giáo viên thay thế), Trùng phòng học hay Vi phạm định mức số tiết.</p>
+                                <div class="badge bg-warning text-dark px-3 py-2 fs-6 mt-2">
+                                    Đã tự động chuyển trạng thái sang: CHỜ DUYỆT (REVIEW)
+                                </div>
+                            </div>
+                        `;
+                    } else {
+                        modalHeader.className = 'modal-header bg-danger text-white';
+                        modalTitle.innerHTML = '<i class="bi bi-exclamation-triangle-fill me-2"></i>Phát hiện Xung đột Ràng buộc!';
+                        let errorHtml = `
+                            <div class="alert alert-danger mb-3">
+                                Phát hiện <strong>${valResult.errors.length}</strong> vi phạm ràng buộc học vụ:
+                            </div>
+                            <div class="list-group">
+                        `;
+                        valResult.errors.forEach(err => {
+                            errorHtml += `
+                                <div class="list-group-item list-group-item-action border-start border-danger border-4">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h6 class="mb-1 text-danger fw-bold"><i class="bi bi-x-circle me-1"></i>${err.ruleId} - ${err.message}</h6>
+                                        <small class="badge bg-danger">${err.severity || 'ERROR'}</small>
+                                    </div>
+                                    <p class="mb-1 small text-muted">${err.details || ''}</p>
+                                </div>
+                            `;
+                        });
+                        errorHtml += `</div>`;
+                        modalBody.innerHTML = errorHtml;
+                    }
+
+                    openModal('modalValidationResult');
+                    await loadTimetableForSelectedClass();
+                } catch (e) {}
+            }
+
+            async function publishCurrentTimetable() {
+                if (!currentTimetable) return;
+                if (!confirm(`Bạn có chắc chắn muốn CÔNG BỐ (Publish) Thời khóa biểu phiên bản v${currentTimetable.version}? Thời khóa biểu này sẽ chính thức có hiệu lực áp dụng toàn trường.`)) {
+                    return;
+                }
+
+                try {
+                    await fetchApi(`/api/v1/timetables/${currentTimetable.id}/publish`, {
+                        method: 'POST'
+                    });
+                    showAlert('Thời khóa biểu đã được CÔNG BỐ thành công!');
+                    await loadTimetableForSelectedClass();
+                } catch (e) {}
+            }
+
+            async function cloneCurrentTimetable() {
+                if (!currentTimetable) return;
+                if (!confirm(`Tạo phiên bản mới (v${currentTimetable.version + 1}) dạng bản nháp từ Thời khóa biểu hiện tại?`)) {
+                    return;
+                }
+
+                try {
+                    const res = await fetchApi(`/api/v1/timetables/${currentTimetable.id}/new-version`, {
+                        method: 'POST'
+                    });
+                    showAlert('Đã nhân bản phiên bản mới thành công!');
+                    await loadTimetableForSelectedClass();
+                } catch (e) {}
+            }
+
+            async function deleteCurrentTimetable() {
+                if (!currentTimetable) return;
+                if (!confirm(`Bạn có chắc chắn muốn xóa Thời khóa biểu bản nháp này? Hành động không thể hoàn tác.`)) {
+                    return;
+                }
+
+                try {
+                    await fetchApi(`/api/v1/timetables/${currentTimetable.id}`, {
+                        method: 'DELETE'
+                    });
+                    showAlert('Đã xóa thời khóa biểu thành công.');
+                    await loadTimetableForSelectedClass();
+                } catch (e) {}
+            }
+
+            // =================================================================
+            // 4. QUẢN LÝ TIẾT HỌC (TIMETABLE ENTRY CRUD)
+            // =================================================================
+            function openAddEntryModal() {
+                if (!currentTimetable) {
+                    showAlert('Vui lòng chọn thời khóa biểu trước.', 'warning');
+                    return;
+                }
+                document.getElementById('formTimetableEntry').reset();
+                document.getElementById('entry-id').value = '';
+                document.getElementById('modalEntryTitle').textContent = 'Thêm Tiết học vào Thời khóa biểu';
+                openModal('modalTimetableEntry');
+            }
+
+            function quickAddEntry(dayOfWeek, timeSlotId) {
+                openAddEntryModal();
+                document.getElementById('entry-dayOfWeek').value = dayOfWeek;
+                document.getElementById('entry-timeSlotId').value = timeSlotId;
+            }
+
+            async function editEntry(entryId) {
+                try {
+                    const res = await fetchApi(`/api/v1/timetable-entries/${entryId}`);
+                    const entry = res.data;
+                    document.getElementById('entry-id').value = entry.id;
+                    document.getElementById('entry-dayOfWeek').value = entry.dayOfWeek;
+                    document.getElementById('entry-timeSlotId').value = entry.timeSlotId;
+                    document.getElementById('entry-teachingAssignmentId').value = entry.teachingAssignmentId;
+                    document.getElementById('entry-substituteTeacherId').value = entry.substituteTeacherId || '';
+                    document.getElementById('entry-classroomId').value = entry.classroomId || '';
+                    document.getElementById('modalEntryTitle').textContent = 'Cập nhật Tiết học';
+                    openModal('modalTimetableEntry');
+                } catch (e) {}
+            }
+
+            async function submitSaveEntry() {
+                const entryId = document.getElementById('entry-id').value;
+                const payload = {
+                    timetableId: currentTimetable.id,
+                    teachingAssignmentId: Number(document.getElementById('entry-teachingAssignmentId').value),
+                    substituteTeacherId: document.getElementById('entry-substituteTeacherId').value ? Number(document.getElementById('entry-substituteTeacherId').value) : null,
+                    dayOfWeek: Number(document.getElementById('entry-dayOfWeek').value),
+                    timeSlotId: Number(document.getElementById('entry-timeSlotId').value),
+                    classroomId: document.getElementById('entry-classroomId').value ? Number(document.getElementById('entry-classroomId').value) : null
+                };
+
+                if (!payload.teachingAssignmentId || !payload.dayOfWeek || !payload.timeSlotId) {
+                    showAlert('Vui lòng điền đầy đủ các trường bắt buộc (*)', 'warning');
+                    return;
+                }
+
+                try {
+                    if (entryId) {
+                        await fetchApi(`/api/v1/timetable-entries/${entryId}`, {
+                            method: 'PUT',
+                            body: JSON.stringify(payload)
+                        });
+                        showAlert('Cập nhật tiết học thành công!');
+                    } else {
+                        await fetchApi('/api/v1/timetable-entries', {
+                            method: 'POST',
+                            body: JSON.stringify(payload)
+                        });
+                        showAlert('Thêm tiết học thành công!');
+                    }
+                    closeModal('modalTimetableEntry');
+                    await loadTimetableForSelectedClass();
+                } catch (e) {}
+            }
+
+            async function deleteEntry(entryId) {
+                if (!confirm('Bạn có chắc chắn muốn xóa tiết học này khỏi thời khóa biểu?')) return;
+                try {
+                    await fetchApi(`/api/v1/timetable-entries/${entryId}`, {
+                        method: 'DELETE'
+                    });
+                    showAlert('Đã xóa tiết học.');
+                    await loadTimetableForSelectedClass();
+                } catch (e) {}
+            }
+
+            // =================================================================
+            // 5. TAB 2: ĐỊNH MỨC & KHỐI LƯỢNG GIẢNG DẠY (TEACHER WORKLOAD)
+            // =================================================================
+            async function loadWorkloadData() {
+                const semesterId = document.getElementById('workload-semester-select').value;
+                if (!semesterId) {
+                    document.getElementById('workload-table-body').innerHTML = `
+                        <tr><td colspan="8" class="text-center py-4 text-muted">Vui lòng chọn học kỳ để xem báo cáo định mức.</td></tr>
+                    `;
+                    return;
+                }
+
+                try {
+                    const res = await fetchApi(`/api/v1/teacher-workloads/semester/${semesterId}`);
+                    const workloads = res.data || [];
+                    const tbody = document.getElementById('workload-table-body');
+                    tbody.innerHTML = '';
+
+                    let countOverload = 0;
+                    let countBalanced = 0;
+                    let countUnderload = 0;
+
+                    if (workloads.length === 0) {
+                        tbody.innerHTML = `<tr><td colspan="8" class="text-center py-4 text-muted">Chưa có dữ liệu phân công giảng dạy trong học kỳ này.</td></tr>`;
+                        return;
+                    }
+
+                    workloads.forEach(w => {
+                        if (w.workloadStatus === 'OVERLOAD') countOverload++;
+                        else if (w.workloadStatus === 'BALANCED') countBalanced++;
+                        else countUnderload++;
+
+                        const badgeClass = w.workloadStatus === 'OVERLOAD' ? 'bg-danger' :
+                                           w.workloadStatus === 'BALANCED' ? 'bg-success' : 'bg-warning text-dark';
+                        const badgeText = w.workloadStatus === 'OVERLOAD' ? 'Quá tải (Overload)' :
+                                          w.workloadStatus === 'BALANCED' ? 'Cân bằng (Balanced)' : 'Thiếu tiết (Underload)';
+
+                        const diffSign = w.difference > 0 ? `+${w.difference}` : `${w.difference}`;
+                        const diffClass = w.difference > 0 ? 'text-danger fw-bold' : (w.difference === 0 ? 'text-success' : 'text-warning text-dark fw-bold');
+
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td class="fw-semibold">${w.teacherName}</td>
+                            <td class="text-muted small">${w.positionName || 'Giáo viên'}</td>
+                            <td class="small">${w.semesterName || '--'}</td>
+                            <td class="text-center fw-bold fs-6">${w.totalAssignedPeriods}</td>
+                            <td class="text-center">${w.standardHours || 17}</td>
+                            <td class="text-center">${w.effectiveNormHours || w.standardHours || 17}</td>
+                            <td class="text-center ${diffClass}">${diffSign}</td>
+                            <td class="text-center"><span class="badge ${badgeClass}">${badgeText}</span></td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+
+                    document.getElementById('stat-workload-overload').textContent = countOverload;
+                    document.getElementById('stat-workload-balanced').textContent = countBalanced;
+                    document.getElementById('stat-workload-underload').textContent = countUnderload;
+                } catch (e) {
+                    console.error('Lỗi khi tải dữ liệu định mức:', e);
+                }
+            }
+
+            // =================================================================
+            // 6. TAB 3: PHÂN CÔNG GIẢNG DẠY (TEACHING ASSIGNMENTS)
+            // =================================================================
+            async function loadAssignmentsData() {
+                try {
+                    const res = await fetchApi('/api/v1/teaching-assignments');
+                    const assignments = res.data || [];
+                    const tbody = document.getElementById('assignments-table-body');
+                    tbody.innerHTML = '';
+
+                    if (assignments.length === 0) {
+                        tbody.innerHTML = `<tr><td colspan="7" class="text-center py-4 text-muted">Chưa có phân công giảng dạy nào được thiết lập.</td></tr>`;
+                        return;
+                    }
+
+                    assignments.forEach(asg => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td class="fw-semibold text-primary">${asg.schoolClassName || asg.gradeLevel || '--'}</td>
+                            <td class="fw-semibold">${asg.subjectName}</td>
+                            <td><i class="bi bi-person me-1"></i>${asg.teacherName}</td>
+                            <td><span class="badge bg-success bg-opacity-75">${asg.status || 'ACTIVE'}</span></td>
+                            <td class="small text-muted">${formatDate(asg.assignedAt || asg.createdAt)}</td>
+                            <td class="small text-muted">${asg.assignedByName || '--'}</td>
+                            <td class="text-end pe-4" data-roles="SUPER_ADMIN,HR_MANAGER,BOARD_OF_DIRECTORS">
+                                <button class="btn btn-sm btn-outline-danger" onclick="deleteAssignment(${asg.id})" title="Hủy phân công">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+
+                    const currentUser = getCurrentUser();
+                    if (currentUser) applyRoleBasedUI(currentUser);
+                } catch (e) {
+                    console.error('Lỗi khi tải danh sách phân công:', e);
+                }
+            }
+
+            function openAssignTeacherModal() {
+                document.getElementById('formAssignTeacher').reset();
+                openModal('modalAssignTeacher');
+            }
+
+            async function filterTeachersBySubjectQualification() {
+                const subjectId = document.getElementById('asg-subjectId').value;
+                const teacherSelect = document.getElementById('asg-teacherId');
+                const hint = document.getElementById('asg-qualification-hint');
+
+                if (!subjectId) {
+                    populateSelect('asg-teacherId', cachedTeachers, 'id', (t) => `${t.fullName} (${t.employeeCode})`);
+                    hint.style.display = 'none';
+                    return;
+                }
+
+                try {
+                    // Lấy danh sách giáo viên có chuyên môn về môn học này (BR-09)
+                    const res = await fetchApi(`/api/v1/teacher-qualifications?subjectId=${subjectId}`);
+                    const qualifiedTeachers = res.data || [];
+
+                    if (qualifiedTeachers.length > 0) {
+                        hint.style.display = 'block';
+                        hint.innerHTML = `<i class="bi bi-check-circle me-1"></i>Tìm thấy ${qualifiedTeachers.length} giáo viên có chứng chỉ/chuyên môn phù hợp.`;
+                        populateSelect('asg-teacherId', qualifiedTeachers, 'teacherId', (q) => `${q.teacherName} (${q.qualificationLevel || 'Đạt chuẩn'})`);
+                    } else {
+                        hint.style.display = 'block';
+                        hint.innerHTML = `<i class="bi bi-exclamation-circle me-1"></i>Chưa có giáo viên nào khai báo chuyên môn môn này. Hiển thị tất cả giáo viên.`;
+                        populateSelect('asg-teacherId', cachedTeachers, 'id', (t) => `${t.fullName} (${t.employeeCode})`);
+                    }
+                } catch (e) {
+                    populateSelect('asg-teacherId', cachedTeachers, 'id', (t) => `${t.fullName} (${t.employeeCode})`);
+                }
+            }
+
+            async function submitAssignTeacher() {
+                const classId = document.getElementById('asg-classId').value;
+                const subjectId = document.getElementById('asg-subjectId').value;
+                const teacherId = document.getElementById('asg-teacherId').value;
+
+                if (!classId || !subjectId || !teacherId) {
+                    showAlert('Vui lòng điền đầy đủ các thông tin bắt buộc (*)', 'warning');
+                    return;
+                }
+
+                try {
+                    await fetchApi('/api/v1/teaching-assignments', {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            schoolClassId: Number(classId),
+                            subjectId: Number(subjectId),
+                            teacherId: Number(teacherId)
+                        })
+                    });
+                    closeModal('modalAssignTeacher');
+                    showAlert('Phân công giáo viên cho lớp thành công!');
+                    await loadAssignmentsData();
+                } catch (e) {}
+            }
+
+            async function deleteAssignment(id) {
+                if (!confirm('Bạn có chắc chắn muốn hủy phân công giáo viên này?')) return;
+                try {
+                    await fetchApi(`/api/v1/teaching-assignments/${id}`, {
+                        method: 'DELETE'
+                    });
+                    showAlert('Đã hủy phân công.');
+                    await loadAssignmentsData();
+                } catch (e) {}
+            }
+
+            // =================================================================
+            // 7. TAB 4: CHUYÊN MÔN GIÁO VIÊN (QUALIFICATIONS)
+            // =================================================================
+            async function loadQualificationsData() {
+                try {
+                    const tbody = document.getElementById('qualifications-table-body');
+                    tbody.innerHTML = '';
+
+                    // Lấy tất cả môn học và duyệt danh sách chuyên môn
+                    let allQuals = [];
+                    for (const sub of cachedSubjects) {
+                        const res = await fetchApi(`/api/v1/teacher-qualifications?subjectId=${sub.id}`);
+                        if (res.data) allQuals.push(...res.data);
+                    }
+
+                    if (allQuals.length === 0) {
+                        tbody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-muted">Chưa có giáo viên nào khai báo chuyên môn môn học.</td></tr>`;
+                        return;
+                    }
+
+                    allQuals.forEach(q => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td class="fw-semibold"><i class="bi bi-person me-1"></i>${q.teacherName}</td>
+                            <td class="fw-semibold text-primary">${q.subjectName} (${q.subjectCode})</td>
+                            <td><span class="badge bg-light text-dark border">${q.qualificationLevel || 'Cử nhân Sư phạm'}</span></td>
+                            <td><span class="badge bg-success bg-opacity-75">${q.status || 'ACTIVE'}</span></td>
+                            <td class="small text-muted">${formatDate(q.createdAt)}</td>
+                            <td class="text-end pe-4" data-roles="SUPER_ADMIN,HR_MANAGER,BOARD_OF_DIRECTORS">
+                                <button class="btn btn-sm btn-outline-danger" onclick="deleteQualification(${q.id})" title="Xóa chuyên môn">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+
+                    const currentUser = getCurrentUser();
+                    if (currentUser) applyRoleBasedUI(currentUser);
+                } catch (e) {
+                    console.error('Lỗi khi tải danh sách chuyên môn:', e);
+                }
+            }
+
+            function openAddQualificationModal() {
+                document.getElementById('formTeacherQualification').reset();
+                openModal('modalTeacherQualification');
+            }
+
+            async function submitQualification() {
+                const teacherId = document.getElementById('qual-teacherId').value;
+                const subjectId = document.getElementById('qual-subjectId').value;
+                const qualificationLevel = document.getElementById('qual-level').value;
+
+                if (!teacherId || !subjectId) {
+                    showAlert('Vui lòng chọn Giáo viên và Môn học (*)', 'warning');
+                    return;
+                }
+
+                try {
+                    await fetchApi('/api/v1/teacher-qualifications', {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            teacherId: Number(teacherId),
+                            subjectId: Number(subjectId),
+                            qualificationLevel: qualificationLevel || 'Cử nhân'
+                        })
+                    });
+                    closeModal('modalTeacherQualification');
+                    showAlert('Khai báo chuyên môn giáo viên thành công!');
+                    await loadQualificationsData();
+                } catch (e) {}
+            }
+
+            async function deleteQualification(id) {
+                if (!confirm('Bạn có chắc chắn muốn xóa chuyên môn này của giáo viên?')) return;
+                try {
+                    await fetchApi(`/api/v1/teacher-qualifications/${id}`, {
+                        method: 'DELETE'
+                    });
+                    showAlert('Đã xóa chuyên môn.');
+                    await loadQualificationsData();
+                } catch (e) {}
+            }
+
+            // =================================================================
+            // 8. KHỞI TẠO 9 TIẾT HỌC CHUẨN (UTILITY)
+            // =================================================================
+            async function initDefaultTimeSlots() {
+                if (!confirm('Khởi tạo danh mục 9 tiết học chuẩn (5 tiết sáng từ 07:00, 4 tiết chiều từ 13:00)?')) return;
+                try {
+                    const res = await fetchApi('/api/v1/time-slots/init-defaults', {
+                        method: 'POST'
+                    });
+                    showAlert('Khởi tạo 9 tiết học chuẩn thành công!');
+                    cachedTimeSlots = res.data || [];
+                    populateSelect('entry-timeSlotId', cachedTimeSlots, 'id', (slot) => `Tiết ${slot.periodNumber} (${slot.session} : ${formatTime(slot.startTime)} - ${formatTime(slot.endTime)})`);
+                    if (currentTimetable) {
+                        await loadTimetableForSelectedClass();
+                    }
+                } catch (e) {}
+            }
+        </script>
+    </div>
+</html>

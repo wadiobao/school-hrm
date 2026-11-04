@@ -57,4 +57,9 @@ public class WebController {
     public String teaching() {
         return "teaching/index";
     }
+
+    @GetMapping("/scheduling")
+    public String scheduling() {
+        return "scheduling/index";
+    }
 }
