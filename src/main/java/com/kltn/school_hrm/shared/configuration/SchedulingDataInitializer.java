@@ -191,7 +191,7 @@ public class SchedulingDataInitializer implements ApplicationRunner {
         // 3. Khởi tạo 10 Ban (Bộ môn), mỗi ban gồm đúng 3 người: 1 Trưởng bộ môn + 2 Giáo viên
         // 3.1. Ban Ngữ văn
         DepartmentGroup grpVan = seedAcademicDepartmentWithStaff(
-                "BAN-VAN", "Bộ môn Ngữ văn", adminDept, subLit, "Thạc sĩ / Cử nhân Sư phạm Ngữ văn",
+                "BAN-VAN", "Bộ môn Ngữ văn", adminDept, subLit, "Cử nhân SP Ngữ văn",
                 hodRole, hodPos, teacherRole, teacherPos,
                 "head_van", "Head@123", "EMP-VAN-H01", "ThS. Lê Thị Trưởng Ban Văn", "head.van@school-hrm.local", "0900000101", "Nữ",
                 "gv_van1", "Teacher@123", "EMP-VAN-T01", "Cô Nguyễn Thị Ngữ Văn", "gv.van1@school-hrm.local", "0900000102", "Nữ",
@@ -200,7 +200,7 @@ public class SchedulingDataInitializer implements ApplicationRunner {
 
         // 3.2. Ban Toán (kế thừa mathhead và teacher từ DataInitializer + bổ sung gv_toan2 để đủ 3 người)
         DepartmentGroup grpToan = seedAcademicDepartmentWithStaff(
-                "BAN-TOAN", "Bộ môn Toán", adminDept, subMath, "Thạc sĩ / Cử nhân Sư phạm Toán",
+                "BAN-TOAN", "Bộ môn Toán", adminDept, subMath, "Cử nhân SP Toán",
                 hodRole, hodPos, teacherRole, teacherPos,
                 "mathhead", "MathHead@123", "EMP-TBT-001", "ThS. Trần Thị Trưởng Ban Toán", "mathhead@school-hrm.local", "0900000006", "Nữ",
                 "teacher", "Teacher@123", "EMP-GV-001", "Thầy Hoàng Văn Giáo Viên", "teacher@school-hrm.local", "0900000004", "Nam",
@@ -209,7 +209,7 @@ public class SchedulingDataInitializer implements ApplicationRunner {
 
         // 3.3. Ban Ngoại ngữ 1
         DepartmentGroup grpNn1 = seedAcademicDepartmentWithStaff(
-                "BAN-NN1", "Bộ môn Ngoại ngữ 1", adminDept, subEng, "Thạc sĩ TESOL / Cử nhân Tiếng Anh",
+                "BAN-NN1", "Bộ môn Ngoại ngữ 1", adminDept, subEng, "Cử nhân SP Tiếng Anh",
                 hodRole, hodPos, teacherRole, teacherPos,
                 "head_nn1", "Head@123", "EMP-NN1-H01", "ThS. Phạm Văn Trưởng Ban Ngoại Ngữ", "head.nn1@school-hrm.local", "0900000301", "Nam",
                 "gv_nn1", "Teacher@123", "EMP-NN1-T01", "Cô Đặng Thị Tiếng Anh", "gv.nn1@school-hrm.local", "0900000302", "Nữ",
@@ -218,7 +218,7 @@ public class SchedulingDataInitializer implements ApplicationRunner {
 
         // 3.4. Ban Giáo dục công dân
         DepartmentGroup grpGdcd = seedAcademicDepartmentWithStaff(
-                "BAN-GDCD", "Bộ môn Giáo dục công dân", adminDept, subGdcd, "Cử nhân Sư phạm GDCD",
+                "BAN-GDCD", "Bộ môn Giáo dục công dân", adminDept, subGdcd, "Cử nhân SP GDCD",
                 hodRole, hodPos, teacherRole, teacherPos,
                 "head_gdcd", "Head@123", "EMP-GDCD-H01", "ThS. Bùi Văn Trưởng Ban GDCD", "head.gdcd@school-hrm.local", "0900000401", "Nam",
                 "gv_gdcd1", "Teacher@123", "EMP-GDCD-T01", "Cô Hoàng Thị Công Dân", "gv.gdcd1@school-hrm.local", "0900000402", "Nữ",
@@ -227,7 +227,7 @@ public class SchedulingDataInitializer implements ApplicationRunner {
 
         // 3.5. Ban Lịch sử và Địa lí
         DepartmentGroup grpSuDia = seedAcademicDepartmentWithStaff(
-                "BAN-SUDIA", "Bộ môn Lịch sử và Địa lí", adminDept, subHistGeo, "Cử nhân Sư phạm Lịch sử - Địa lí",
+                "BAN-SUDIA", "Bộ môn Lịch sử và Địa lí", adminDept, subHistGeo, "Cử nhân SP Sử - Địa",
                 hodRole, hodPos, teacherRole, teacherPos,
                 "head_sudia", "Head@123", "EMP-SD-H01", "ThS. Dương Văn Trưởng Ban Sử Địa", "head.sudia@school-hrm.local", "0900000501", "Nam",
                 "gv_sudia1", "Teacher@123", "EMP-SD-T01", "Thầy Lý Văn Lịch Sử", "gv.sudia1@school-hrm.local", "0900000502", "Nam",
@@ -236,7 +236,7 @@ public class SchedulingDataInitializer implements ApplicationRunner {
 
         // 3.6. Ban Khoa học tự nhiên
         DepartmentGroup grpKhtn = seedAcademicDepartmentWithStaff(
-                "BAN-KHTN", "Bộ môn Khoa học tự nhiên", adminDept, subKhtn, "Tiến sĩ / Cử nhân Khoa học Tự nhiên",
+                "BAN-KHTN", "Bộ môn Khoa học tự nhiên", adminDept, subKhtn, "Cử nhân SP KHTN",
                 hodRole, hodPos, teacherRole, teacherPos,
                 "head_khtn", "Head@123", "EMP-KHTN-H01", "TS. Hoàng Văn Trưởng Ban KHTN", "head.khtn@school-hrm.local", "0900000601", "Nam",
                 "gv_khtn1", "Teacher@123", "EMP-KHTN-T01", "Thầy Trịnh Văn Vật Lí", "gv.khtn1@school-hrm.local", "0900000602", "Nam",
@@ -245,7 +245,7 @@ public class SchedulingDataInitializer implements ApplicationRunner {
 
         // 3.7. Ban Công nghệ
         DepartmentGroup grpCn = seedAcademicDepartmentWithStaff(
-                "BAN-CN", "Bộ môn Công nghệ", adminDept, subTech, "Kỹ sư / Cử nhân Sư phạm Kỹ thuật Công nghệ",
+                "BAN-CN", "Bộ môn Công nghệ", adminDept, subTech, "Cử nhân SP Công nghệ",
                 hodRole, hodPos, teacherRole, teacherPos,
                 "head_cn", "Head@123", "EMP-CN-H01", "ThS. Đỗ Văn Trưởng Ban Công Nghệ", "head.cn@school-hrm.local", "0900000701", "Nam",
                 "gv_cn1", "Teacher@123", "EMP-CN-T01", "Thầy Phan Văn Kỹ Thuật", "gv.cn1@school-hrm.local", "0900000702", "Nam",
@@ -254,7 +254,7 @@ public class SchedulingDataInitializer implements ApplicationRunner {
 
         // 3.8. Ban Tin học
         DepartmentGroup grpTin = seedAcademicDepartmentWithStaff(
-                "BAN-TIN", "Bộ môn Tin học", adminDept, subIt, "Thạc sĩ / Cử nhân Sư phạm Tin học & CNTT",
+                "BAN-TIN", "Bộ môn Tin học", adminDept, subIt, "Cử nhân SP Tin học",
                 hodRole, hodPos, teacherRole, teacherPos,
                 "head_tin", "Head@123", "EMP-TIN-H01", "ThS. Đinh Văn Trưởng Ban Tin Học", "head.tin@school-hrm.local", "0900000801", "Nam",
                 "gv_tin1", "Teacher@123", "EMP-TIN-T01", "Thầy Trương Văn Lập Trình", "gv.tin1@school-hrm.local", "0900000802", "Nam",
@@ -263,7 +263,7 @@ public class SchedulingDataInitializer implements ApplicationRunner {
 
         // 3.9. Ban Giáo dục thể chất
         DepartmentGroup grpGdtc = seedAcademicDepartmentWithStaff(
-                "BAN-GDTC", "Bộ môn Giáo dục thể chất", adminDept, subPe, "Cử nhân Huấn luyện & Giáo dục Thể chất",
+                "BAN-GDTC", "Bộ môn Giáo dục thể chất", adminDept, subPe, "Cử nhân GD Thể chất",
                 hodRole, hodPos, teacherRole, teacherPos,
                 "head_gdtc", "Head@123", "EMP-GDTC-H01", "ThS. Lương Văn Trưởng Ban Thể Chất", "head.gdtc@school-hrm.local", "0900000901", "Nam",
                 "gv_gdtc1", "Teacher@123", "EMP-GDTC-T01", "Thầy Hà Văn Thể Thao", "gv.gdtc1@school-hrm.local", "0900000902", "Nam",
@@ -272,7 +272,7 @@ public class SchedulingDataInitializer implements ApplicationRunner {
 
         // 3.10. Ban Nghệ thuật
         DepartmentGroup grpNgheThuat = seedAcademicDepartmentWithStaff(
-                "BAN-NGHETHUAT", "Bộ môn Nghệ thuật", adminDept, subArt, "Cử nhân Sư phạm Âm nhạc & Mỹ thuật",
+                "BAN-NGHETHUAT", "Bộ môn Nghệ thuật", adminDept, subArt, "Cử nhân SP Nghệ thuật",
                 hodRole, hodPos, teacherRole, teacherPos,
                 "head_nghethuat", "Head@123", "EMP-NT-H01", "ThS. Cao Thị Trưởng Ban Nghệ Thuật", "head.nghethuat@school-hrm.local", "0900001001", "Nữ",
                 "gv_nt1", "Teacher@123", "EMP-NT-T01", "Cô Đoàn Thị Âm Nhạc", "gv.nt1@school-hrm.local", "0900001002", "Nữ",
@@ -416,7 +416,7 @@ public class SchedulingDataInitializer implements ApplicationRunner {
 
         // Cấp chứng chỉ chuyên môn giảng dạy môn của Ban cho cả 3 người (1 Trưởng + 2 Giáo viên)
         if (subject != null) {
-            if (head != null) seedQualification(head, subject, "Trưởng bộ môn - " + qualificationLevel);
+            if (head != null) seedQualification(head, subject, "ThS - " + qualificationLevel);
             if (teacher1 != null) seedQualification(teacher1, subject, qualificationLevel);
             if (teacher2 != null) seedQualification(teacher2, subject, qualificationLevel);
         }
@@ -570,10 +570,11 @@ public class SchedulingDataInitializer implements ApplicationRunner {
 
     private void seedQualification(Employee teacher, Subject subject, String level) {
         if (!qualificationRepository.existsByTeacherIdAndSubjectId(teacher.getId(), subject.getId())) {
+            String safeLevel = (level != null && level.length() > 50) ? level.substring(0, 50) : level;
             TeacherSubjectQualification q = TeacherSubjectQualification.builder()
                     .teacher(teacher)
                     .subject(subject)
-                    .qualificationLevel(level)
+                    .qualificationLevel(safeLevel)
                     .status(SubjectStatus.ACTIVE)
                     .build();
             qualificationRepository.save(q);

@@ -43,7 +43,7 @@ public class TeacherSubjectQualification extends BaseEntity {
     @JoinColumn(name = "subject_id", nullable = false)
     private Subject subject;
 
-    @Column(name = "qualification_level", length = 50)
+    @Column(name = "qualification_level", length = 150)
     private String qualificationLevel;
 
     @Enumerated(EnumType.STRING)
