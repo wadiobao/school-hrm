@@ -70,5 +70,22 @@ public interface TimetableEntryRepository extends JpaRepository<TimetableEntry, 
     // Kiểm tra xem tiết học có đang được sử dụng trong thời khóa biểu đã công bố không (SCH-06)
     @Query("SELECT COUNT(te) FROM TimetableEntry te JOIN te.timetable t WHERE te.timeSlot.id = :timeSlotId AND t.status = 'PUBLISHED'")
     long countEntriesByTimeSlotIdInPublishedTimetable(@Param("timeSlotId") Long timeSlotId);
+
+    // Truy vấn tất cả tiết học trong học kỳ phục vụ hiển thị TKB theo giáo viên
+    @Query("SELECT te FROM TimetableEntry te " +
+           "JOIN FETCH te.timetable t " +
+           "JOIN FETCH te.teachingAssignment ta " +
+           "JOIN FETCH ta.teacher teacher " +
+           "JOIN FETCH ta.subject subject " +
+           "JOIN FETCH ta.schoolClass sc " +
+           "LEFT JOIN FETCH te.substituteTeacher sub " +
+           "JOIN FETCH te.timeSlot ts " +
+           "LEFT JOIN FETCH te.classroom cr " +
+           "WHERE t.semester.id = :semesterId " +
+           "AND (:status IS NULL OR t.status = :status) " +
+           "ORDER BY te.dayOfWeek ASC, ts.periodNumber ASC")
+    List<TimetableEntry> findEntriesBySemesterAndStatus(
+            @Param("semesterId") Long semesterId,
+            @Param("status") com.kltn.school_hrm.shared.enums.Enums.TimetableStatus status);
 }
 

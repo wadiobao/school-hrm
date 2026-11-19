@@ -22,23 +22,28 @@
                 </button>
             </li>
             <li class="nav-item" role="presentation">
+                <button class="nav-link px-4 py-2 fw-semibold rounded-pill" id="tab-teacher-schedule-btn" data-bs-toggle="pill" data-bs-target="#pane-teacher-schedule" type="button" role="tab" onclick="onTeacherScheduleTabClicked()">
+                    <i class="bi bi-person-workspace me-1"></i> 2. Thời khóa biểu theo giáo viên
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
                 <button class="nav-link px-4 py-2 fw-semibold rounded-pill" id="tab-workload-btn" data-bs-toggle="pill" data-bs-target="#pane-workload" type="button" role="tab" onclick="loadWorkloadData()">
-                    <i class="bi bi-bar-chart-line me-1"></i> 2. Định mức & Khối lượng GV
+                    <i class="bi bi-bar-chart-line me-1"></i> 3. Định mức & Khối lượng GV
                 </button>
             </li>
             <li class="nav-item" role="presentation">
                 <button class="nav-link px-4 py-2 fw-semibold rounded-pill" id="tab-assignments-btn" data-bs-toggle="pill" data-bs-target="#pane-assignments" type="button" role="tab" onclick="loadAssignmentsData()">
-                    <i class="bi bi-person-badge me-1"></i> 3. Phân công Lớp - Môn (1 năm học)
+                    <i class="bi bi-person-badge me-1"></i> 4. Phân công Lớp - Môn (1 năm học)
                 </button>
             </li>
             <li class="nav-item" role="presentation">
                 <button class="nav-link px-4 py-2 fw-semibold rounded-pill" id="tab-qualifications-btn" data-bs-toggle="pill" data-bs-target="#pane-qualifications" type="button" role="tab" onclick="loadQualificationsData()">
-                    <i class="bi bi-award me-1"></i> 4. Chuyên môn giáo viên
+                    <i class="bi bi-award me-1"></i> 5. Chuyên môn giáo viên
                 </button>
             </li>
             <li class="nav-item" role="presentation" data-roles="SUPER_ADMIN,HR_MANAGER,BOARD_OF_DIRECTORS">
                 <button class="nav-link px-4 py-2 fw-semibold rounded-pill" id="tab-academic-btn" data-bs-toggle="pill" data-bs-target="#pane-academic" type="button" role="tab" onclick="loadAcademicCatalogData()">
-                    <i class="bi bi-mortarboard-fill me-1"></i> 5. Quản lý Học vụ (Năm học, Lớp, Môn, Phòng)
+                    <i class="bi bi-mortarboard-fill me-1"></i> 6. Quản lý Học vụ (Năm học, Lớp, Môn, Phòng)
                 </button>
             </li>
         </ul>
@@ -171,7 +176,94 @@
             </div>
 
             <!-- ================================================================= -->
-            <!-- TAB 2: ĐỊNH MỨC & KHỐI LƯỢNG GIẢNG DẠY (TEACHER WORKLOAD)         -->
+            <!-- TAB 2: THỜI KHÓA BIỂU THEO GIÁO VIÊN (TEACHER TIMETABLE MATRIX)   -->
+            <!-- ================================================================= -->
+            <div class="tab-pane fade" id="pane-teacher-schedule" role="tabpanel">
+
+                <!-- Thanh công cụ lọc & chọn Giáo viên / Học kỳ -->
+                <div class="card mb-4 border-0 shadow-sm">
+                    <div class="card-body">
+                        <div class="row g-3 align-items-end">
+                            <div class="col-md-3">
+                                <label class="form-label small fw-semibold text-muted mb-1">Năm học</label>
+                                <select id="teacher-sch-filter-year" class="form-select form-select-sm" onchange="onTeacherScheduleYearChanged()">
+                                    <option value="">-- Chọn năm học --</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label small fw-semibold text-muted mb-1">Học kỳ</label>
+                                <select id="teacher-sch-filter-semester" class="form-select form-select-sm" onchange="loadTeacherScheduleData()">
+                                    <option value="">-- Chọn học kỳ --</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3" id="teacher-sch-dept-wrapper">
+                                <label class="form-label small fw-semibold text-muted mb-1">Bộ môn / Khoa</label>
+                                <select id="teacher-sch-filter-dept" class="form-select form-select-sm" onchange="onTeacherScheduleDeptChanged()">
+                                    <option value="">-- Tất cả bộ môn --</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3" id="teacher-sch-teacher-wrapper">
+                                <label class="form-label small fw-semibold text-muted mb-1">Giáo viên</label>
+                                <select id="teacher-sch-filter-teacher" class="form-select form-select-sm" onchange="loadTeacherScheduleData()">
+                                    <option value="">-- Tất cả giáo viên --</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Banner thông báo phạm vi xem -->
+                <div id="teacher-sch-scope-banner" class="alert d-flex align-items-center mb-3 py-2 px-3 shadow-sm border-0 d-none">
+                    <i id="teacher-sch-scope-icon" class="bi fs-5 me-2"></i>
+                    <div id="teacher-sch-scope-text" class="small"></div>
+                </div>
+
+                <!-- Bảng thời khóa biểu dạng Giáo viên | Thứ 2 | Thứ 3... -->
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                        <h6 class="m-0 fw-bold text-dark">
+                            <i class="bi bi-table me-2 text-primary"></i>Lịch giảng dạy theo Giáo viên
+                        </h6>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-outline-secondary btn-sm" onclick="window.print()">
+                                <i class="bi bi-printer me-1"></i> In lịch
+                            </button>
+                            <button class="btn btn-outline-primary btn-sm" onclick="loadTeacherScheduleData()">
+                                <i class="bi bi-arrow-clockwise me-1"></i> Làm mới
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-hover align-middle m-0 teacher-schedule-table" id="teacherScheduleTable">
+                                <thead class="table-light text-center small text-uppercase fw-bold">
+                                    <tr>
+                                        <th style="width: 220px; min-width: 200px;">Giáo viên</th>
+                                        <th style="min-width: 170px;">Thứ 2</th>
+                                        <th style="min-width: 170px;">Thứ 3</th>
+                                        <th style="min-width: 170px;">Thứ 4</th>
+                                        <th style="min-width: 170px;">Thứ 5</th>
+                                        <th style="min-width: 170px;">Thứ 6</th>
+                                        <th style="min-width: 170px;">Thứ 7</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="teacherScheduleTableBody">
+                                    <tr>
+                                        <td colspan="7" class="text-center py-5 text-muted">
+                                            <div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
+                                            Vui lòng chọn Năm học và Học kỳ để xem thời khóa biểu...
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- ================================================================= -->
+            <!-- TAB 3: ĐỊNH MỨC & KHỐI LƯỢNG GIẢNG DẠY (TEACHER WORKLOAD)         -->
             <!-- ================================================================= -->
             <div class="tab-pane fade" id="pane-workload" role="tabpanel">
                 <div class="card mb-4 border-0 shadow-sm">
@@ -980,6 +1072,29 @@
             .empty-cell-btn:hover {
                 opacity: 1;
             }
+            .teacher-schedule-table th, .teacher-schedule-table td {
+                vertical-align: top;
+                padding: 8px;
+            }
+            .teacher-period-card {
+                background: #ffffff;
+                border: 1px solid #cbd5e1;
+                border-left: 3px solid #0d6efd;
+                border-radius: 6px;
+                padding: 6px 8px;
+                box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+                text-align: left;
+                font-size: 0.78rem;
+                transition: transform 0.15s ease, box-shadow 0.15s ease;
+            }
+            .teacher-period-card:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+            }
+            .teacher-period-substitute {
+                border-left-color: #ffc107 !important;
+                background-color: #fffdf5 !important;
+            }
         </style>
 
         <script>
@@ -1030,16 +1145,32 @@
                     populateSelect('entry-substituteTeacherId', cachedTeachers, 'id', (t) => `${t.fullName} (${t.employeeCode})`);
                     populateSelect('qual-teacherId', cachedTeachers, 'id', (t) => `${t.fullName} (${t.employeeCode})`);
                     populateSelect('class-homeroomTeacherId', cachedTeachers, 'id', (t) => `${t.fullName} (${t.employeeCode})`);
+                    populateSelect('teacher-sch-filter-teacher', cachedTeachers, 'id', (t) => `${t.fullName} (${t.employeeCode})`);
+
+                    // Tải phòng ban / bộ môn
+                    try {
+                        const resDepts = await fetchApi('/api/v1/departments');
+                        const depts = resDepts.data || [];
+                        populateSelect('teacher-sch-filter-dept', depts, 'id', (d) => `${d.name}`);
+                    } catch (err) {
+                        console.warn('Lỗi khi tải danh mục phòng ban:', err);
+                    }
 
                     // Tải khung giờ / tiết học
                     const resSlots = await fetchApi('/api/v1/time-slots');
                     cachedTimeSlots = resSlots.data || [];
                     populateSelect('entry-timeSlotId', cachedTimeSlots, 'id', (slot) => `Tiết ${slot.periodNumber} (${slot.session} : ${formatTime(slot.startTime)} - ${formatTime(slot.endTime)})`);
 
+                    // Danh mục năm học cho tab TKB giáo viên
+                    populateSelect('teacher-sch-filter-year', cachedYears, 'id', (y) => `${y.name}`);
+
                     // Tự động chọn năm học đầu tiên nếu có
                     if (cachedYears.length > 0) {
                         document.getElementById('filter-academic-year').value = cachedYears[0].id;
+                        const teacherYearEl = document.getElementById('teacher-sch-filter-year');
+                        if (teacherYearEl) teacherYearEl.value = cachedYears[0].id;
                         await onAcademicYearChanged();
+                        await onTeacherScheduleYearChanged();
                     }
                 } catch (e) {
                     console.error('Lỗi khi tải danh mục:', e);
@@ -1500,6 +1631,167 @@
                     showAlert('Đã xóa tiết học.');
                     await loadTimetableForSelectedClass();
                 } catch (e) {}
+            }
+
+            // =================================================================
+            // TAB: THỜI KHÓA BIỂU THEO GIÁO VIÊN (TEACHER TIMETABLE MATRIX)
+            // =================================================================
+            let cachedTeacherScheduleData = null;
+
+            async function onTeacherScheduleTabClicked() {
+                const yearSelect = document.getElementById('teacher-sch-filter-year');
+                if (yearSelect && cachedYears.length > 0 && !yearSelect.value) {
+                    yearSelect.value = cachedYears[0].id;
+                    await onTeacherScheduleYearChanged();
+                } else if (yearSelect && yearSelect.value) {
+                    await loadTeacherScheduleData();
+                }
+            }
+
+            async function onTeacherScheduleYearChanged() {
+                const yearId = document.getElementById('teacher-sch-filter-year').value;
+                if (!yearId) return;
+
+                try {
+                    const res = await fetchApi(`/api/v1/semesters?academicYearId=${yearId}`);
+                    const sems = res.data || [];
+                    populateSelect('teacher-sch-filter-semester', sems, 'id', (s) => `${s.name}`);
+
+                    if (sems.length > 0) {
+                        document.getElementById('teacher-sch-filter-semester').value = sems[0].id;
+                        await loadTeacherScheduleData();
+                    }
+                } catch (e) {
+                    console.error('Lỗi khi tải học kỳ cho TKB giáo viên:', e);
+                }
+            }
+
+            function onTeacherScheduleDeptChanged() {
+                const deptId = document.getElementById('teacher-sch-filter-dept').value;
+
+                if (!deptId) {
+                    populateSelect('teacher-sch-filter-teacher', cachedTeachers, 'id', (t) => `${t.fullName} (${t.employeeCode})`);
+                } else {
+                    const filtered = cachedTeachers.filter(t => t.department && t.department.id == deptId);
+                    populateSelect('teacher-sch-filter-teacher', filtered, 'id', (t) => `${t.fullName} (${t.employeeCode})`);
+                }
+                loadTeacherScheduleData();
+            }
+
+            async function loadTeacherScheduleData() {
+                const semSelect = document.getElementById('teacher-sch-filter-semester');
+                const teacherSelect = document.getElementById('teacher-sch-filter-teacher');
+                const deptSelect = document.getElementById('teacher-sch-filter-dept');
+                const tbody = document.getElementById('teacherScheduleTableBody');
+
+                if (!semSelect || !semSelect.value) {
+                    tbody.innerHTML = `<tr><td colspan="7" class="text-center py-5 text-muted">Vui lòng chọn Năm học và Học kỳ để xem thời khóa biểu theo giáo viên.</td></tr>`;
+                    return;
+                }
+
+                tbody.innerHTML = `<tr><td colspan="7" class="text-center py-5 text-muted"><div class="spinner-border spinner-border-sm text-primary me-2"></div>Đang tải dữ liệu thời khóa biểu giáo viên...</td></tr>`;
+
+                try {
+                    let url = `/api/v1/timetables/teacher-matrix?semesterId=${semSelect.value}`;
+                    if (teacherSelect && teacherSelect.value) {
+                        url += `&teacherId=${teacherSelect.value}`;
+                    }
+                    if (deptSelect && deptSelect.value) {
+                        url += `&departmentId=${deptSelect.value}`;
+                    }
+
+                    const res = await fetchApi(url);
+                    cachedTeacherScheduleData = res.data;
+                    renderTeacherScheduleMatrix(res.data);
+                } catch (e) {
+                    tbody.innerHTML = `<tr><td colspan="7" class="text-center py-4 text-danger"><i class="bi bi-exclamation-triangle me-2"></i>Lỗi tải dữ liệu: ${e.message || 'Không thể lấy thời khóa biểu'}</td></tr>`;
+                }
+            }
+
+            function renderTeacherScheduleMatrix(data) {
+                const tbody = document.getElementById('teacherScheduleTableBody');
+                const banner = document.getElementById('teacher-sch-scope-banner');
+                const icon = document.getElementById('teacher-sch-scope-icon');
+                const text = document.getElementById('teacher-sch-scope-text');
+                const deptWrapper = document.getElementById('teacher-sch-dept-wrapper');
+                const teacherWrapper = document.getElementById('teacher-sch-teacher-wrapper');
+
+                if (!data) return;
+
+                // Xử lý hiển thị Banner & Phân quyền
+                if (data.canViewAll) {
+                    banner.className = 'alert alert-success d-flex align-items-center mb-3 py-2 px-3 shadow-sm border-0 bg-success bg-opacity-10 text-success';
+                    icon.className = 'bi bi-shield-check fs-5 me-2';
+                    text.innerHTML = `<strong>Chế độ xem toàn trường:</strong> Bạn có quyền xem thời khóa biểu của tất cả giáo viên (Hiệu trưởng / HR / Trưởng bộ môn).`;
+                    banner.classList.remove('d-none');
+                    if (deptWrapper) deptWrapper.classList.remove('d-none');
+                    if (teacherWrapper) teacherWrapper.classList.remove('d-none');
+                } else {
+                    banner.className = 'alert alert-info d-flex align-items-center mb-3 py-2 px-3 shadow-sm border-0 bg-primary bg-opacity-10 text-primary';
+                    icon.className = 'bi bi-person-check-fill fs-5 me-2';
+                    text.innerHTML = `<strong>Chế độ xem cá nhân:</strong> Hiển thị lịch giảng dạy cá nhân của bạn: <strong>${data.currentEmployeeName || ''}</strong>.`;
+                    banner.classList.remove('d-none');
+                    if (deptWrapper) deptWrapper.classList.add('d-none');
+                    if (teacherWrapper) teacherWrapper.classList.add('d-none');
+                }
+
+                if (!data.rows || data.rows.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="7" class="text-center py-5 text-muted"><i class="bi bi-calendar-x fs-3 d-block mb-2 text-secondary opacity-50"></i>Không có dữ liệu thời khóa biểu cho giáo viên được chọn trong học kỳ này.</td></tr>`;
+                    return;
+                }
+
+                let html = '';
+                data.rows.forEach(row => {
+                    html += `<tr>`;
+                    
+                    // Cột 1: Thông tin giáo viên
+                    html += `
+                        <td class="bg-light bg-opacity-50">
+                            <div class="fw-bold text-dark text-truncate" title="${row.teacherName}">${row.teacherName}</div>
+                            <div class="small text-muted font-monospace">${row.teacherCode}</div>
+                            ${row.departmentName ? `<span class="badge bg-secondary bg-opacity-10 text-secondary border mt-1 small">${row.departmentName}</span>` : ''}
+                            <div class="small text-primary fw-semibold mt-1">
+                                <i class="bi bi-clock-history me-1"></i>${row.totalPeriods} tiết/tuần
+                            </div>
+                        </td>
+                    `;
+
+                    // Cột 2 đến 7: Thứ 2 (day 1) -> Thứ 7 (day 6)
+                    for (let day = 1; day <= 6; day++) {
+                        const items = (row.scheduleByDay && row.scheduleByDay[day]) ? row.scheduleByDay[day] : [];
+
+                        if (items.length === 0) {
+                            html += `<td class="text-center text-muted py-3 align-middle"><span class="opacity-25">-</span></td>`;
+                        } else {
+                            html += `<td><div class="d-flex flex-column gap-2">`;
+                            items.forEach(it => {
+                                const cardClass = it.isSubstitute ? 'teacher-period-card teacher-period-substitute' : 'teacher-period-card';
+                                const badgeClass = it.session === 'MORNING' ? 'bg-primary' : 'bg-info text-dark';
+                                html += `
+                                    <div class="${cardClass}">
+                                        <div class="d-flex justify-content-between align-items-center mb-1">
+                                            <span class="badge ${badgeClass}">Tiết ${it.periodNumber}</span>
+                                            <span class="text-muted fw-bold font-monospace" style="font-size: 0.72rem;">${it.timeSlotRange}</span>
+                                        </div>
+                                        <div class="fw-bold text-dark text-truncate" title="${it.schoolClassName} - ${it.subjectName}">
+                                            <i class="bi bi-mortarboard-fill me-1 text-primary"></i>${it.schoolClassName} • ${it.subjectName}
+                                        </div>
+                                        <div class="d-flex justify-content-between align-items-center mt-1" style="font-size: 0.72rem;">
+                                            <span class="text-secondary"><i class="bi bi-geo-alt-fill text-danger me-1"></i>${it.classroomCode || 'P.Học'}</span>
+                                            ${it.isSubstitute ? `<span class="badge bg-warning text-dark px-1"><i class="bi bi-arrow-repeat me-1"></i>Dạy thay</span>` : ''}
+                                            ${it.substituteNote && !it.isSubstitute ? `<span class="badge bg-light text-secondary border px-1" title="${it.substituteNote}">GV khác dạy</span>` : ''}
+                                        </div>
+                                    </div>
+                                `;
+                            });
+                            html += `</div></td>`;
+                        }
+                    }
+
+                    html += `</tr>`;
+                });
+
+                tbody.innerHTML = html;
             }
 
             // =================================================================

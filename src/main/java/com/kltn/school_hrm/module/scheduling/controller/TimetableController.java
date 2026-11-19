@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.kltn.school_hrm.dto.common.ApiResponse;
 import com.kltn.school_hrm.module.scheduling.constraint.ValidationResult;
 import com.kltn.school_hrm.module.scheduling.dto.request.TimetableRequest;
+import com.kltn.school_hrm.module.scheduling.dto.response.TeacherTimetableResponse;
 import com.kltn.school_hrm.module.scheduling.dto.response.TimetableMatrixResponse;
 import com.kltn.school_hrm.module.scheduling.dto.response.TimetableResponse;
 import com.kltn.school_hrm.module.scheduling.service.TimetableService;
@@ -52,6 +53,15 @@ public class TimetableController {
     public ResponseEntity<ApiResponse<TimetableMatrixResponse>> getMatrix(@PathVariable Long id) {
         TimetableMatrixResponse response = timetableService.getMatrix(id);
         return ResponseEntity.ok(ApiResponse.success(response, "Lấy ma trận thời khóa biểu tuần thành công"));
+    }
+
+    @GetMapping("/teacher-matrix")
+    public ResponseEntity<ApiResponse<TeacherTimetableResponse>> getTeacherMatrix(
+            @RequestParam Long semesterId,
+            @RequestParam(required = false) Long teacherId,
+            @RequestParam(required = false) Long departmentId) {
+        TeacherTimetableResponse response = timetableService.getTeacherTimetable(semesterId, teacherId, departmentId);
+        return ResponseEntity.ok(ApiResponse.success(response, "Lấy thời khóa biểu theo giáo viên thành công"));
     }
 
     @GetMapping("/published")

@@ -1,6 +1,8 @@
 package com.kltn.school_hrm.module.scheduling.service.implement;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -10,18 +12,26 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.kltn.school_hrm.module.academic.entity.Classroom;
 import com.kltn.school_hrm.module.academic.entity.SchoolClass;
 import com.kltn.school_hrm.module.academic.entity.Semester;
+import com.kltn.school_hrm.module.academic.entity.Subject;
 import com.kltn.school_hrm.module.academic.repository.SchoolClassRepository;
 import com.kltn.school_hrm.module.academic.repository.SemesterRepository;
+import com.kltn.school_hrm.module.employee.entity.Employee;
+import com.kltn.school_hrm.module.employee.repository.EmployeeRepository;
 import com.kltn.school_hrm.module.scheduling.constraint.TimetableValidator;
 import com.kltn.school_hrm.module.scheduling.constraint.ValidationError;
 import com.kltn.school_hrm.module.scheduling.constraint.ValidationResult;
 import com.kltn.school_hrm.module.scheduling.dto.request.TimetableRequest;
+import com.kltn.school_hrm.module.scheduling.dto.response.TeacherPeriodItem;
+import com.kltn.school_hrm.module.scheduling.dto.response.TeacherScheduleRow;
+import com.kltn.school_hrm.module.scheduling.dto.response.TeacherTimetableResponse;
 import com.kltn.school_hrm.module.scheduling.dto.response.TimeSlotResponse;
 import com.kltn.school_hrm.module.scheduling.dto.response.TimetableEntryResponse;
 import com.kltn.school_hrm.module.scheduling.dto.response.TimetableMatrixResponse;
 import com.kltn.school_hrm.module.scheduling.dto.response.TimetableResponse;
+import com.kltn.school_hrm.module.scheduling.entity.TimeSlot;
 import com.kltn.school_hrm.module.scheduling.entity.Timetable;
 import com.kltn.school_hrm.module.scheduling.entity.TimetableEntry;
 import com.kltn.school_hrm.module.scheduling.repository.TimetableEntryRepository;
@@ -30,9 +40,13 @@ import com.kltn.school_hrm.module.scheduling.service.TimeSlotService;
 import com.kltn.school_hrm.module.scheduling.service.TimetableEntryService;
 import com.kltn.school_hrm.module.scheduling.service.TimetableService;
 import com.kltn.school_hrm.module.scheduling.statemachine.TimetableStateMachine;
+import com.kltn.school_hrm.module.teaching.entity.TeachingAssignment;
+import com.kltn.school_hrm.shared.enums.Enums.PositionCode;
+import com.kltn.school_hrm.shared.enums.Enums.RoleCode;
 import com.kltn.school_hrm.shared.enums.Enums.TimetableStatus;
 import com.kltn.school_hrm.shared.exception.custom.BusinessException;
 import com.kltn.school_hrm.shared.exception.custom.ResourceNotFoundException;
+import com.kltn.school_hrm.shared.utils.SchedulingSecurity;
 
 import lombok.RequiredArgsConstructor;
 
@@ -48,6 +62,8 @@ public class TimetableServiceImpl implements TimetableService {
     private final TimetableEntryRepository entryRepository;
     private final SchoolClassRepository schoolClassRepository;
     private final SemesterRepository semesterRepository;
+    private final EmployeeRepository employeeRepository;
+    private final SchedulingSecurity schedulingSecurity;
     private final TimeSlotService timeSlotService;
     private final TimetableEntryService entryService;
     private final TimetableValidator timetableValidator;
@@ -259,6 +275,160 @@ public class TimetableServiceImpl implements TimetableService {
                 .validationNotes(entity.getValidationNotes())
                 .createdAt(entity.getCreatedAt())
                 .updatedAt(entity.getUpdatedAt())
+                .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public TeacherTimetableResponse getTeacherTimetable(Long semesterId, Long teacherId, Long departmentId) {
+        Semester semester = semesterRepository.findById(semesterId)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy học kỳ với id: " + semesterId));
+
+        boolean canViewAll = schedulingSecurity.canViewAllTeacherSchedules();
+        Optional<Employee> currentEmpOpt = schedulingSecurity.getCurrentEmployee();
+
+        Long currentEmployeeId = currentEmpOpt.map(Employee::getId).orElse(null);
+        String currentEmployeeName = currentEmpOpt.map(Employee::getFullName).orElse("N/A");
+
+        // 1. Xác định danh sách giáo viên cần hiển thị theo phân quyền
+        List<Employee> targetTeachers;
+        if (canViewAll) {
+            if (teacherId != null) {
+                targetTeachers = employeeRepository.findById(teacherId).map(List::of).orElse(List.of());
+            } else if (departmentId != null) {
+                targetTeachers = employeeRepository.findAll().stream()
+                        .filter(e -> e.getDepartment() != null && e.getDepartment().getId().equals(departmentId))
+                        .filter(this::isTeacherOrHasAssignments)
+                        .collect(Collectors.toList());
+            } else {
+                targetTeachers = employeeRepository.findAll().stream()
+                        .filter(this::isTeacherOrHasAssignments)
+                        .collect(Collectors.toList());
+            }
+        } else {
+            // Cá nhân thông thường: CHỈ HIỂN THỊ CÁ NHÂN
+            if (currentEmpOpt.isEmpty()) {
+                throw new BusinessException("Tài khoản hiện tại chưa được liên kết với hồ sơ nhân viên/giáo viên");
+            }
+            targetTeachers = List.of(currentEmpOpt.get());
+        }
+
+        // 2. Lấy danh sách tiết học trong học kỳ này
+        List<TimetableEntry> entries = entryRepository.findEntriesBySemesterAndStatus(semesterId, TimetableStatus.PUBLISHED);
+        if (entries.isEmpty()) {
+            entries = entryRepository.findEntriesBySemesterAndStatus(semesterId, null);
+        }
+
+        // 3. Gom nhóm tiết học theo Giáo viên và theo Thứ trong tuần
+        Map<Long, Map<Integer, List<TeacherPeriodItem>>> teacherScheduleMap = new HashMap<>();
+
+        for (TimetableEntry entry : entries) {
+            TeachingAssignment ta = entry.getTeachingAssignment();
+            if (ta == null) continue;
+
+            Employee mainTeacher = ta.getTeacher();
+            Employee subTeacher = entry.getSubstituteTeacher();
+            Integer day = entry.getDayOfWeek();
+            if (day == null) continue;
+
+            // Nếu có giáo viên dạy thay:
+            if (subTeacher != null) {
+                TeacherPeriodItem subItem = mapToTeacherPeriodItem(entry, ta, true, "Dạy thay cho " + (mainTeacher != null ? mainTeacher.getFullName() : ""));
+                teacherScheduleMap.computeIfAbsent(subTeacher.getId(), k -> new HashMap<>())
+                        .computeIfAbsent(day, k -> new ArrayList<>())
+                        .add(subItem);
+            }
+
+            if (mainTeacher != null) {
+                if (subTeacher == null) {
+                    TeacherPeriodItem mainItem = mapToTeacherPeriodItem(entry, ta, false, null);
+                    teacherScheduleMap.computeIfAbsent(mainTeacher.getId(), k -> new HashMap<>())
+                            .computeIfAbsent(day, k -> new ArrayList<>())
+                            .add(mainItem);
+                } else {
+                    TeacherPeriodItem noteItem = mapToTeacherPeriodItem(entry, ta, false, "Có " + subTeacher.getFullName() + " dạy thay");
+                    teacherScheduleMap.computeIfAbsent(mainTeacher.getId(), k -> new HashMap<>())
+                            .computeIfAbsent(day, k -> new ArrayList<>())
+                            .add(noteItem);
+                }
+            }
+        }
+
+        // 4. Xây dựng danh sách TeacherScheduleRow
+        List<TeacherScheduleRow> rows = new ArrayList<>();
+        for (Employee teacher : targetTeachers) {
+            Map<Integer, List<TeacherPeriodItem>> dayMap = teacherScheduleMap.getOrDefault(teacher.getId(), new HashMap<>());
+
+            int teacherTotalPeriods = 0;
+            Map<Integer, List<TeacherPeriodItem>> sortedDayMap = new HashMap<>();
+            for (int d = 1; d <= 7; d++) {
+                List<TeacherPeriodItem> items = dayMap.getOrDefault(d, new ArrayList<>());
+                items.sort(Comparator.comparing(TeacherPeriodItem::getPeriodNumber, Comparator.nullsLast(Comparator.naturalOrder())));
+                sortedDayMap.put(d, items);
+                teacherTotalPeriods += items.size();
+            }
+
+            TeacherScheduleRow row = TeacherScheduleRow.builder()
+                    .teacherId(teacher.getId())
+                    .teacherCode(teacher.getEmployeeCode())
+                    .teacherName(teacher.getFullName())
+                    .departmentName(teacher.getDepartment() != null ? teacher.getDepartment().getName() : "")
+                    .positionName(teacher.getPosition() != null ? teacher.getPosition().getName() : "")
+                    .totalPeriods(teacherTotalPeriods)
+                    .scheduleByDay(sortedDayMap)
+                    .build();
+
+            rows.add(row);
+        }
+
+        rows.sort(Comparator.comparing(TeacherScheduleRow::getTeacherName, Comparator.nullsLast(Comparator.naturalOrder())));
+
+        String academicYearName = semester.getAcademicYear() != null ? semester.getAcademicYear().getName() : "";
+
+        return TeacherTimetableResponse.builder()
+                .semesterId(semester.getId())
+                .semesterName(semester.getName())
+                .academicYearName(academicYearName)
+                .canViewAll(canViewAll)
+                .currentEmployeeId(currentEmployeeId)
+                .currentEmployeeName(currentEmployeeName)
+                .rows(rows)
+                .build();
+    }
+
+    private boolean isTeacherOrHasAssignments(Employee emp) {
+        if (emp.getPosition() != null && emp.getPosition().getCode() == PositionCode.TEACHER) {
+            return true;
+        }
+        if (emp.getUser() != null && emp.getUser().getRole() != null && emp.getUser().getRole().getRoleCode() == RoleCode.TEACHER) {
+            return true;
+        }
+        return true;
+    }
+
+    private TeacherPeriodItem mapToTeacherPeriodItem(TimetableEntry entry, TeachingAssignment ta, boolean isSubstitute, String note) {
+        TimeSlot slot = entry.getTimeSlot();
+        Classroom room = entry.getClassroom();
+        SchoolClass sc = ta.getSchoolClass();
+        Subject subject = ta.getSubject();
+
+        String slotRange = slot != null ? (slot.getStartTime() + " - " + slot.getEndTime()) : "";
+
+        return TeacherPeriodItem.builder()
+                .entryId(entry.getId())
+                .periodNumber(slot != null ? slot.getPeriodNumber() : null)
+                .timeSlotRange(slotRange)
+                .session(slot != null ? slot.getSession() : null)
+                .schoolClassId(sc != null ? sc.getId() : null)
+                .schoolClassName(sc != null ? sc.getName() : null)
+                .subjectId(subject != null ? subject.getId() : null)
+                .subjectCode(subject != null ? subject.getCode() : null)
+                .subjectName(ta.getSubjectName())
+                .classroomId(room != null ? room.getId() : null)
+                .classroomCode(room != null ? room.getCode() : null)
+                .classroomName(room != null ? room.getName() : null)
+                .isSubstitute(isSubstitute)
+                .substituteNote(note)
                 .build();
     }
 }
