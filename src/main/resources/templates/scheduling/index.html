@@ -96,8 +96,11 @@
                                 <button class="btn btn-outline-primary btn-sm flex-grow-1" onclick="loadTimetableForSelectedClass()">
                                     <i class="bi bi-search me-1"></i> Xem TKB theo lớp
                                 </button>
-                                <button class="btn btn-outline-success btn-sm" data-roles="SUPER_ADMIN,HR_MANAGER,BOARD_OF_DIRECTORS" onclick="openCreateTimetableModal()" title="Tạo thời khóa biểu cho lớp này">
+                                <button class="btn btn-outline-success btn-sm" data-roles="SUPER_ADMIN,HR_MANAGER,BOARD_OF_DIRECTORS" onclick="openCreateTimetableModal()" title="Tạo thời khóa biểu thủ công cho lớp này">
                                     <i class="bi bi-plus-lg me-1"></i> Tạo TKB
+                                </button>
+                                <button class="btn btn-warning btn-sm text-dark fw-semibold" data-roles="SUPER_ADMIN,HR_MANAGER,BOARD_OF_DIRECTORS" onclick="openAutoScheduleModal()" title="Tự động phân bổ giáo viên và xếp lịch cho tất cả các lớp trong học kỳ">
+                                    <i class="bi bi-magic me-1"></i> Tự động xếp
                                 </button>
                             </div>
                         </div>
@@ -230,6 +233,9 @@
                             <i class="bi bi-table me-2 text-primary"></i>Lịch giảng dạy theo Giáo viên
                         </h6>
                         <div class="d-flex gap-2">
+                            <button class="btn btn-warning btn-sm text-dark fw-semibold" data-roles="SUPER_ADMIN,HR_MANAGER,BOARD_OF_DIRECTORS" onclick="openAutoScheduleModal()">
+                                <i class="bi bi-magic me-1"></i> Tự động phân bổ GV & Xếp TKB Học kỳ
+                            </button>
                             <button class="btn btn-outline-secondary btn-sm" onclick="window.print()">
                                 <i class="bi bi-printer me-1"></i> In lịch
                             </button>
@@ -1035,6 +1041,192 @@
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Đóng</button>
                         <button type="button" class="btn btn-primary btn-sm" onclick="submitQualification()">Lưu chuyên môn</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================================================================= -->
+        <!-- MODAL: TỰ ĐỘNG PHÂN BỔ GIÁO VIÊN & XẾP THỜI KHÓA BIỂU TOÀN TRƯỜNG -->
+        <!-- ================================================================= -->
+        <div class="modal fade" id="modalAutoSchedule" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-xl modal-dialog-scrollable">
+                <div class="modal-content border-0 shadow-lg">
+                    <div class="modal-header bg-primary text-white">
+                        <div>
+                            <h5 class="modal-title fw-bold mb-0">
+                                <i class="bi bi-magic me-2"></i>Tự động Phân bổ Giáo viên & Xếp Thời khóa biểu Toàn trường
+                            </h5>
+                            <div class="small text-white-50">
+                                Thuật toán 2 pha: (1) Quy đổi tỉ lệ môn học Hamilton & Phân công GV cân bằng tải $\rightarrow$ (2) Xếp lịch CSP + MRV Heuristic + Kempe Swap Repair
+                            </div>
+                        </div>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row g-3">
+                            <!-- Cột trái: Cấu hình Thời gian, Ngày học & Tùy chọn Thuật toán -->
+                            <div class="col-lg-5">
+                                <div class="card border shadow-sm mb-3">
+                                    <div class="card-header bg-light py-2 fw-bold small text-uppercase text-primary">
+                                        <i class="bi bi-calendar-range me-1"></i> 1. Phạm vi Học kỳ & Khung ngày học
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row g-2 mb-3">
+                                            <div class="col-6">
+                                                <label class="form-label small fw-semibold mb-1">Năm học *</label>
+                                                <select id="auto-sch-year" class="form-select form-select-sm" onchange="onAutoScheduleYearChanged()">
+                                                </select>
+                                            </div>
+                                            <div class="col-6">
+                                                <label class="form-label small fw-semibold mb-1">Học kỳ *</label>
+                                                <select id="auto-sch-semester" class="form-select form-select-sm">
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label class="form-label small fw-semibold mb-1 d-block">Các ngày học trong tuần *</label>
+                                            <div class="d-flex flex-wrap gap-2" id="auto-sch-days-group">
+                                                <div class="form-check form-check-inline m-0">
+                                                    <input class="form-check-input auto-day-cb" type="checkbox" value="1" id="auto-day-1" checked onchange="recalculateHamiltonPreview()">
+                                                    <label class="form-check-label small" for="auto-day-1">Thứ 2</label>
+                                                </div>
+                                                <div class="form-check form-check-inline m-0">
+                                                    <input class="form-check-input auto-day-cb" type="checkbox" value="2" id="auto-day-2" checked onchange="recalculateHamiltonPreview()">
+                                                    <label class="form-check-label small" for="auto-day-2">Thứ 3</label>
+                                                </div>
+                                                <div class="form-check form-check-inline m-0">
+                                                    <input class="form-check-input auto-day-cb" type="checkbox" value="3" id="auto-day-3" checked onchange="recalculateHamiltonPreview()">
+                                                    <label class="form-check-label small" for="auto-day-3">Thứ 4</label>
+                                                </div>
+                                                <div class="form-check form-check-inline m-0">
+                                                    <input class="form-check-input auto-day-cb" type="checkbox" value="4" id="auto-day-4" checked onchange="recalculateHamiltonPreview()">
+                                                    <label class="form-check-label small" for="auto-day-4">Thứ 5</label>
+                                                </div>
+                                                <div class="form-check form-check-inline m-0">
+                                                    <input class="form-check-input auto-day-cb" type="checkbox" value="5" id="auto-day-5" checked onchange="recalculateHamiltonPreview()">
+                                                    <label class="form-check-label small" for="auto-day-5">Thứ 6</label>
+                                                </div>
+                                                <div class="form-check form-check-inline m-0">
+                                                    <input class="form-check-input auto-day-cb" type="checkbox" value="6" id="auto-day-6" checked onchange="recalculateHamiltonPreview()">
+                                                    <label class="form-check-label small" for="auto-day-6">Thứ 7</label>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="row g-2 mb-3">
+                                            <div class="col-6">
+                                                <label class="form-label small fw-semibold mb-1">Buổi học chính</label>
+                                                <select id="auto-sch-session" class="form-select form-select-sm" onchange="recalculateHamiltonPreview()">
+                                                    <option value="MORNING" selected>Buổi sáng (Tiết 1 - 5)</option>
+                                                    <option value="AFTERNOON">Buổi chiều (Tiết 6 - 9)</option>
+                                                    <option value="BOTH">Cả ngày (Sáng + Chiều)</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-6">
+                                                <label class="form-label small fw-semibold mb-1">Số tiết tối đa / ngày</label>
+                                                <input type="number" id="auto-sch-max-per-day" class="form-control form-control-sm" value="5" min="1" max="9" onchange="recalculateHamiltonPreview()">
+                                            </div>
+                                        </div>
+
+                                        <div class="row g-2">
+                                            <div class="col-6">
+                                                <label class="form-label small fw-semibold mb-1">Tổng số tiết / tuần / lớp</label>
+                                                <input type="number" id="auto-sch-target-weekly" class="form-control form-control-sm fw-bold text-primary" value="23" min="5" max="45" oninput="recalculateHamiltonPreview()">
+                                            </div>
+                                            <div class="col-6">
+                                                <label class="form-label small fw-semibold mb-1">Tối đa cùng 1 môn / ngày</label>
+                                                <input type="number" id="auto-sch-max-subj-day" class="form-control form-control-sm" value="2" min="1" max="4">
+                                            </div>
+                                        </div>
+                                        <div class="mt-2 small text-muted" id="auto-sch-capacity-hint">
+                                            Quỹ tiết khả dụng: <strong>30 tiết/tuần</strong> (6 ngày × 5 tiết/ngày)
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="card border shadow-sm">
+                                    <div class="card-header bg-light py-2 fw-bold small text-uppercase text-primary">
+                                        <i class="bi bi-sliders me-1"></i> 2. Tùy chọn Phân công & Công bố
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="form-check form-switch mb-2">
+                                            <input class="form-check-input" type="checkbox" id="auto-sch-assign-teachers" checked>
+                                            <label class="form-check-label small fw-semibold" for="auto-sch-assign-teachers">
+                                                Tự động phân công giáo viên từ 10 Ban (Cân bằng tải & Ưu tiên GVCN)
+                                            </label>
+                                        </div>
+                                        <div class="form-check form-switch mb-2">
+                                            <input class="form-check-input" type="checkbox" id="auto-sch-overwrite" checked>
+                                            <label class="form-check-label small fw-semibold" for="auto-sch-overwrite">
+                                                Ghi đè và tái lập lịch đồng bộ cho tất cả các lớp trong học kỳ
+                                            </label>
+                                        </div>
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="auto-sch-publish" checked>
+                                            <label class="form-check-label small fw-semibold" for="auto-sch-publish">
+                                                Tự động Kiểm tra xung đột & Công bố chính thức (PUBLISHED)
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Cột phải: Cấu hình Tỉ lệ / Trọng số các môn học -->
+                            <div class="col-lg-7">
+                                <div class="card border shadow-sm h-100">
+                                    <div class="card-header bg-light py-2 d-flex justify-content-between align-items-center">
+                                        <span class="fw-bold small text-uppercase text-primary">
+                                            <i class="bi bi-pie-chart-fill me-1"></i> 3. Tỉ lệ / Trọng số các Môn học & Quy đổi số tiết
+                                        </span>
+                                        <div class="btn-group btn-group-sm">
+                                            <button type="button" class="btn btn-outline-primary btn-sm py-0" onclick="applySubjectRatioPreset('MOET_23')">
+                                                Chuẩn Bộ GD (23 tiết)
+                                            </button>
+                                            <button type="button" class="btn btn-outline-secondary btn-sm py-0" onclick="applySubjectRatioPreset('INTENSIVE_26')">
+                                                Tăng cường (26 tiết)
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="card-body p-0">
+                                        <div class="table-responsive">
+                                            <table class="table table-sm table-hover align-middle mb-0">
+                                                <thead class="table-light small">
+                                                    <tr>
+                                                        <th class="ps-3">Mã môn</th>
+                                                        <th>Tên môn học</th>
+                                                        <th style="width: 115px;" class="text-center">Trọng số / Tỉ lệ</th>
+                                                        <th style="width: 90px;" class="text-center">Tỉ trọng (%)</th>
+                                                        <th style="width: 115px;" class="text-center">Số tiết / tuần</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="auto-sch-subject-ratios-body">
+                                                </tbody>
+                                                <tfoot class="table-light fw-bold small">
+                                                    <tr>
+                                                        <td colspan="2" class="ps-3">TỔNG CỘNG</td>
+                                                        <td class="text-center" id="auto-sch-total-weight">23.0</td>
+                                                        <td class="text-center">100%</td>
+                                                        <td class="text-center text-primary fs-6" id="auto-sch-total-periods">23 tiết</td>
+                                                    </tr>
+                                                </tfoot>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Khu vực hiển thị Kết quả sau khi chạy thuật toán -->
+                        <div id="auto-sch-result-box" class="mt-4 d-none">
+                        </div>
+                    </div>
+                    <div class="modal-footer bg-light">
+                        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Đóng</button>
+                        <button type="button" class="btn btn-primary btn-sm px-4 fw-bold" id="btn-run-auto-schedule" onclick="executeAutoSchedule()">
+                            <i class="bi bi-lightning-charge-fill me-1"></i> Chạy Tự động Phân bổ & Xếp lịch Toàn trường
+                        </button>
                     </div>
                 </div>
             </div>
@@ -2395,6 +2587,380 @@
                         await loadTimetableForSelectedClass();
                     }
                 } catch (e) {}
+            }
+
+            // =================================================================
+            // 11. TỰ ĐỘNG PHÂN BỔ GIÁO VIÊN & XẾP THỜI KHÓA BIỂU TOÀN TRƯỜNG
+            // =================================================================
+            const DEFAULT_MOET_RATIOS = {
+                'MATH': 4.0,
+                'LIT': 4.0,
+                'ENG': 3.0,
+                'KHTN': 3.0,
+                'HIST_GEO': 2.0,
+                'IT': 2.0,
+                'PE': 2.0,
+                'GDCD': 1.0,
+                'TECH': 1.0,
+                'ART': 1.0
+            };
+
+            const INTENSIVE_26_RATIOS = {
+                'MATH': 5.0,
+                'LIT': 4.0,
+                'ENG': 4.0,
+                'KHTN': 3.0,
+                'HIST_GEO': 2.0,
+                'IT': 3.0,
+                'PE': 2.0,
+                'GDCD': 1.0,
+                'TECH': 1.0,
+                'ART': 1.0
+            };
+
+            async function openAutoScheduleModal() {
+                populateSelect('auto-sch-year', cachedYears, 'id', (y) => `${y.name}`);
+                const currentYearId = document.getElementById('teacher-sch-filter-year')?.value
+                    || document.getElementById('filter-academic-year')?.value
+                    || (cachedYears[0] ? cachedYears[0].id : '');
+
+                if (currentYearId) {
+                    document.getElementById('auto-sch-year').value = currentYearId;
+                    await onAutoScheduleYearChanged();
+                }
+
+                const currentSemId = document.getElementById('teacher-sch-filter-semester')?.value
+                    || document.getElementById('filter-semester')?.value;
+                if (currentSemId) {
+                    document.getElementById('auto-sch-semester').value = currentSemId;
+                }
+
+                renderAutoScheduleSubjectTable(DEFAULT_MOET_RATIOS);
+                recalculateHamiltonPreview();
+                document.getElementById('auto-sch-result-box').classList.add('d-none');
+                openModal('modalAutoSchedule');
+            }
+
+            async function onAutoScheduleYearChanged() {
+                const yearId = document.getElementById('auto-sch-year').value;
+                if (!yearId) return;
+                try {
+                    const res = await fetchApi(`/api/v1/semesters?academicYearId=${yearId}`);
+                    const sems = res.data || [];
+                    populateSelect('auto-sch-semester', sems, 'id', (s) => `${s.name}`);
+                    if (sems.length > 0) {
+                        document.getElementById('auto-sch-semester').value = sems[0].id;
+                    }
+                } catch (e) {}
+            }
+
+            function renderAutoScheduleSubjectTable(presetMap) {
+                const tbody = document.getElementById('auto-sch-subject-ratios-body');
+                if (!tbody) return;
+
+                const subjects = (cachedSubjects && cachedSubjects.length > 0) ? cachedSubjects : [
+                    { code: 'MATH', name: 'Toán' },
+                    { code: 'LIT', name: 'Ngữ văn' },
+                    { code: 'ENG', name: 'Ngoại ngữ 1' },
+                    { code: 'KHTN', name: 'Khoa học tự nhiên' },
+                    { code: 'HIST_GEO', name: 'Lịch sử và Địa lí' },
+                    { code: 'IT', name: 'Tin học' },
+                    { code: 'PE', name: 'Giáo dục thể chất' },
+                    { code: 'GDCD', name: 'Giáo dục công dân' },
+                    { code: 'TECH', name: 'Công nghệ' },
+                    { code: 'ART', name: 'Nghệ thuật' }
+                ];
+
+                let html = '';
+                subjects.forEach(s => {
+                    const w = (presetMap && presetMap[s.code] !== undefined)
+                        ? presetMap[s.code]
+                        : (DEFAULT_MOET_RATIOS[s.code] !== undefined ? DEFAULT_MOET_RATIOS[s.code] : 1.0);
+                    html += `
+                        <tr>
+                            <td class="ps-3 font-monospace small fw-bold text-secondary">${s.code}</td>
+                            <td class="small fw-semibold">${s.name}</td>
+                            <td class="text-center">
+                                <input type="number" step="0.5" min="0" max="20"
+                                       class="form-control form-control-sm text-center auto-subj-weight-input"
+                                       data-code="${s.code}" value="${w}"
+                                       oninput="recalculateHamiltonPreview()">
+                            </td>
+                            <td class="text-center small text-muted" id="auto-pct-${s.code}">0%</td>
+                            <td class="text-center">
+                                <span class="badge bg-primary bg-opacity-10 text-primary border border-primary-subtle px-2 py-1"
+                                      id="auto-periods-${s.code}">0 tiết</span>
+                            </td>
+                        </tr>
+                    `;
+                });
+                tbody.innerHTML = html;
+            }
+
+            function applySubjectRatioPreset(type) {
+                if (type === 'INTENSIVE_26') {
+                    document.getElementById('auto-sch-target-weekly').value = 26;
+                    renderAutoScheduleSubjectTable(INTENSIVE_26_RATIOS);
+                } else {
+                    document.getElementById('auto-sch-target-weekly').value = 23;
+                    renderAutoScheduleSubjectTable(DEFAULT_MOET_RATIOS);
+                }
+                recalculateHamiltonPreview();
+            }
+
+            function recalculateHamiltonPreview() {
+                const daysChecked = Array.from(document.querySelectorAll('.auto-day-cb:checked')).length;
+                const maxPerDay = parseInt(document.getElementById('auto-sch-max-per-day')?.value || '5', 10);
+                const capacity = daysChecked * maxPerDay;
+                const targetTotal = parseInt(document.getElementById('auto-sch-target-weekly')?.value || '23', 10);
+
+                const hintEl = document.getElementById('auto-sch-capacity-hint');
+                if (hintEl) {
+                    const isOver = targetTotal > capacity;
+                    hintEl.className = isOver ? 'mt-2 small text-danger fw-bold' : 'mt-2 small text-muted';
+                    hintEl.innerHTML = `Quỹ tiết khả dụng: <strong>${capacity} tiết/tuần</strong> (${daysChecked} ngày × ${maxPerDay} tiết/ngày)${isOver ? ' - Vượt quá quỹ tiết!' : ''}`;
+                }
+
+                const inputs = Array.from(document.querySelectorAll('.auto-subj-weight-input'));
+                let totalWeight = 0;
+                const weights = [];
+
+                inputs.forEach(inp => {
+                    const code = inp.getAttribute('data-code');
+                    const w = Math.max(0, parseFloat(inp.value) || 0);
+                    totalWeight += w;
+                    weights.push({ code, w });
+                });
+
+                document.getElementById('auto-sch-total-weight').textContent = totalWeight.toFixed(1);
+
+                // Tính số tiết nguyên theo phương pháp Hamilton (Largest Remainder)
+                const activeCount = weights.filter(x => x.w > 0).length;
+                const guaranteeMinOne = targetTotal >= activeCount;
+                const allocated = {};
+                const remainders = [];
+                let sumAllocated = 0;
+
+                weights.forEach(item => {
+                    const pct = totalWeight > 0 ? ((item.w / totalWeight) * 100) : 0;
+                    const pctEl = document.getElementById(`auto-pct-${item.code}`);
+                    if (pctEl) pctEl.textContent = `${pct.toFixed(1)}%`;
+
+                    if (item.w <= 0 || totalWeight <= 0) {
+                        allocated[item.code] = 0;
+                        remainders.push({ code: item.code, rem: -999 });
+                    } else {
+                        const exact = (item.w / totalWeight) * targetTotal;
+                        let fl = Math.floor(exact);
+                        let rem = exact - fl;
+                        if (guaranteeMinOne && fl < 1) {
+                            fl = 1;
+                            rem = -1;
+                        }
+                        allocated[item.code] = fl;
+                        sumAllocated += fl;
+                        remainders.push({ code: item.code, rem });
+                    }
+                });
+
+                let diff = targetTotal - sumAllocated;
+                if (diff > 0 && activeCount > 0) {
+                    remainders.sort((a, b) => b.rem - a.rem);
+                    let idx = 0;
+                    while (diff > 0) {
+                        const c = remainders[idx % remainders.length].code;
+                        if (allocated[c] !== undefined) {
+                            allocated[c]++;
+                            diff--;
+                        }
+                        idx++;
+                    }
+                }
+
+                let finalSum = 0;
+                Object.keys(allocated).forEach(code => {
+                    const p = allocated[code];
+                    finalSum += p;
+                    const badge = document.getElementById(`auto-periods-${code}`);
+                    if (badge) {
+                        badge.textContent = `${p} tiết`;
+                        badge.className = p > 0
+                            ? 'badge bg-primary bg-opacity-10 text-primary border border-primary-subtle px-2 py-1'
+                            : 'badge bg-light text-muted border px-2 py-1';
+                    }
+                });
+
+                const totalPeriodsEl = document.getElementById('auto-sch-total-periods');
+                if (totalPeriodsEl) totalPeriodsEl.textContent = `${finalSum} tiết`;
+            }
+
+            async function executeAutoSchedule() {
+                const semesterId = document.getElementById('auto-sch-semester').value;
+                if (!semesterId) {
+                    showAlert('Vui lòng chọn Học kỳ để xếp thời khóa biểu tự động.', 'warning');
+                    return;
+                }
+
+                const activeDays = Array.from(document.querySelectorAll('.auto-day-cb:checked'))
+                    .map(cb => parseInt(cb.value, 10));
+                if (activeDays.length === 0) {
+                    showAlert('Phải chọn ít nhất 1 ngày học trong tuần.', 'warning');
+                    return;
+                }
+
+                const subjectRatios = {};
+                document.querySelectorAll('.auto-subj-weight-input').forEach(inp => {
+                    const code = inp.getAttribute('data-code');
+                    const val = parseFloat(inp.value) || 0;
+                    subjectRatios[code] = val;
+                });
+
+                const payload = {
+                    semesterId: Number(semesterId),
+                    activeDays: activeDays,
+                    sessionMode: document.getElementById('auto-sch-session').value,
+                    maxPeriodsPerDay: parseInt(document.getElementById('auto-sch-max-per-day').value || '5', 10),
+                    targetWeeklyPeriods: parseInt(document.getElementById('auto-sch-target-weekly').value || '23', 10),
+                    maxPeriodsPerSubjectPerDay: parseInt(document.getElementById('auto-sch-max-subj-day').value || '2', 10),
+                    subjectRatios: subjectRatios,
+                    autoAssignTeachers: document.getElementById('auto-sch-assign-teachers').checked,
+                    overwriteExisting: document.getElementById('auto-sch-overwrite').checked,
+                    autoPublish: document.getElementById('auto-sch-publish').checked
+                };
+
+                const btn = document.getElementById('btn-run-auto-schedule');
+                const originalText = btn.innerHTML;
+                btn.disabled = true;
+                btn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span>Đang tính toán phân bổ GV & xếp TKB...`;
+
+                try {
+                    const res = await fetchApi('/api/v1/timetables/auto-generate', {
+                        method: 'POST',
+                        body: JSON.stringify(payload)
+                    });
+
+                    showAlert(res.message || 'Tự động xếp thời khóa biểu học kỳ thành công!', 'success');
+                    renderAutoScheduleResultSummary(res.data);
+
+                    // Đồng bộ làm mới cả Ma trận Giáo viên và Ma trận Lớp
+                    await loadTeacherScheduleData();
+                    if (document.getElementById('filter-class')?.value) {
+                        await loadTimetableForSelectedClass();
+                    }
+                } catch (e) {
+                    showAlert(e.message || 'Lỗi khi chạy tự động xếp lịch.', 'danger');
+                } finally {
+                    btn.disabled = false;
+                    btn.innerHTML = originalText;
+                }
+            }
+
+            function renderAutoScheduleResultSummary(data) {
+                const box = document.getElementById('auto-sch-result-box');
+                if (!box || !data) return;
+
+                let classesHtml = '';
+                (data.classResults || []).forEach(c => {
+                    const badgeCls = c.status === 'PUBLISHED' ? 'bg-success' : (c.status === 'REVIEW' ? 'bg-info text-dark' : 'bg-secondary');
+                    classesHtml += `
+                        <tr>
+                            <td class="fw-bold text-primary">${c.schoolClassName} (Khối ${c.gradeLevel})</td>
+                            <td class="text-center"><span class="badge ${badgeCls}">${c.status} (v${c.version})</span></td>
+                            <td class="text-center fw-bold">${c.scheduledPeriods} / ${c.requiredPeriods} tiết</td>
+                            <td class="small text-muted">${(c.assignedTeachers || []).join(' • ')}</td>
+                        </tr>
+                    `;
+                });
+
+                let teachersHtml = '';
+                (data.teacherLoads || []).forEach(t => {
+                    const barColor = t.loadPercentage > 100 ? 'bg-danger' : (t.loadPercentage >= 70 ? 'bg-success' : 'bg-primary');
+                    teachersHtml += `
+                        <tr>
+                            <td class="fw-semibold">${t.teacherName} <span class="text-muted small font-monospace">(${t.teacherCode})</span></td>
+                            <td class="small">${t.departmentName}</td>
+                            <td class="text-center">${t.classesCount} lớp</td>
+                            <td class="text-center fw-bold">${t.assignedWeeklyPeriods} / ${t.standardNormHours} tiết</td>
+                            <td style="width: 150px;">
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="progress flex-grow-1" style="height: 6px;">
+                                        <div class="progress-bar ${barColor}" style="width: ${Math.min(100, t.loadPercentage)}%"></div>
+                                    </div>
+                                    <span class="small fw-semibold">${t.loadPercentage}%</span>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                });
+
+                box.innerHTML = `
+                    <div class="card border-success shadow-sm">
+                        <div class="card-header bg-success bg-opacity-10 text-success fw-bold d-flex justify-content-between align-items-center py-2">
+                            <span><i class="bi bi-check-circle-fill me-2"></i>Kết quả Xếp lịch Tự động: ${data.semesterName} (${data.academicYearName})</span>
+                            <span class="badge bg-success">Hoàn thành trong ${data.executionTimeMs} ms</span>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3 mb-3 text-center">
+                                <div class="col-md-3">
+                                    <div class="p-2 bg-light rounded border">
+                                        <div class="text-muted small">Số lớp đã xếp lịch</div>
+                                        <div class="fs-5 fw-bold text-primary">${data.totalClassesScheduled} lớp</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="p-2 bg-light rounded border">
+                                        <div class="text-muted small">Phân công Lớp - Môn</div>
+                                        <div class="fs-5 fw-bold text-dark">${data.totalAssignmentsAllocated} phân công</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="p-2 bg-light rounded border">
+                                        <div class="text-muted small">Tổng số tiết đã xếp</div>
+                                        <div class="fs-5 fw-bold text-success">${data.totalPeriodsScheduled} tiết</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="p-2 bg-light rounded border">
+                                        <div class="text-muted small">Số tiết xung đột / chưa xếp</div>
+                                        <div class="fs-5 fw-bold ${data.unplacedPeriods === 0 ? 'text-success' : 'text-danger'}">${data.unplacedPeriods} tiết</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <h6 class="fw-bold small text-uppercase text-secondary mb-2">1. Trạng thái Thời khóa biểu từng Lớp</h6>
+                            <div class="table-responsive mb-3">
+                                <table class="table table-sm table-bordered align-middle mb-0">
+                                    <thead class="table-light small">
+                                        <tr>
+                                            <th style="width: 130px;">Lớp học</th>
+                                            <th style="width: 140px;" class="text-center">Trạng thái</th>
+                                            <th style="width: 120px;" class="text-center">Số tiết</th>
+                                            <th>Danh sách Giáo viên được phân công tự động</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>${classesHtml}</tbody>
+                                </table>
+                            </div>
+
+                            <h6 class="fw-bold small text-uppercase text-secondary mb-2">2. Thống kê Cân bằng tải Giảng dạy của Giáo viên</h6>
+                            <div class="table-responsive" style="max-height: 240px;">
+                                <table class="table table-sm table-bordered table-hover align-middle mb-0">
+                                    <thead class="table-light small">
+                                        <tr>
+                                            <th>Giáo viên</th>
+                                            <th>Bộ môn / Ban</th>
+                                            <th class="text-center">Số lớp</th>
+                                            <th class="text-center">Tải / Định mức</th>
+                                            <th>Tỉ lệ tải</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>${teachersHtml}</tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                box.classList.remove('d-none');
             }
         </script>
     </div>

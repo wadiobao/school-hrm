@@ -39,12 +39,14 @@ import com.kltn.school_hrm.module.core.repository.RoleRepository;
 import com.kltn.school_hrm.module.core.repository.UserRepository;
 import com.kltn.school_hrm.module.employee.entity.Employee;
 import com.kltn.school_hrm.module.employee.repository.EmployeeRepository;
+import com.kltn.school_hrm.module.scheduling.dto.request.AutoScheduleSettingRequest;
 import com.kltn.school_hrm.module.scheduling.entity.TimeSlot;
 import com.kltn.school_hrm.module.scheduling.entity.Timetable;
 import com.kltn.school_hrm.module.scheduling.entity.TimetableEntry;
 import com.kltn.school_hrm.module.scheduling.repository.TimeSlotRepository;
 import com.kltn.school_hrm.module.scheduling.repository.TimetableEntryRepository;
 import com.kltn.school_hrm.module.scheduling.repository.TimetableRepository;
+import com.kltn.school_hrm.module.scheduling.service.AutoScheduleEngineService;
 import com.kltn.school_hrm.module.teaching.entity.TeacherSubjectQualification;
 import com.kltn.school_hrm.module.teaching.entity.TeachingAssignment;
 import com.kltn.school_hrm.module.teaching.entity.TeachingNorm;
@@ -102,6 +104,7 @@ public class SchedulingDataInitializer implements ApplicationRunner {
     private final TeachingAssignmentRepository teachingAssignmentRepository;
     private final TimetableRepository timetableRepository;
     private final TimetableEntryRepository timetableEntryRepository;
+    private final AutoScheduleEngineService autoScheduleEngineService;
 
     private record DepartmentGroup(Department department, Subject subject, Employee head, Employee teacher1, Employee teacher2) {}
 
@@ -340,38 +343,20 @@ public class SchedulingDataInitializer implements ApplicationRunner {
         seedTeachingNorm(teacherPos, "2025-2026", 17);
         seedTeachingNorm(hodPos, "2025-2026", 14);
 
-        // 9. Khởi tạo Khung chương trình học Lớp 10A1 - Học kỳ 1 (ClassSubject) cho cả 10 môn
-        seedClassSubject(class10A1, subMath, semester1, 4);
-        seedClassSubject(class10A1, subLit, semester1, 4);
-        seedClassSubject(class10A1, subEng, semester1, 3);
-        seedClassSubject(class10A1, subKhtn, semester1, 3);
-        seedClassSubject(class10A1, subHistGeo, semester1, 2);
-        seedClassSubject(class10A1, subGdcd, semester1, 1);
-        seedClassSubject(class10A1, subTech, semester1, 1);
-        seedClassSubject(class10A1, subIt, semester1, 2);
-        seedClassSubject(class10A1, subPe, semester1, 2);
-        seedClassSubject(class10A1, subArt, semester1, 1);
-
-        // 10. Phân công giảng dạy Lớp 10A1 cho đủ 10 bộ môn
-        TeachingAssignment asgMath = seedAssignment(class10A1, subMath, grpToan.teacher1(), "Toán 10", 4.0, Curriculum.MOET);
-        TeachingAssignment asgLit = seedAssignment(class10A1, subLit, grpVan.teacher1(), "Ngữ văn 10", 4.0, Curriculum.MOET);
-        TeachingAssignment asgEng = seedAssignment(class10A1, subEng, grpNn1.teacher1(), "Ngoại ngữ 1 (Tiếng Anh 10)", 3.0, Curriculum.MOET);
-        TeachingAssignment asgKhtn = seedAssignment(class10A1, subKhtn, grpKhtn.teacher1(), "Khoa học tự nhiên 10", 3.0, Curriculum.MOET);
-        TeachingAssignment asgHistGeo = seedAssignment(class10A1, subHistGeo, grpSuDia.teacher1(), "Lịch sử và Địa lí 10", 2.0, Curriculum.MOET);
-        TeachingAssignment asgGdcd = seedAssignment(class10A1, subGdcd, grpGdcd.teacher1(), "Giáo dục công dân 10", 1.0, Curriculum.MOET);
-        TeachingAssignment asgTech = seedAssignment(class10A1, subTech, grpCn.teacher1(), "Công nghệ 10", 1.0, Curriculum.MOET);
-        TeachingAssignment asgIt = seedAssignment(class10A1, subIt, grpTin.teacher1(), "Tin học 10", 2.0, Curriculum.MOET);
-        TeachingAssignment asgPe = seedAssignment(class10A1, subPe, grpGdtc.teacher1(), "Giáo dục thể chất 10", 2.0, Curriculum.MOET);
-        TeachingAssignment asgArt = seedAssignment(class10A1, subArt, grpNgheThuat.teacher1(), "Nghệ thuật 10", 1.0, Curriculum.MOET);
-
-        // 11. Khởi tạo Thời khóa biểu mẫu đầy đủ 10 môn cho lớp 10A1 (Học kỳ 1)
-        seedSampleTimetable(
-                class10A1, semester1,
-                asgMath, asgLit, asgEng, asgKhtn, asgHistGeo,
-                asgGdcd, asgTech, asgIt, asgPe, asgArt,
-                room101, roomLabIT, roomLabKhtn, roomSport,
-                grpKhtn.teacher2()
-        );
+        // 9. Tự động phân bổ giáo viên (cân bằng tải) và xếp thời khóa biểu cho tất cả các lớp trong Học kỳ 1
+        if (!timetableRepository.existsBySchoolClassIdAndSemesterIdAndVersion(class10A2.getId(), semester1.getId(), 1)) {
+            autoScheduleEngineService.generateSemesterSchedule(AutoScheduleSettingRequest.builder()
+                    .semesterId(semester1.getId())
+                    .activeDays(List.of(1, 2, 3, 4, 5, 6))
+                    .sessionMode("MORNING")
+                    .maxPeriodsPerDay(5)
+                    .maxPeriodsPerSubjectPerDay(2)
+                    .targetWeeklyPeriods(23)
+                    .autoAssignTeachers(true)
+                    .overwriteExisting(true)
+                    .autoPublish(true)
+                    .build());
+        }
 
         log.info("=== SchedulingDataInitializer: Hoàn tất khởi tạo 10 Ban (30 nhân sự chuyên môn) & Thời khóa biểu ===");
     }

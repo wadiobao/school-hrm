@@ -16,10 +16,13 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.kltn.school_hrm.dto.common.ApiResponse;
 import com.kltn.school_hrm.module.scheduling.constraint.ValidationResult;
+import com.kltn.school_hrm.module.scheduling.dto.request.AutoScheduleSettingRequest;
 import com.kltn.school_hrm.module.scheduling.dto.request.TimetableRequest;
+import com.kltn.school_hrm.module.scheduling.dto.response.AutoScheduleResultResponse;
 import com.kltn.school_hrm.module.scheduling.dto.response.TeacherTimetableResponse;
 import com.kltn.school_hrm.module.scheduling.dto.response.TimetableMatrixResponse;
 import com.kltn.school_hrm.module.scheduling.dto.response.TimetableResponse;
+import com.kltn.school_hrm.module.scheduling.service.AutoScheduleEngineService;
 import com.kltn.school_hrm.module.scheduling.service.TimetableService;
 
 import jakarta.validation.Valid;
@@ -34,6 +37,17 @@ import lombok.RequiredArgsConstructor;
 public class TimetableController {
 
     private final TimetableService timetableService;
+    private final AutoScheduleEngineService autoScheduleEngineService;
+
+    @PostMapping("/auto-generate")
+    @PreAuthorize("@schedulingSecurity.canManageSchedule()")
+    public ResponseEntity<ApiResponse<AutoScheduleResultResponse>> autoGenerate(
+            @Valid @RequestBody AutoScheduleSettingRequest request) {
+        AutoScheduleResultResponse result = autoScheduleEngineService.generateSemesterSchedule(request);
+        return ResponseEntity.ok(ApiResponse.success(result,
+                String.format("Đã tự động phân công giáo viên và xếp thời khóa biểu cho %d lớp (%d tiết) trong %d ms",
+                        result.getTotalClassesScheduled(), result.getTotalPeriodsScheduled(), result.getExecutionTimeMs())));
+    }
 
     @PostMapping
     @PreAuthorize("@schedulingSecurity.canManageSchedule()")
