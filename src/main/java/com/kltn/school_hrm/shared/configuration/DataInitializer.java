@@ -88,9 +88,16 @@ public class DataInitializer implements ApplicationRunner {
 		Department adminDept = seedDepartment("BAN-GIAM-HOC", "Ban Giám hiệu");
 		Department hrDept = seedSubDepartment("PHONG-NS", "Phòng Nhân sự", adminDept);
 		Department itDept = seedSubDepartment("PHONG-CNTT", "Phòng Công nghệ Thông tin", adminDept);
+		seedSubDepartment("BAN-VAN", "Bộ môn Ngữ văn", adminDept);
 		Department mathDept = seedSubDepartment("BAN-TOAN", "Bộ môn Toán", adminDept);
-		seedSubDepartment("BAN-ANH", "Bộ môn Tiếng Anh", adminDept);
-		seedSubDepartment("BAN-LY", "Bộ môn Vật lý", adminDept);
+		seedSubDepartment("BAN-NN1", "Bộ môn Ngoại ngữ 1", adminDept);
+		seedSubDepartment("BAN-GDCD", "Bộ môn Giáo dục công dân", adminDept);
+		seedSubDepartment("BAN-SUDIA", "Bộ môn Lịch sử và Địa lí", adminDept);
+		seedSubDepartment("BAN-KHTN", "Bộ môn Khoa học tự nhiên", adminDept);
+		seedSubDepartment("BAN-CN", "Bộ môn Công nghệ", adminDept);
+		seedSubDepartment("BAN-TIN", "Bộ môn Tin học", adminDept);
+		seedSubDepartment("BAN-GDTC", "Bộ môn Giáo dục thể chất", adminDept);
+		seedSubDepartment("BAN-NGHETHUAT", "Bộ môn Nghệ thuật", adminDept);
 
 		// ── 3. Positions ──────────────────────────────────────────────────────
 		Position principalPos = seedPosition(Enums.PositionCode.PRINCIPAL, "Hiệu trưởng", new BigDecimal("0.50"));

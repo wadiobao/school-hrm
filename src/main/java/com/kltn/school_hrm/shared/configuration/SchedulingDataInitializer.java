@@ -5,6 +5,7 @@ import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,13 +18,14 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.kltn.school_hrm.module.academic.entity.AcademicYear;
+import com.kltn.school_hrm.module.academic.entity.ClassSubject;
 import com.kltn.school_hrm.module.academic.entity.Classroom;
 import com.kltn.school_hrm.module.academic.entity.SchoolClass;
 import com.kltn.school_hrm.module.academic.entity.Semester;
 import com.kltn.school_hrm.module.academic.entity.Subject;
 import com.kltn.school_hrm.module.academic.repository.AcademicYearRepository;
-import com.kltn.school_hrm.module.academic.repository.ClassroomRepository;
 import com.kltn.school_hrm.module.academic.repository.ClassSubjectRepository;
+import com.kltn.school_hrm.module.academic.repository.ClassroomRepository;
 import com.kltn.school_hrm.module.academic.repository.SchoolClassRepository;
 import com.kltn.school_hrm.module.academic.repository.SemesterRepository;
 import com.kltn.school_hrm.module.academic.repository.SubjectRepository;
@@ -68,7 +70,8 @@ import lombok.RequiredArgsConstructor;
 /**
  * Khởi tạo dữ liệu mẫu cho Phân hệ Học vụ & Xếp thời khóa biểu.
  * <p>
- * Chạy sau DataInitializer nền tảng (@Order(2)), tự động kiểm tra trùng lặp (idempotent).
+ * Khởi tạo 10 Ban (Bộ môn) theo Chương trình GDPT, mỗi ban gồm đúng 3 nhân sự:
+ * 1 Trưởng bộ môn (HEAD_OF_DEPARTMENT) và 2 Giáo viên (TEACHER).
  * </p>
  */
 @Component("schedulingDataInitializer")
@@ -100,77 +103,183 @@ public class SchedulingDataInitializer implements ApplicationRunner {
     private final TimetableRepository timetableRepository;
     private final TimetableEntryRepository timetableEntryRepository;
 
+    private record DepartmentGroup(Department department, Subject subject, Employee head, Employee teacher1, Employee teacher2) {}
+
     @Override
     @Transactional
     public void run(ApplicationArguments args) {
-        log.info("=== SchedulingDataInitializer: Bắt đầu khởi tạo dữ liệu mẫu Học vụ & Thời khóa biểu ===");
+        log.info("=== SchedulingDataInitializer: Bắt đầu khởi tạo 10 Ban chuyên môn (3 người/ban) & Thời khóa biểu ===");
 
-        // 1. Khởi tạo chức vụ & tài khoản Phó hiệu trưởng và các giáo viên bộ môn
-        Position vicePrincipalPos = positionRepository.findByCode(PositionCode.VICE_PRINCIPAL).orElseGet(() -> {
-            Position pos = Position.builder()
-                    .code(PositionCode.VICE_PRINCIPAL)
-                    .name("Phó hiệu trưởng")
-                    .positionAllowanceRate(new BigDecimal("0.40"))
-                    .build();
-            return positionRepository.save(pos);
-        });
+        // 1. Khởi tạo Roles & Positions cần thiết
+        Position vicePrincipalPos = positionRepository.findByCode(PositionCode.VICE_PRINCIPAL).orElseGet(() ->
+                positionRepository.save(Position.builder()
+                        .code(PositionCode.VICE_PRINCIPAL)
+                        .name("Phó hiệu trưởng")
+                        .positionAllowanceRate(new BigDecimal("0.40"))
+                        .build()));
 
-        Role boardRole = roleRepository.findByRoleCode(RoleCode.BOARD_OF_DIRECTORS).orElseGet(() -> {
-            Role r = Role.builder()
-                    .roleCode(RoleCode.BOARD_OF_DIRECTORS)
-                    .roleName("Ban Giám hiệu")
-                    .description("Ban Giám hiệu")
-                    .build();
-            return roleRepository.save(r);
-        });
-        Role teacherRole = roleRepository.findByRoleCode(RoleCode.TEACHER).orElseGet(() -> {
-            Role r = Role.builder()
-                    .roleCode(RoleCode.TEACHER)
-                    .roleName("Giáo viên")
-                    .description("Giáo viên giảng dạy")
-                    .build();
-            return roleRepository.save(r);
-        });
-        Position teacherPos = positionRepository.findByCode(PositionCode.TEACHER).orElseGet(() -> {
-            Position pos = Position.builder()
-                    .code(PositionCode.TEACHER)
-                    .name("Giáo viên")
-                    .positionAllowanceRate(new BigDecimal("0.20"))
-                    .build();
-            return positionRepository.save(pos);
-        });
+        Position hodPos = positionRepository.findByCode(PositionCode.HEAD_OF_DEPARTMENT).orElseGet(() ->
+                positionRepository.save(Position.builder()
+                        .code(PositionCode.HEAD_OF_DEPARTMENT)
+                        .name("Trưởng Bộ môn")
+                        .positionAllowanceRate(new BigDecimal("0.35"))
+                        .build()));
 
-        Department adminDept = departmentRepository.findByCode("BAN-GIAM-HOC").orElse(null);
-        Department mathDept = departmentRepository.findByCode("BAN-TOAN").orElse(null);
-        Department engDept = departmentRepository.findByCode("BAN-ANH").orElse(null);
-        Department physDept = departmentRepository.findByCode("BAN-LY").orElse(null);
+        Position teacherPos = positionRepository.findByCode(PositionCode.TEACHER).orElseGet(() ->
+                positionRepository.save(Position.builder()
+                        .code(PositionCode.TEACHER)
+                        .name("Giáo viên")
+                        .positionAllowanceRate(new BigDecimal("0.20"))
+                        .build()));
 
-        // Seed Vice Principal (Phó hiệu trưởng - có quyền tạo & công bố TKB)
-        Employee vicePrincipalEmp = seedEmployee(
+        Role boardRole = roleRepository.findByRoleCode(RoleCode.BOARD_OF_DIRECTORS).orElseGet(() ->
+                roleRepository.save(Role.builder()
+                        .roleCode(RoleCode.BOARD_OF_DIRECTORS)
+                        .roleName("Ban Giám hiệu")
+                        .description("Ban Giám hiệu")
+                        .build()));
+
+        Role hodRole = roleRepository.findByRoleCode(RoleCode.HEAD_OF_DEPARTMENT).orElseGet(() ->
+                roleRepository.save(Role.builder()
+                        .roleCode(RoleCode.HEAD_OF_DEPARTMENT)
+                        .roleName("Trưởng Bộ môn")
+                        .description("Quản lý chuyên môn và phê duyệt cấp bộ môn")
+                        .build()));
+
+        Role teacherRole = roleRepository.findByRoleCode(RoleCode.TEACHER).orElseGet(() ->
+                roleRepository.save(Role.builder()
+                        .roleCode(RoleCode.TEACHER)
+                        .roleName("Giáo viên")
+                        .description("Giáo viên giảng dạy")
+                        .build()));
+
+        Department adminDept = departmentRepository.findByCode("BAN-GIAM-HOC").orElseGet(() ->
+                departmentRepository.save(Department.builder()
+                        .code("BAN-GIAM-HOC")
+                        .name("Ban Giám hiệu")
+                        .build()));
+
+        // Seed Phó hiệu trưởng
+        seedEmployee(
                 "viceprincipal", "VicePrincipal@123", "EMP-VP-001",
                 "Trần Thị Phó Hiệu Trưởng", "viceprincipal@school-hrm.local", "0900000010",
                 "Nữ", boardRole, adminDept, vicePrincipalPos
         );
 
-        // Seed Giáo viên Văn, Anh, Lý
-        Employee teacherMath = employeeRepository.findByEmployeeCode("EMP-TEACHER-001").orElse(null);
-        Employee teacherVan = seedEmployee(
-                "teachervan", "Teacher@123", "EMP-T-VAN-001",
-                "Lê Thị Ngữ Văn", "van.le@school-hrm.local", "0900000011",
-                "Nữ", teacherRole, adminDept, teacherPos
-        );
-        Employee teacherAnh = seedEmployee(
-                "teacheranh", "Teacher@123", "EMP-T-ENG-001",
-                "Phạm Văn Tiếng Anh", "anh.pham@school-hrm.local", "0900000012",
-                "Nam", teacherRole, engDept, teacherPos
-        );
-        Employee teacherLy = seedEmployee(
-                "teacherly", "Teacher@123", "EMP-T-PHYS-001",
-                "Hoàng Văn Vật Lý", "ly.hoang@school-hrm.local", "0900000013",
-                "Nam", teacherRole, physDept, teacherPos
+        // 2. Khởi tạo 10 Môn học chuẩn theo chương trình GDPT
+        Subject subLit = seedSubject("LIT", "Ngữ văn",
+                "Rèn luyện kỹ năng đọc, viết, nói, nghe và cảm thụ văn học.", SubjectStatus.ACTIVE);
+        Subject subMath = seedSubject("MATH", "Toán",
+                "Học về số học, đại số, hình học, đo lường, thống kê và xác suất.", SubjectStatus.ACTIVE);
+        Subject subEng = seedSubject("ENG", "Ngoại ngữ 1",
+                "Thường là tiếng Anh (hoặc các ngoại ngữ khác tùy điều kiện từng trường).", SubjectStatus.ACTIVE);
+        Subject subGdcd = seedSubject("GDCD", "Giáo dục công dân",
+                "Giáo dục đạo đức, kỹ năng sống, kinh tế và pháp luật cơ bản.", SubjectStatus.ACTIVE);
+        Subject subHistGeo = seedSubject("HIST_GEO", "Lịch sử và Địa lí",
+                "Đây là môn tích hợp gồm hai phân môn Lịch sử và Địa lí.", SubjectStatus.ACTIVE);
+        Subject subKhtn = seedSubject("KHTN", "Khoa học tự nhiên",
+                "Đây là môn tích hợp kiến thức của ba phân môn Vật lí, Hóa học và Sinh học.", SubjectStatus.ACTIVE);
+        Subject subTech = seedSubject("TECH", "Công nghệ",
+                "Tìm hiểu về kỹ thuật, nông nghiệp, công nghiệp, điện tử và hướng nghiệp.", SubjectStatus.ACTIVE);
+        Subject subIt = seedSubject("IT", "Tin học",
+                "Học kỹ năng sử dụng máy tính, công nghệ thông tin, an toàn mạng và lập trình cơ bản.", SubjectStatus.ACTIVE);
+        Subject subPe = seedSubject("PE", "Giáo dục thể chất",
+                "Rèn luyện thể lực và các môn thể thao tự chọn.", SubjectStatus.ACTIVE);
+        Subject subArt = seedSubject("ART", "Nghệ thuật",
+                "Gồm hai nội dung là Âm nhạc và Mỹ thuật.", SubjectStatus.ACTIVE);
+
+        // 3. Khởi tạo 10 Ban (Bộ môn), mỗi ban gồm đúng 3 người: 1 Trưởng bộ môn + 2 Giáo viên
+        // 3.1. Ban Ngữ văn
+        DepartmentGroup grpVan = seedAcademicDepartmentWithStaff(
+                "BAN-VAN", "Bộ môn Ngữ văn", adminDept, subLit, "Thạc sĩ / Cử nhân Sư phạm Ngữ văn",
+                hodRole, hodPos, teacherRole, teacherPos,
+                "head_van", "Head@123", "EMP-VAN-H01", "ThS. Lê Thị Trưởng Ban Văn", "head.van@school-hrm.local", "0900000101", "Nữ",
+                "gv_van1", "Teacher@123", "EMP-VAN-T01", "Cô Nguyễn Thị Ngữ Văn", "gv.van1@school-hrm.local", "0900000102", "Nữ",
+                "gv_van2", "Teacher@123", "EMP-VAN-T02", "Thầy Trần Văn Văn Học", "gv.van2@school-hrm.local", "0900000103", "Nam"
         );
 
-        // 2. Khởi tạo Năm học & Học kỳ
+        // 3.2. Ban Toán (kế thừa mathhead và teacher từ DataInitializer + bổ sung gv_toan2 để đủ 3 người)
+        DepartmentGroup grpToan = seedAcademicDepartmentWithStaff(
+                "BAN-TOAN", "Bộ môn Toán", adminDept, subMath, "Thạc sĩ / Cử nhân Sư phạm Toán",
+                hodRole, hodPos, teacherRole, teacherPos,
+                "mathhead", "MathHead@123", "EMP-TBT-001", "ThS. Trần Thị Trưởng Ban Toán", "mathhead@school-hrm.local", "0900000006", "Nữ",
+                "teacher", "Teacher@123", "EMP-GV-001", "Thầy Hoàng Văn Giáo Viên", "teacher@school-hrm.local", "0900000004", "Nam",
+                "gv_toan2", "Teacher@123", "EMP-TOAN-T02", "Cô Phạm Thị Đại Số", "gv.toan2@school-hrm.local", "0900000203", "Nữ"
+        );
+
+        // 3.3. Ban Ngoại ngữ 1
+        DepartmentGroup grpNn1 = seedAcademicDepartmentWithStaff(
+                "BAN-NN1", "Bộ môn Ngoại ngữ 1", adminDept, subEng, "Thạc sĩ TESOL / Cử nhân Tiếng Anh",
+                hodRole, hodPos, teacherRole, teacherPos,
+                "head_nn1", "Head@123", "EMP-NN1-H01", "ThS. Phạm Văn Trưởng Ban Ngoại Ngữ", "head.nn1@school-hrm.local", "0900000301", "Nam",
+                "gv_nn1", "Teacher@123", "EMP-NN1-T01", "Cô Đặng Thị Tiếng Anh", "gv.nn1@school-hrm.local", "0900000302", "Nữ",
+                "gv_nn2", "Teacher@123", "EMP-NN1-T02", "Thầy Vũ Văn Ngoại Ngữ", "gv.nn2@school-hrm.local", "0900000303", "Nam"
+        );
+
+        // 3.4. Ban Giáo dục công dân
+        DepartmentGroup grpGdcd = seedAcademicDepartmentWithStaff(
+                "BAN-GDCD", "Bộ môn Giáo dục công dân", adminDept, subGdcd, "Cử nhân Sư phạm GDCD",
+                hodRole, hodPos, teacherRole, teacherPos,
+                "head_gdcd", "Head@123", "EMP-GDCD-H01", "ThS. Bùi Văn Trưởng Ban GDCD", "head.gdcd@school-hrm.local", "0900000401", "Nam",
+                "gv_gdcd1", "Teacher@123", "EMP-GDCD-T01", "Cô Hoàng Thị Công Dân", "gv.gdcd1@school-hrm.local", "0900000402", "Nữ",
+                "gv_gdcd2", "Teacher@123", "EMP-GDCD-T02", "Thầy Ngô Văn Pháp Luật", "gv.gdcd2@school-hrm.local", "0900000403", "Nam"
+        );
+
+        // 3.5. Ban Lịch sử và Địa lí
+        DepartmentGroup grpSuDia = seedAcademicDepartmentWithStaff(
+                "BAN-SUDIA", "Bộ môn Lịch sử và Địa lí", adminDept, subHistGeo, "Cử nhân Sư phạm Lịch sử - Địa lí",
+                hodRole, hodPos, teacherRole, teacherPos,
+                "head_sudia", "Head@123", "EMP-SD-H01", "ThS. Dương Văn Trưởng Ban Sử Địa", "head.sudia@school-hrm.local", "0900000501", "Nam",
+                "gv_sudia1", "Teacher@123", "EMP-SD-T01", "Thầy Lý Văn Lịch Sử", "gv.sudia1@school-hrm.local", "0900000502", "Nam",
+                "gv_sudia2", "Teacher@123", "EMP-SD-T02", "Cô Mai Thị Địa Lí", "gv.sudia2@school-hrm.local", "0900000503", "Nữ"
+        );
+
+        // 3.6. Ban Khoa học tự nhiên
+        DepartmentGroup grpKhtn = seedAcademicDepartmentWithStaff(
+                "BAN-KHTN", "Bộ môn Khoa học tự nhiên", adminDept, subKhtn, "Tiến sĩ / Cử nhân Khoa học Tự nhiên",
+                hodRole, hodPos, teacherRole, teacherPos,
+                "head_khtn", "Head@123", "EMP-KHTN-H01", "TS. Hoàng Văn Trưởng Ban KHTN", "head.khtn@school-hrm.local", "0900000601", "Nam",
+                "gv_khtn1", "Teacher@123", "EMP-KHTN-T01", "Thầy Trịnh Văn Vật Lí", "gv.khtn1@school-hrm.local", "0900000602", "Nam",
+                "gv_khtn2", "Teacher@123", "EMP-KHTN-T02", "Cô Võ Thị Hóa Sinh", "gv.khtn2@school-hrm.local", "0900000603", "Nữ"
+        );
+
+        // 3.7. Ban Công nghệ
+        DepartmentGroup grpCn = seedAcademicDepartmentWithStaff(
+                "BAN-CN", "Bộ môn Công nghệ", adminDept, subTech, "Kỹ sư / Cử nhân Sư phạm Kỹ thuật Công nghệ",
+                hodRole, hodPos, teacherRole, teacherPos,
+                "head_cn", "Head@123", "EMP-CN-H01", "ThS. Đỗ Văn Trưởng Ban Công Nghệ", "head.cn@school-hrm.local", "0900000701", "Nam",
+                "gv_cn1", "Teacher@123", "EMP-CN-T01", "Thầy Phan Văn Kỹ Thuật", "gv.cn1@school-hrm.local", "0900000702", "Nam",
+                "gv_cn2", "Teacher@123", "EMP-CN-T02", "Cô Lâm Thị Công Nghệ", "gv.cn2@school-hrm.local", "0900000703", "Nữ"
+        );
+
+        // 3.8. Ban Tin học
+        DepartmentGroup grpTin = seedAcademicDepartmentWithStaff(
+                "BAN-TIN", "Bộ môn Tin học", adminDept, subIt, "Thạc sĩ / Cử nhân Sư phạm Tin học & CNTT",
+                hodRole, hodPos, teacherRole, teacherPos,
+                "head_tin", "Head@123", "EMP-TIN-H01", "ThS. Đinh Văn Trưởng Ban Tin Học", "head.tin@school-hrm.local", "0900000801", "Nam",
+                "gv_tin1", "Teacher@123", "EMP-TIN-T01", "Thầy Trương Văn Lập Trình", "gv.tin1@school-hrm.local", "0900000802", "Nam",
+                "gv_tin2", "Teacher@123", "EMP-TIN-T02", "Cô Châu Thị Tin Học", "gv.tin2@school-hrm.local", "0900000803", "Nữ"
+        );
+
+        // 3.9. Ban Giáo dục thể chất
+        DepartmentGroup grpGdtc = seedAcademicDepartmentWithStaff(
+                "BAN-GDTC", "Bộ môn Giáo dục thể chất", adminDept, subPe, "Cử nhân Huấn luyện & Giáo dục Thể chất",
+                hodRole, hodPos, teacherRole, teacherPos,
+                "head_gdtc", "Head@123", "EMP-GDTC-H01", "ThS. Lương Văn Trưởng Ban Thể Chất", "head.gdtc@school-hrm.local", "0900000901", "Nam",
+                "gv_gdtc1", "Teacher@123", "EMP-GDTC-T01", "Thầy Hà Văn Thể Thao", "gv.gdtc1@school-hrm.local", "0900000902", "Nam",
+                "gv_gdtc2", "Teacher@123", "EMP-GDTC-T02", "Cô Tạ Thị Điền Kinh", "gv.gdtc2@school-hrm.local", "0900000903", "Nữ"
+        );
+
+        // 3.10. Ban Nghệ thuật
+        DepartmentGroup grpNgheThuat = seedAcademicDepartmentWithStaff(
+                "BAN-NGHETHUAT", "Bộ môn Nghệ thuật", adminDept, subArt, "Cử nhân Sư phạm Âm nhạc & Mỹ thuật",
+                hodRole, hodPos, teacherRole, teacherPos,
+                "head_nghethuat", "Head@123", "EMP-NT-H01", "ThS. Cao Thị Trưởng Ban Nghệ Thuật", "head.nghethuat@school-hrm.local", "0900001001", "Nữ",
+                "gv_nt1", "Teacher@123", "EMP-NT-T01", "Cô Đoàn Thị Âm Nhạc", "gv.nt1@school-hrm.local", "0900001002", "Nữ",
+                "gv_nt2", "Teacher@123", "EMP-NT-T02", "Thầy Huỳnh Văn Mỹ Thuật", "gv.nt2@school-hrm.local", "0900001003", "Nam"
+        );
+
+        // 4. Khởi tạo Năm học & Học kỳ
         AcademicYear academicYear = academicYearRepository.findByName("Năm học 2025-2026").orElseGet(() -> {
             AcademicYear y = AcademicYear.builder()
                     .name("Năm học 2025-2026")
@@ -194,9 +303,7 @@ public class SchedulingDataInitializer implements ApplicationRunner {
                             .endDate(LocalDate.of(2026, 1, 15))
                             .status(AcademicStatus.ACTIVE)
                             .build();
-                    Semester saved = semesterRepository.save(s);
-                    log.info("  [+] Đã tạo Học kỳ 1: {}", saved.getName());
-                    return saved;
+                    return semesterRepository.save(s);
                 });
 
         semesterRepository.findByAcademicYearId(academicYear.getId()).stream()
@@ -213,64 +320,109 @@ public class SchedulingDataInitializer implements ApplicationRunner {
                     return semesterRepository.save(s);
                 });
 
-        // 3. Khởi tạo Môn học (Subjects)
-        Subject subMath = seedSubject("MATH", "Toán học", "Môn Toán chuẩn THPT", SubjectStatus.ACTIVE);
-        Subject subLit = seedSubject("LIT", "Ngữ văn", "Môn Ngữ văn chuẩn THPT", SubjectStatus.ACTIVE);
-        Subject subEng = seedSubject("ENG", "Tiếng Anh", "Môn Tiếng Anh hệ 10 năm", SubjectStatus.ACTIVE);
-        Subject subPhys = seedSubject("PHYS", "Vật lý", "Môn Vật lý", SubjectStatus.ACTIVE);
-        Subject subChem = seedSubject("CHEM", "Hóa học", "Môn Hóa học", SubjectStatus.ACTIVE);
-        Subject subBio = seedSubject("BIO", "Sinh học", "Môn Sinh học", SubjectStatus.ACTIVE);
-        Subject subIT = seedSubject("IT", "Tin học", "Môn Tin học ứng dụng", SubjectStatus.ACTIVE);
-        Subject subPE = seedSubject("PE", "Giáo dục thể chất", "Môn Thể dục thể thao", SubjectStatus.ACTIVE);
+        // 5. Khởi tạo Phòng học (Classrooms)
+        Classroom room101 = seedClassroom("P101", "Phòng học 101", 45, ClassroomType.STANDARD);
+        Classroom room102 = seedClassroom("P102", "Phòng học 102", 45, ClassroomType.STANDARD);
+        Classroom room103 = seedClassroom("P103", "Phòng học 103", 45, ClassroomType.STANDARD);
+        Classroom roomLabIT = seedClassroom("LAB-IT1", "Phòng máy tính 1", 45, ClassroomType.LAB);
+        Classroom roomLabKhtn = seedClassroom("LAB-KHTN", "Phòng thí nghiệm KHTN", 45, ClassroomType.LAB);
+        Classroom roomSport = seedClassroom("SAN-GDTC", "Sân Thể thao ngoài trời", 100, ClassroomType.GYM);
 
-        // 4. Khởi tạo Phòng học (Classrooms)
-        Classroom room101 = seedClassroom("P101", "Phòng học 101", 45, ClassroomType.STANDARD, "Nhà A", 1);
-        Classroom room102 = seedClassroom("P102", "Phòng học 102", 45, ClassroomType.STANDARD, "Nhà A", 1);
-        Classroom room103 = seedClassroom("P103", "Phòng học 103", 45, ClassroomType.STANDARD, "Nhà A", 1);
-        Classroom roomLabIT = seedClassroom("LAB-IT1", "Phòng máy tính 1", 40, ClassroomType.LAB, "Nhà B", 2);
-        Classroom roomLabPhys = seedClassroom("LAB-PHYS", "Phòng thí nghiệm Lý", 40, ClassroomType.LAB, "Nhà B", 2);
-        Classroom roomSport = seedClassroom("SAN-GDTC", "Sân Thể thao ngoài trời", 100, ClassroomType.GYM, "Khu Thể thao", 1);
+        // 6. Khởi tạo Lớp học (School Classes)
+        SchoolClass class10A1 = seedSchoolClass("10A1", 10, academicYear, grpToan.teacher1(), 45, ClassStatus.ACTIVE);
+        SchoolClass class10A2 = seedSchoolClass("10A2", 10, academicYear, grpVan.teacher1(), 45, ClassStatus.ACTIVE);
+        SchoolClass class11A1 = seedSchoolClass("11A1", 11, academicYear, grpKhtn.teacher1(), 42, ClassStatus.ACTIVE);
 
-        // 5. Khởi tạo Lớp học (School Classes)
-        SchoolClass class10A1 = seedSchoolClass("10A1", 10, academicYear, teacherMath, 45, ClassStatus.ACTIVE);
-        SchoolClass class10A2 = seedSchoolClass("10A2", 10, academicYear, teacherVan, 45, ClassStatus.ACTIVE);
-        SchoolClass class11A1 = seedSchoolClass("11A1", 11, academicYear, teacherLy, 42, ClassStatus.ACTIVE);
-
-        // 6. Khởi tạo 9 Tiết học chuẩn (TimeSlots)
+        // 7. Khởi tạo 9 Tiết học chuẩn (TimeSlots)
         seedTimeSlots();
 
-        // 7. Khởi tạo Chuyên môn giáo viên (Teacher Qualifications - BR-09)
-        if (teacherMath != null && subMath != null) {
-            seedQualification(teacherMath, subMath, "Cử nhân Sư phạm Toán");
-        }
-        if (teacherVan != null && subLit != null) {
-            seedQualification(teacherVan, subLit, "Cử nhân Sư phạm Ngữ văn");
-        }
-        if (teacherAnh != null && subEng != null) {
-            seedQualification(teacherAnh, subEng, "Thạc sĩ TESOL, IELTS 8.0");
-        }
-        if (teacherLy != null && subPhys != null) {
-            seedQualification(teacherLy, subPhys, "Cử nhân Sư phạm Vật lý");
-        }
-
-        // 8. Khởi tạo Định mức giảng dạy (Teaching Norms - BR-07, BR-08)
+        // 8. Khởi tạo Định mức giảng dạy (Teaching Norms)
         seedTeachingNorm(teacherPos, "2025-2026", 17);
+        seedTeachingNorm(hodPos, "2025-2026", 14);
 
-        // 9. Phân công giảng dạy Lớp - Môn (Teaching Assignments - 1 năm học)
-        TeachingAssignment asgMath = seedAssignment(class10A1, subMath, teacherMath, "Toán 10", 4.0, Curriculum.MOET);
-        TeachingAssignment asgLit = seedAssignment(class10A1, subLit, teacherVan, "Ngữ văn 10", 4.0, Curriculum.MOET);
-        TeachingAssignment asgEng = seedAssignment(class10A1, subEng, teacherAnh, "Tiếng Anh 10", 3.0, Curriculum.MOET);
-        TeachingAssignment asgPhys = seedAssignment(class10A1, subPhys, teacherLy, "Vật lý 10", 2.0, Curriculum.MOET);
+        // 9. Khởi tạo Khung chương trình học Lớp 10A1 - Học kỳ 1 (ClassSubject) cho cả 10 môn
+        seedClassSubject(class10A1, subMath, semester1, 4);
+        seedClassSubject(class10A1, subLit, semester1, 4);
+        seedClassSubject(class10A1, subEng, semester1, 3);
+        seedClassSubject(class10A1, subKhtn, semester1, 3);
+        seedClassSubject(class10A1, subHistGeo, semester1, 2);
+        seedClassSubject(class10A1, subGdcd, semester1, 1);
+        seedClassSubject(class10A1, subTech, semester1, 1);
+        seedClassSubject(class10A1, subIt, semester1, 2);
+        seedClassSubject(class10A1, subPe, semester1, 2);
+        seedClassSubject(class10A1, subArt, semester1, 1);
 
-        // 10. Khởi tạo Thời khóa biểu mẫu cho lớp 10A1 (Học kỳ 1)
-        seedSampleTimetable(class10A1, semester1, asgMath, asgLit, asgEng, asgPhys, room101, teacherLy);
+        // 10. Phân công giảng dạy Lớp 10A1 cho đủ 10 bộ môn
+        TeachingAssignment asgMath = seedAssignment(class10A1, subMath, grpToan.teacher1(), "Toán 10", 4.0, Curriculum.MOET);
+        TeachingAssignment asgLit = seedAssignment(class10A1, subLit, grpVan.teacher1(), "Ngữ văn 10", 4.0, Curriculum.MOET);
+        TeachingAssignment asgEng = seedAssignment(class10A1, subEng, grpNn1.teacher1(), "Ngoại ngữ 1 (Tiếng Anh 10)", 3.0, Curriculum.MOET);
+        TeachingAssignment asgKhtn = seedAssignment(class10A1, subKhtn, grpKhtn.teacher1(), "Khoa học tự nhiên 10", 3.0, Curriculum.MOET);
+        TeachingAssignment asgHistGeo = seedAssignment(class10A1, subHistGeo, grpSuDia.teacher1(), "Lịch sử và Địa lí 10", 2.0, Curriculum.MOET);
+        TeachingAssignment asgGdcd = seedAssignment(class10A1, subGdcd, grpGdcd.teacher1(), "Giáo dục công dân 10", 1.0, Curriculum.MOET);
+        TeachingAssignment asgTech = seedAssignment(class10A1, subTech, grpCn.teacher1(), "Công nghệ 10", 1.0, Curriculum.MOET);
+        TeachingAssignment asgIt = seedAssignment(class10A1, subIt, grpTin.teacher1(), "Tin học 10", 2.0, Curriculum.MOET);
+        TeachingAssignment asgPe = seedAssignment(class10A1, subPe, grpGdtc.teacher1(), "Giáo dục thể chất 10", 2.0, Curriculum.MOET);
+        TeachingAssignment asgArt = seedAssignment(class10A1, subArt, grpNgheThuat.teacher1(), "Nghệ thuật 10", 1.0, Curriculum.MOET);
 
-        log.info("=== SchedulingDataInitializer: Hoàn tất khởi tạo dữ liệu mẫu Học vụ & Thời khóa biểu ===");
+        // 11. Khởi tạo Thời khóa biểu mẫu đầy đủ 10 môn cho lớp 10A1 (Học kỳ 1)
+        seedSampleTimetable(
+                class10A1, semester1,
+                asgMath, asgLit, asgEng, asgKhtn, asgHistGeo,
+                asgGdcd, asgTech, asgIt, asgPe, asgArt,
+                room101, roomLabIT, roomLabKhtn, roomSport,
+                grpKhtn.teacher2()
+        );
+
+        log.info("=== SchedulingDataInitializer: Hoàn tất khởi tạo 10 Ban (30 nhân sự chuyên môn) & Thời khóa biểu ===");
     }
 
     // ─────────────────────────────────────────────────────────────────────────
     // Helper Methods
     // ─────────────────────────────────────────────────────────────────────────
+
+    private DepartmentGroup seedAcademicDepartmentWithStaff(
+            String deptCode, String deptName, Department parentDept, Subject subject, String qualificationLevel,
+            Role hodRole, Position hodPos, Role teacherRole, Position teacherPos,
+            String headUser, String headPass, String headCode, String headName, String headEmail, String headPhone, String headGender,
+            String t1User, String t1Pass, String t1Code, String t1Name, String t1Email, String t1Phone, String t1Gender,
+            String t2User, String t2Pass, String t2Code, String t2Name, String t2Email, String t2Phone, String t2Gender) {
+
+        Department dept = departmentRepository.findByCode(deptCode).orElseGet(() -> {
+            Department d = Department.builder()
+                    .code(deptCode)
+                    .name(deptName)
+                    .parentDepartment(parentDept)
+                    .build();
+            return departmentRepository.save(d);
+        });
+        if (!deptName.equals(dept.getName())) {
+            dept.setName(deptName);
+            dept = departmentRepository.save(dept);
+        }
+
+        // 1. Trưởng bộ môn
+        Employee head = seedEmployee(headUser, headPass, headCode, headName, headEmail, headPhone, headGender, hodRole, dept, hodPos);
+        // 2. Giáo viên 1
+        Employee teacher1 = seedEmployee(t1User, t1Pass, t1Code, t1Name, t1Email, t1Phone, t1Gender, teacherRole, dept, teacherPos);
+        // 3. Giáo viên 2
+        Employee teacher2 = seedEmployee(t2User, t2Pass, t2Code, t2Name, t2Email, t2Phone, t2Gender, teacherRole, dept, teacherPos);
+
+        // Gán Trưởng bộ môn làm Manager của Ban
+        if (head != null && (dept.getManager() == null || !head.getId().equals(dept.getManager().getId()))) {
+            dept.setManager(head);
+            dept = departmentRepository.save(dept);
+            log.info("  [+] Bổ nhiệm Trưởng bộ môn '{}': {}", deptName, head.getFullName());
+        }
+
+        // Cấp chứng chỉ chuyên môn giảng dạy môn của Ban cho cả 3 người (1 Trưởng + 2 Giáo viên)
+        if (subject != null) {
+            if (head != null) seedQualification(head, subject, "Trưởng bộ môn - " + qualificationLevel);
+            if (teacher1 != null) seedQualification(teacher1, subject, qualificationLevel);
+            if (teacher2 != null) seedQualification(teacher2, subject, qualificationLevel);
+        }
+
+        return new DepartmentGroup(dept, subject, head, teacher1, teacher2);
+    }
 
     private Employee seedEmployee(String username, String rawPassword, String empCode,
                                   String fullName, String email, String phone,
@@ -280,19 +432,46 @@ public class SchedulingDataInitializer implements ApplicationRunner {
             return null;
         }
 
-        if (userRepository.existsByUsername(username)) {
-            return employeeRepository.findByEmployeeCode(empCode).orElse(null);
+        Optional<Employee> existingByCode = employeeRepository.findByEmployeeCode(empCode);
+        if (existingByCode.isPresent()) {
+            Employee existing = existingByCode.get();
+            boolean changed = false;
+            if (dept != null && (existing.getDepartment() == null || !dept.getId().equals(existing.getDepartment().getId()))) {
+                existing.setDepartment(dept);
+                changed = true;
+            }
+            if (pos != null && (existing.getPosition() == null || !pos.getId().equals(existing.getPosition().getId()))) {
+                existing.setPosition(pos);
+                changed = true;
+            }
+            return changed ? employeeRepository.save(existing) : existing;
         }
 
-        User user = User.builder()
-                .username(username)
-                .passwordHash(passwordEncoder.encode(rawPassword))
-                .email(email)
-                .phone(phone)
-                .status(UserStatus.ACTIVE)
-                .role(role)
-                .build();
-        user = userRepository.save(user);
+        Optional<User> existingUserOpt = userRepository.findByUsername(username);
+        User user;
+        if (existingUserOpt.isPresent()) {
+            user = existingUserOpt.get();
+            Optional<Employee> empByUser = employeeRepository.findByUserId(user.getId());
+            if (empByUser.isPresent()) {
+                return empByUser.get();
+            }
+        } else {
+            user = User.builder()
+                    .username(username)
+                    .passwordHash(passwordEncoder.encode(rawPassword))
+                    .email(email)
+                    .phone(phone)
+                    .status(UserStatus.ACTIVE)
+                    .role(role)
+                    .build();
+            user = userRepository.save(user);
+        }
+
+        // Tạo số CCCD 12 chữ số duy nhất dựa trên số điện thoại để tránh trùng lặp unique constraint
+        String digitsOnlyPhone = phone.replaceAll("\\D", "");
+        String uniqueCitizenId = "079" + (digitsOnlyPhone.length() >= 9
+                ? digitsOnlyPhone.substring(digitsOnlyPhone.length() - 9)
+                : String.format("%09d", Math.abs(empCode.hashCode()) % 1_000_000_000));
 
         Employee emp = Employee.builder()
                 .user(user)
@@ -300,7 +479,7 @@ public class SchedulingDataInitializer implements ApplicationRunner {
                 .fullName(fullName)
                 .email(email)
                 .phone(phone)
-                .citizenId("0790000" + empCode.substring(empCode.length() - 5))
+                .citizenId(uniqueCitizenId)
                 .gender(gender)
                 .department(dept)
                 .position(pos)
@@ -308,12 +487,17 @@ public class SchedulingDataInitializer implements ApplicationRunner {
                 .status(EmployeeStatus.WORKING)
                 .build();
         emp = employeeRepository.save(emp);
-        log.info("  [+] Đã tạo Nhân sự: {} ({}) - username: {}", fullName, empCode, username);
+        log.info("  [+] Đã tạo Nhân sự: {} ({}) - Ban: {} - username: {}",
+                fullName, empCode, dept != null ? dept.getName() : "N/A", username);
         return emp;
     }
 
     private Subject seedSubject(String code, String name, String desc, SubjectStatus status) {
-        return subjectRepository.findByCode(code).orElseGet(() -> {
+        return subjectRepository.findByCode(code).map(existing -> {
+            existing.setName(name);
+            existing.setDescription(desc);
+            return subjectRepository.save(existing);
+        }).orElseGet(() -> {
             Subject s = Subject.builder()
                     .code(code)
                     .name(name)
@@ -324,8 +508,21 @@ public class SchedulingDataInitializer implements ApplicationRunner {
         });
     }
 
-    private Classroom seedClassroom(String code, String name, Integer capacity,
-                                   ClassroomType type, String building, Integer floor) {
+    private void seedClassSubject(SchoolClass clazz, Subject subject, Semester semester, int periodsPerWeek) {
+        if (clazz == null || subject == null || semester == null) return;
+        if (!classSubjectRepository.existsBySchoolClassIdAndSubjectIdAndSemesterId(
+                clazz.getId(), subject.getId(), semester.getId())) {
+            ClassSubject cs = ClassSubject.builder()
+                    .schoolClass(clazz)
+                    .subject(subject)
+                    .semester(semester)
+                    .periodsPerWeek(periodsPerWeek)
+                    .build();
+            classSubjectRepository.save(cs);
+        }
+    }
+
+    private Classroom seedClassroom(String code, String name, Integer capacity, ClassroomType type) {
         return classroomRepository.findByCode(code).orElseGet(() -> {
             Classroom c = Classroom.builder()
                     .code(code)
@@ -416,10 +613,16 @@ public class SchedulingDataInitializer implements ApplicationRunner {
                 });
     }
 
-    private void seedSampleTimetable(SchoolClass clazz, Semester semester,
-                                     TeachingAssignment asgMath, TeachingAssignment asgLit,
-                                     TeachingAssignment asgEng, TeachingAssignment asgPhys,
-                                     Classroom room, Employee substituteTeacher) {
+    private void seedSampleTimetable(
+            SchoolClass clazz, Semester semester,
+            TeachingAssignment asgMath, TeachingAssignment asgLit,
+            TeachingAssignment asgEng, TeachingAssignment asgKhtn,
+            TeachingAssignment asgHistGeo, TeachingAssignment asgGdcd,
+            TeachingAssignment asgTech, TeachingAssignment asgIt,
+            TeachingAssignment asgPe, TeachingAssignment asgArt,
+            Classroom roomStandard, Classroom roomLabIT,
+            Classroom roomLabKhtn, Classroom roomSport,
+            Employee substituteKhtnTeacher) {
         if (clazz == null || semester == null) return;
 
         if (timetableRepository.existsBySchoolClassIdAndSemesterIdAndVersion(clazz.getId(), semester.getId(), 1)) {
@@ -435,46 +638,79 @@ public class SchedulingDataInitializer implements ApplicationRunner {
         tt = timetableRepository.save(tt);
 
         List<TimeSlot> slots = timeSlotRepository.findAll();
-        if (slots.size() < 4) return;
+        if (slots.size() < 5) return;
 
         TimeSlot slot1 = slots.get(0);
         TimeSlot slot2 = slots.get(1);
         TimeSlot slot3 = slots.get(2);
         TimeSlot slot4 = slots.get(3);
+        TimeSlot slot5 = slots.get(4);
 
-        // Thứ 2: Tiết 1-2 Toán, Tiết 3-4 Văn
+        // Thứ 2: Tiết 1-2 Toán (2/4), Tiết 3-4 Ngữ văn (2/4), Tiết 5 GDCD (1/1)
         if (asgMath != null) {
-            seedEntry(tt, asgMath, DayOfWeek.MONDAY.getValue(), slot1, room, null);
-            seedEntry(tt, asgMath, DayOfWeek.MONDAY.getValue(), slot2, room, null);
+            seedEntry(tt, asgMath, DayOfWeek.MONDAY.getValue(), slot1, roomStandard, null);
+            seedEntry(tt, asgMath, DayOfWeek.MONDAY.getValue(), slot2, roomStandard, null);
         }
         if (asgLit != null) {
-            seedEntry(tt, asgLit, DayOfWeek.MONDAY.getValue(), slot3, room, null);
-            seedEntry(tt, asgLit, DayOfWeek.MONDAY.getValue(), slot4, room, null);
+            seedEntry(tt, asgLit, DayOfWeek.MONDAY.getValue(), slot3, roomStandard, null);
+            seedEntry(tt, asgLit, DayOfWeek.MONDAY.getValue(), slot4, roomStandard, null);
+        }
+        if (asgGdcd != null) {
+            seedEntry(tt, asgGdcd, DayOfWeek.MONDAY.getValue(), slot5, roomStandard, null);
         }
 
-        // Thứ 3: Tiết 1-2 Tiếng Anh, Tiết 3-4 Vật Lý (có 1 tiết có Giáo viên dạy thay mẫu!)
+        // Thứ 3: Tiết 1-2 Ngoại ngữ 1 (2/3), Tiết 3-4 KHTN (2/3 - tiết 4 có GV dạy thay cùng ban), Tiết 5 Công nghệ (1/1)
         if (asgEng != null) {
-            seedEntry(tt, asgEng, DayOfWeek.TUESDAY.getValue(), slot1, room, null);
-            seedEntry(tt, asgEng, DayOfWeek.TUESDAY.getValue(), slot2, room, null);
+            seedEntry(tt, asgEng, DayOfWeek.TUESDAY.getValue(), slot1, roomStandard, null);
+            seedEntry(tt, asgEng, DayOfWeek.TUESDAY.getValue(), slot2, roomStandard, null);
         }
-        if (asgPhys != null) {
-            // Tiết 3 do giáo viên chính dạy
-            seedEntry(tt, asgPhys, DayOfWeek.TUESDAY.getValue(), slot3, room, null);
-            // Tiết 4 có giáo viên dạy thay mẫu
-            seedEntry(tt, asgPhys, DayOfWeek.TUESDAY.getValue(), slot4, room, substituteTeacher);
+        if (asgKhtn != null) {
+            seedEntry(tt, asgKhtn, DayOfWeek.TUESDAY.getValue(), slot3, roomLabKhtn, null);
+            seedEntry(tt, asgKhtn, DayOfWeek.TUESDAY.getValue(), slot4, roomLabKhtn, substituteKhtnTeacher);
+        }
+        if (asgTech != null) {
+            seedEntry(tt, asgTech, DayOfWeek.TUESDAY.getValue(), slot5, roomStandard, null);
         }
 
-        // Thứ 4: Tiết 1-2 Toán, Tiết 3-4 Văn
+        // Thứ 4: Tiết 1-2 Toán (4/4), Tiết 3-4 Ngữ văn (4/4)
         if (asgMath != null) {
-            seedEntry(tt, asgMath, DayOfWeek.WEDNESDAY.getValue(), slot1, room, null);
-            seedEntry(tt, asgMath, DayOfWeek.WEDNESDAY.getValue(), slot2, room, null);
+            seedEntry(tt, asgMath, DayOfWeek.WEDNESDAY.getValue(), slot1, roomStandard, null);
+            seedEntry(tt, asgMath, DayOfWeek.WEDNESDAY.getValue(), slot2, roomStandard, null);
         }
         if (asgLit != null) {
-            seedEntry(tt, asgLit, DayOfWeek.WEDNESDAY.getValue(), slot3, room, null);
-            seedEntry(tt, asgLit, DayOfWeek.WEDNESDAY.getValue(), slot4, room, null);
+            seedEntry(tt, asgLit, DayOfWeek.WEDNESDAY.getValue(), slot3, roomStandard, null);
+            seedEntry(tt, asgLit, DayOfWeek.WEDNESDAY.getValue(), slot4, roomStandard, null);
         }
 
-        log.info("  [+] Đã tạo Thời khóa biểu mẫu (PUBLISHED v1) cho Lớp: {} - Học kỳ: {}", clazz.getName(), semester.getName());
+        // Thứ 5: Tiết 1-2 Lịch sử & Địa lí (2/2), Tiết 3-4 Tin học (2/2)
+        if (asgHistGeo != null) {
+            seedEntry(tt, asgHistGeo, DayOfWeek.THURSDAY.getValue(), slot1, roomStandard, null);
+            seedEntry(tt, asgHistGeo, DayOfWeek.THURSDAY.getValue(), slot2, roomStandard, null);
+        }
+        if (asgIt != null) {
+            seedEntry(tt, asgIt, DayOfWeek.THURSDAY.getValue(), slot3, roomLabIT, null);
+            seedEntry(tt, asgIt, DayOfWeek.THURSDAY.getValue(), slot4, roomLabIT, null);
+        }
+
+        // Thứ 6: Tiết 1 Ngoại ngữ 1 (3/3), Tiết 2 KHTN (3/3), Tiết 3-4 Giáo dục thể chất (2/2)
+        if (asgEng != null) {
+            seedEntry(tt, asgEng, DayOfWeek.FRIDAY.getValue(), slot1, roomStandard, null);
+        }
+        if (asgKhtn != null) {
+            seedEntry(tt, asgKhtn, DayOfWeek.FRIDAY.getValue(), slot2, roomLabKhtn, null);
+        }
+        if (asgPe != null) {
+            seedEntry(tt, asgPe, DayOfWeek.FRIDAY.getValue(), slot3, roomSport, null);
+            seedEntry(tt, asgPe, DayOfWeek.FRIDAY.getValue(), slot4, roomSport, null);
+        }
+
+        // Thứ 7: Tiết 1 Nghệ thuật (1/1)
+        if (asgArt != null) {
+            seedEntry(tt, asgArt, DayOfWeek.SATURDAY.getValue(), slot1, roomStandard, null);
+        }
+
+        log.info("  [+] Đã tạo Thời khóa biểu mẫu 10 môn (PUBLISHED v1, 23 tiết/tuần) cho Lớp: {} - Học kỳ: {}",
+                clazz.getName(), semester.getName());
     }
 
     private void seedEntry(Timetable tt, TeachingAssignment asg, Integer dayOfWeek,
@@ -490,4 +726,3 @@ public class SchedulingDataInitializer implements ApplicationRunner {
         timetableEntryRepository.save(entry);
     }
 }
-

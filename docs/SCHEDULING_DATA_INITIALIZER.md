@@ -1,4 +1,4 @@
-# Tài Liệu Kỹ Thuật: Khởi Tạo Dữ Liệu Mẫu Phân Hệ Thời Khóa Biểu & Học Vụ
+# Tài Liệu Kỹ Thuật: Khởi Tạo Dữ Liệu Mẫu Phân Hệ Thời Khóa Biểu & 10 Ban Chuyên Môn
 
 Class chịu trách nhiệm: `com.kltn.school_hrm.shared.configuration.SchedulingDataInitializer`
 
@@ -7,163 +7,43 @@ Class chịu trách nhiệm: `com.kltn.school_hrm.shared.configuration.Schedulin
 ## 1. Tổng quan Kiến trúc
 
 - **Package**: `com.kltn.school_hrm.shared.configuration`
-- **Mục đích**: Tự động kiểm tra và khởi tạo dữ liệu mẫu cho toàn bộ chu trình Học vụ, Phân công giảng dạy và Thời khóa biểu khi ứng dụng Spring Boot khởi động.
-- **Thứ tự thực thi**: `@Order(2)` — Chạy ngay sau `DataInitializer` nền tảng (nơi tạo Roles, Departments, Positions cơ bản).
+- **Mục đích**: Tự động kiểm tra và khởi tạo dữ liệu mẫu cho 10 Ban (Bộ môn) chuẩn Chương trình GDPT, mỗi ban gồm đúng **3 nhân sự (1 Trưởng bộ môn + 2 Giáo viên)**, cùng với dữ liệu Học vụ, Phân công giảng dạy và Thời khóa biểu mẫu.
+- **Thứ tự thực thi**: `@Order(3)` cùng `@DependsOn({"roleDataInitializer", "dataInitializer"})`.
 - **Tính an toàn (Idempotency)**: Tất cả phương thức `seed*` đều kiểm tra sự tồn tại trong Database (`existsBy*` hoặc `findBy*`) trước khi lưu, đảm bảo an toàn tuyệt đối khi restart ứng dụng nhiều lần.
 
 ---
 
-## 2. Chi tiết 10 Khối Dữ liệu Khởi tạo
+## 2. Danh mục 10 Môn học & 10 Ban Chuyên môn (3 Người / Ban: 1 Trưởng + 2 Giáo viên)
 
-### 2.1. Tài khoản & Nhân sự mới (Users & Employees)
+> **Mật khẩu mặc định**:
+> - Tất cả các Trưởng bộ môn mới: `Head@123` (riêng Trưởng ban Toán `mathhead`: `MathHead@123`)
+> - Tất cả các Giáo viên: `Teacher@123`
 
-| Username | Password | Mã NV | Họ và tên | Chức vụ (Position) | Vai trò (Role) | Bộ phận |
-| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| `viceprincipal` | `VicePrincipal@123` | `EMP-VP-001` | **Trần Thị Phó Hiệu Trưởng** | `VICE_PRINCIPAL` | `BOARD_OF_DIRECTORS` | Ban Giám hiệu |
-| `teachervan` | `Teacher@123` | `EMP-T-VAN-001` | **Lê Thị Ngữ Văn** | `TEACHER` | `TEACHER` | Ban Giám hiệu / Văn |
-| `teacheranh` | `Teacher@123` | `EMP-T-ENG-001` | **Phạm Văn Tiếng Anh** | `TEACHER` | `TEACHER` | Bộ môn Tiếng Anh |
-| `teacherly` | `Teacher@123` | `EMP-T-PHYS-001` | **Hoàng Văn Vật Lý** | `TEACHER` | `TEACHER` | Bộ môn Vật lý |
+| STT | Mã Ban (`Department`) | Tên Ban / Bộ môn | Mã Môn (`Subject`) | Tên Môn & Mô tả chuẩn | 1 Trưởng Bộ Môn (`HEAD_OF_DEPARTMENT`) | 2 Giáo Viên (`TEACHER`) |
+| :-: | :--- | :--- | :--- | :--- | :--- | :--- |
+| **1** | `BAN-VAN` | **Bộ môn Ngữ văn** | `LIT` | **Ngữ văn**: Rèn luyện kỹ năng đọc, viết, nói, nghe và cảm thụ văn học. | `head_van` (`EMP-VAN-H01`)<br>ThS. Lê Thị Trưởng Ban Văn | 1. `gv_van1` (`EMP-VAN-T01`) - Cô Nguyễn Thị Ngữ Văn<br>2. `gv_van2` (`EMP-VAN-T02`) - Thầy Trần Văn Văn Học |
+| **2** | `BAN-TOAN` | **Bộ môn Toán** | `MATH` | **Toán**: Học về số học, đại số, hình học, đo lường, thống kê và xác suất. | `mathhead` (`EMP-TBT-001`)<br>ThS. Trần Thị Trưởng Ban Toán | 1. `teacher` (`EMP-GV-001`) - Thầy Hoàng Văn Giáo Viên<br>2. `gv_toan2` (`EMP-TOAN-T02`) - Cô Phạm Thị Đại Số |
+| **3** | `BAN-NN1` | **Bộ môn Ngoại ngữ 1** | `ENG` | **Ngoại ngữ 1**: Thường là tiếng Anh (hoặc các ngoại ngữ khác tùy điều kiện từng trường). | `head_nn1` (`EMP-NN1-H01`)<br>ThS. Phạm Văn Trưởng Ban Ngoại Ngữ | 1. `gv_nn1` (`EMP-NN1-T01`) - Cô Đặng Thị Tiếng Anh<br>2. `gv_nn2` (`EMP-NN1-T02`) - Thầy Vũ Văn Ngoại Ngữ |
+| **4** | `BAN-GDCD` | **Bộ môn Giáo dục công dân** | `GDCD` | **Giáo dục công dân**: Giáo dục đạo đức, kỹ năng sống, kinh tế và pháp luật cơ bản. | `head_gdcd` (`EMP-GDCD-H01`)<br>ThS. Bùi Văn Trưởng Ban GDCD | 1. `gv_gdcd1` (`EMP-GDCD-T01`) - Cô Hoàng Thị Công Dân<br>2. `gv_gdcd2` (`EMP-GDCD-T02`) - Thầy Ngô Văn Pháp Luật |
+| **5** | `BAN-SUDIA` | **Bộ môn Lịch sử và Địa lí** | `HIST_GEO` | **Lịch sử và Địa lí**: Đây là môn tích hợp gồm hai phân môn Lịch sử và Địa lí. | `head_sudia` (`EMP-SD-H01`)<br>ThS. Dương Văn Trưởng Ban Sử Địa | 1. `gv_sudia1` (`EMP-SD-T01`) - Thầy Lý Văn Lịch Sử<br>2. `gv_sudia2` (`EMP-SD-T02`) - Cô Mai Thị Địa Lí |
+| **6** | `BAN-KHTN` | **Bộ môn Khoa học tự nhiên** | `KHTN` | **Khoa học tự nhiên**: Đây là môn tích hợp kiến thức của ba phân môn Vật lí, Hóa học và Sinh học. | `head_khtn` (`EMP-KHTN-H01`)<br>TS. Hoàng Văn Trưởng Ban KHTN | 1. `gv_khtn1` (`EMP-KHTN-T01`) - Thầy Trịnh Văn Vật Lí<br>2. `gv_khtn2` (`EMP-KHTN-T02`) - Cô Võ Thị Hóa Sinh |
+| **7** | `BAN-CN` | **Bộ môn Công nghệ** | `TECH` | **Công nghệ**: Tìm hiểu về kỹ thuật, nông nghiệp, công nghiệp, điện tử và hướng nghiệp. | `head_cn` (`EMP-CN-H01`)<br>ThS. Đỗ Văn Trưởng Ban Công Nghệ | 1. `gv_cn1` (`EMP-CN-T01`) - Thầy Phan Văn Kỹ Thuật<br>2. `gv_cn2` (`EMP-CN-T02`) - Cô Lâm Thị Công Nghệ |
+| **8** | `BAN-TIN` | **Bộ môn Tin học** | `IT` | **Tin học**: Học kỹ năng sử dụng máy tính, công nghệ thông tin, an toàn mạng và lập trình cơ bản. | `head_tin` (`EMP-TIN-H01`)<br>ThS. Đinh Văn Trưởng Ban Tin Học | 1. `gv_tin1` (`EMP-TIN-T01`) - Thầy Trương Văn Lập Trình<br>2. `gv_tin2` (`EMP-TIN-T02`) - Cô Châu Thị Tin Học |
+| **9** | `BAN-GDTC` | **Bộ môn Giáo dục thể chất** | `PE` | **Giáo dục thể chất**: Rèn luyện thể lực và các môn thể thao tự chọn. | `head_gdtc` (`EMP-GDTC-H01`)<br>ThS. Lương Văn Trưởng Ban Thể Chất | 1. `gv_gdtc1` (`EMP-GDTC-T01`) - Thầy Hà Văn Thể Thao<br>2. `gv_gdtc2` (`EMP-GDTC-T02`) - Cô Tạ Thị Điền Kinh |
+| **10** | `BAN-NGHETHUAT` | **Bộ môn Nghệ thuật** | `ART` | **Nghệ thuật**: Gồm hai nội dung là Âm nhạc và Mỹ thuật. | `head_nghethuat` (`EMP-NT-H01`)<br>ThS. Cao Thị Trưởng Ban Nghệ Thuật | 1. `gv_nt1` (`EMP-NT-T01`) - Cô Đoàn Thị Âm Nhạc<br>2. `gv_nt2` (`EMP-NT-T02`) - Thầy Huỳnh Văn Mỹ Thuật |
 
-> **Lưu ý**: Tài khoản `viceprincipal` cùng với `hrmanager` là 2 tài khoản đại diện sở hữu thẩm quyền tạo, kiểm tra xung đột và công bố thời khóa biểu theo đúng yêu cầu nghiệp vụ.
-
----
-
-### 2.2. Năm học & Học kỳ (Academic Year & Semesters)
-- **Năm học**:
-  - Tên: `Năm học 2025-2026`
-  - Thời gian: `01/09/2025` $\rightarrow$ `30/06/2026`
-  - Trạng thái: `ACTIVE`
-- **Học kỳ trực thuộc**:
-  - **Học kỳ 1**: `Học kỳ 1 (2025-2026)` (`01/09/2025` $\rightarrow$ `15/01/2026`), Trạng thái: `ACTIVE`
-  - **Học kỳ 2**: `Học kỳ 2 (2025-2026)` (`16/01/2026` $\rightarrow$ `30/06/2026`), Trạng thái: `PLANNING`
-
----
-
-### 2.3. Danh mục Môn học (Subjects)
-Khởi tạo 8 môn học cốt lõi theo chương trình THPT, trạng thái `SubjectStatus.ACTIVE`:
-
-| Mã môn (`code`) | Tên môn học (`name`) | Mô tả chi tiết |
-| :--- | :--- | :--- |
-| `MATH` | **Toán học** | Môn Toán chuẩn THPT |
-| `LIT` | **Ngữ văn** | Môn Ngữ văn chuẩn THPT |
-| `ENG` | **Tiếng Anh** | Môn Tiếng Anh hệ 10 năm |
-| `PHYS` | **Vật lý** | Môn Vật lý thực nghiệm |
-| `CHEM` | **Hóa học** | Môn Hóa học |
-| `BIO` | **Sinh học** | Môn Sinh học |
-| `IT` | **Tin học** | Môn Tin học ứng dụng |
-| `PE` | **Giáo dục thể chất** | Môn Thể dục thể thao |
+> **Đặc điểm nghiệp vụ được tự động gán**:
+> 1. Mỗi Trưởng bộ môn được tự động gán làm `Department.manager` của ban tương ứng.
+> 2. Cả 3 thành viên trong mỗi ban (1 Trưởng + 2 Giáo viên) đều được cấp chứng chỉ chuyên môn (`TeacherSubjectQualification`) của môn học thuộc ban đó, sẵn sàng tham gia đứng lớp hoặc dạy thay.
 
 ---
 
-### 2.4. Danh mục Phòng học & Cơ sở vật chất (Classrooms)
-Khởi tạo 6 địa điểm giảng dạy, trạng thái `ClassroomStatus.AVAILABLE`:
+## 3. Khung chương trình học (`ClassSubject`) & Thời khóa biểu mẫu Lớp 10A1
 
-| Mã phòng (`code`) | Tên phòng học | Sức chứa | Loại phòng (`ClassroomType`) |
-| :--- | :--- | :---: | :--- |
-| `P101` | Phòng học 101 (Nhà A, Tầng 1) | 45 | `STANDARD` (Tiêu chuẩn / Lý thuyết) |
-| `P102` | Phòng học 102 (Nhà A, Tầng 1) | 45 | `STANDARD` (Tiêu chuẩn / Lý thuyết) |
-| `P103` | Phòng học 103 (Nhà A, Tầng 1) | 45 | `STANDARD` (Tiêu chuẩn / Lý thuyết) |
-| `LAB-IT1` | Phòng máy tính 1 (Nhà B, Tầng 2) | 40 | `LAB` (Phòng thực hành) |
-| `LAB-PHYS` | Phòng thí nghiệm Lý (Nhà B, Tầng 2) | 40 | `LAB` (Phòng thí nghiệm) |
-| `SAN-GDTC` | Sân Thể thao ngoài trời | 100 | `GYM` (Khu thể chất) |
-
----
-
-### 2.5. Danh sách Lớp học (School Classes)
-Khởi tạo 3 lớp học thuộc Năm học 2025-2026, trạng thái `ClassStatus.ACTIVE`:
-
-| Tên lớp | Khối | Sĩ số | Giáo viên Chủ nhiệm (GVCN) |
-| :--- | :---: | :---: | :--- |
-| **10A1** | 10 | 45 | Nguyễn Văn Giáo Viên (`EMP-TEACHER-001`) |
-| **10A2** | 10 | 45 | Lê Thị Ngữ Văn (`EMP-T-VAN-001`) |
-| **11A1** | 11 | 42 | Hoàng Văn Vật Lý (`EMP-T-PHYS-001`) |
-
----
-
-### 2.6. Khung 9 Tiết học chuẩn (Time Slots)
-Khởi tạo khung giờ biểu chuẩn gồm 5 tiết sáng và 4 tiết chiều:
-
-- **Buổi sáng (`MORNING`)**:
-  - Tiết 1: `07:00` – `07:45`
-  - Tiết 2: `07:50` – `08:35`
-  - *(Ra chơi 15 phút)*
-  - Tiết 3: `08:50` – `09:35`
-  - Tiết 4: `09:40` – `10:25`
-  - Tiết 5: `10:30` – `11:15`
-- **Buổi chiều (`AFTERNOON`)**:
-  - Tiết 6: `13:00` – `13:45`
-  - Tiết 7: `13:50` – `14:35`
-  - *(Ra chơi 15 phút)*
-  - Tiết 8: `14:50` – `15:35`
-  - Tiết 9: `15:40` – `16:25`
-
----
-
-### 2.7. Chuyên môn Giáo viên (Teacher Qualifications - BR-09)
-Thiết lập dữ liệu chứng chỉ chuyên môn cho giáo viên phục vụ kiểm tra ràng buộc phân công:
-
-| Giáo viên | Môn học chuyên môn | Bằng cấp / Chứng chỉ | Trạng thái |
-| :--- | :--- | :--- | :--- |
-| Nguyễn Văn Giáo Viên | `MATH` (Toán học) | Cử nhân Sư phạm Toán | `ACTIVE` |
-| Lê Thị Ngữ Văn | `LIT` (Ngữ văn) | Cử nhân Sư phạm Ngữ văn | `ACTIVE` |
-| Phạm Văn Tiếng Anh | `ENG` (Tiếng Anh) | Thạc sĩ TESOL, IELTS 8.0 | `ACTIVE` |
-| Hoàng Văn Vật Lý | `PHYS` (Vật lý) | Cử nhân Sư phạm Vật lý | `ACTIVE` |
-
----
-
-### 2.8. Định mức Giảng dạy (Teaching Norms - BR-07, BR-08)
-- Vị trí: `PositionCode.TEACHER` (Giáo viên)
-- Năm học: `2025-2026`
-- Định mức chuẩn: **17 tiết / tuần**
-- Tỷ lệ miễn giảm: 0%
-
----
-
-### 2.9. Phân công Giảng dạy Lớp - Môn (Teaching Assignments - 1 Năm học)
-Thực hiện phân công giáo viên cho lớp **10A1** (quy tắc: **1 giáo viên duy nhất cho 1 môn/lớp trong cả năm học**):
-
-| Lớp | Môn học | Giáo viên phụ trách | Số tiết/tuần | Chương trình |
-| :--- | :--- | :--- | :---: | :--- |
-| **10A1** | Toán học | Nguyễn Văn Giáo Viên | 4.0 | `MOET` |
-| **10A1** | Ngữ văn | Lê Thị Ngữ Văn | 4.0 | `MOET` |
-| **10A1** | Tiếng Anh | Phạm Văn Tiếng Anh | 3.0 | `MOET` |
-| **10A1** | Vật lý | Hoàng Văn Vật Lý | 2.0 | `MOET` |
-
----
-
-### 2.10. Thời khóa biểu mẫu (Sample Timetable & Entries)
-Tạo sẵn 1 thời khóa biểu chính thức đã công bố để kiểm thử giao diện:
-- **Lớp**: `10A1`
-- **Học kỳ**: `Học kỳ 1 (2025-2026)`
-- **Phiên bản**: `v1`
-- **Trạng thái**: `TimetableStatus.PUBLISHED`
-- **Chi tiết phân bổ các tiết học**:
-  - **Thứ 2 (Monday)**:
-    - Tiết 1: Môn Toán (GV chính: Nguyễn Văn Giáo Viên, Phòng: `P101`)
-    - Tiết 2: Môn Toán (GV chính: Nguyễn Văn Giáo Viên, Phòng: `P101`)
-    - Tiết 3: Môn Ngữ văn (GV chính: Lê Thị Ngữ Văn, Phòng: `P101`)
-    - Tiết 4: Môn Ngữ văn (GV chính: Lê Thị Ngữ Văn, Phòng: `P101`)
-  - **Thứ 3 (Tuesday)**:
-    - Tiết 1: Môn Tiếng Anh (GV chính: Phạm Văn Tiếng Anh, Phòng: `P101`)
-    - Tiết 2: Môn Tiếng Anh (GV chính: Phạm Văn Tiếng Anh, Phòng: `P101`)
-    - Tiết 3: Môn Vật lý (GV chính: Hoàng Văn Vật Lý, Phòng: `P101`)
-    - **Tiết 4: Môn Vật lý — Có Giáo viên dạy thay mẫu: Hoàng Văn Vật Lý $\rightarrow$ Nguyễn Văn Giáo Viên dạy thay** *(hiển thị badge cảnh báo dạy thay màu cam trên lưới)*
-  - **Thứ 4 (Wednesday)**:
-    - Tiết 1: Môn Toán (GV: Nguyễn Văn Giáo Viên, Phòng: `P101`)
-    - Tiết 2: Môn Toán (GV: Nguyễn Văn Giáo Viên, Phòng: `P101`)
-    - Tiết 3: Môn Ngữ văn (GV: Lê Thị Ngữ Văn, Phòng: `P101`)
-    - Tiết 4: Môn Ngữ văn (GV: Lê Thị Ngữ Văn, Phòng: `P101`)
-
----
-
-## 3. Cách thức Tái sử dụng & Kiểm tra
-1. Khi khởi động ứng dụng, console log sẽ hiển thị:
-   ```text
-   === SchedulingDataInitializer: Bắt đầu khởi tạo dữ liệu mẫu Học vụ & Thời khóa biểu ===
-     [+] Đã tạo Nhân sự: Trần Thị Phó Hiệu Trưởng (EMP-VP-001) - username: viceprincipal
-     ...
-     [+] Đã tạo Thời khóa biểu mẫu (PUBLISHED v1) cho Lớp: 10A1 - Học kỳ: Học kỳ 1 (2025-2026)
-   === SchedulingDataInitializer: Hoàn tất khởi tạo dữ liệu mẫu Học vụ & Thời khóa biểu ===
-   ```
-2. Đăng nhập với tài khoản `hrmanager` hoặc `viceprincipal` và truy cập `http://localhost:8080/scheduling`, chọn Lớp `10A1` để thấy ngay ma trận thời khóa biểu hoàn chỉnh.
-
+Khởi tạo đầy đủ 10 môn học cho Lớp `10A1` trong `Học kỳ 1 (2025-2026)` (tổng **23 tiết/tuần**), khớp 100% giữa `ClassSubject`, `TeachingAssignment` và `TimetableEntry`:
+- **Thứ 2**: Tiết 1-2 Toán, Tiết 3-4 Ngữ văn, Tiết 5 Giáo dục công dân
+- **Thứ 3**: Tiết 1-2 Ngoại ngữ 1, Tiết 3-4 Khoa học tự nhiên (Tiết 4 có Cô Võ Thị Hóa Sinh dạy thay), Tiết 5 Công nghệ
+- **Thứ 4**: Tiết 1-2 Toán, Tiết 3-4 Ngữ văn
+- **Thứ 5**: Tiết 1-2 Lịch sử và Địa lí, Tiết 3-4 Tin học (Phòng LAB-IT1)
+- **Thứ 6**: Tiết 1 Ngoại ngữ 1, Tiết 2 Khoa học tự nhiên (Phòng LAB-KHTN), Tiết 3-4 Giáo dục thể chất (Sân SAN-GDTC)
+- **Thứ 7**: Tiết 1 Nghệ thuật
