@@ -1,1771 +1,663 @@
-# Multi-Level Approval — Thiết kế tổng quát
+# Thiết kế Database & Business Rules — Class Scheduling
 
-## 1. Mục tiêu
+Theo mô hình bạn đã chọn:
 
-Refactor cơ chế `LeaveApproval` hiện tại thành một **Generic Multi-Level Approval Framework** có thể tái sử dụng cho nhiều nghiệp vụ:
+- Thời khóa biểu cố định theo tuần, từ thứ 2 đến thứ 6.
+- Mỗi môn học trong một lớp chỉ có một giáo viên phụ trách trong một học kỳ.
+- Một giáo viên có thể dạy nhiều lớp và nhiều môn nếu đủ điều kiện.
+- Một lớp có nhiều môn học.
+- Một tiết học gắn với một lớp, môn học, giáo viên, phòng học và khung giờ cụ thể.
 
-* Leave Request
-* Overtime Request
-* Payroll
-* Recruitment
-* Purchase Request
-* Contract
-* Salary Adjustment
-* ...
+Tôi đề xuất chia thành ba module: Academic Management, Teaching Assignment và Timetable Management. Thiết kế theo Modular Monolith, phù hợp với Spring Boot và cấu trúc domain/application/infrastructure mà bạn đang theo đuổi.
 
-### Mục tiêu kiến trúc
+## 1. Phân biệt các khái niệm
 
-```text
-LeaveRequest
-PayrollRequest
-OvertimeRequest
-RecruitmentRequest
-       │
-       ▼
-ApprovalEngine
-       │
-       ├── ApprovalPolicy
-       ├── ApprovalLevel
-       ├── ApprovalRequest
-       ├── ApprovalRequestStep
-       └── ApprovalAction
-```
+Trước khi thiết kế database, cần phân biệt:
 
-> **Ghi chú:** Approval Engine chỉ chịu trách nhiệm về workflow phê duyệt. Nó không được biết nghiệp vụ cụ thể là Leave, Payroll hay Recruitment.
+| Khái niệm           | Ý nghĩa                                     |
+| ------------------- | ------------------------------------------- |
+| Academic Year       | Năm học, ví dụ 2026–2027                    |
+| Semester            | Học kỳ thuộc một năm học                    |
+| SchoolClass         | Lớp học, ví dụ 10A1                         |
+| Subject             | Môn học, ví dụ Toán                         |
+| Teaching Assignment | Phân công giáo viên dạy một môn cho một lớp |
+| Time Slot           | Khung giờ/tiết học trong ngày               |
+| Timetable           | Thời khóa biểu của một lớp trong một học kỳ |
+| Timetable Entry     | Một tiết học được xếp vào lịch              |
 
----
-
-# 2. Vấn đề của `LeaveApproval` hiện tại
-
-## 2.1. Tightly Coupled với Leave
-
-Hiện tại:
-
-```java
-@ManyToOne
-private LeaveRequest leaveRequest;
-```
-
-Điều này khiến `LeaveApproval` chỉ dùng được cho Leave.
-
-Muốn dùng cho Payroll phải tạo:
-
-```text
-PayrollApproval
-```
-
-Muốn dùng cho Overtime lại tạo:
-
-```text
-OvertimeApproval
-```
-
-Dẫn tới nhiều code trùng lặp.
-
-### Thiết kế mới
-
-Dùng:
-
-```text
-businessType
-businessId
-```
+Điểm thiết kế: `TeachingAssignment` không phải là `TimetableEntry`.
 
 Ví dụ:
 
-```text
-businessType = LEAVE_REQUEST
-businessId   = 123
+- Phân công: Giáo viên A dạy Toán lớp 10A1, 5 tiết/tuần.
+- Thời khóa biểu: Giáo viên A dạy Toán lớp 10A1 vào thứ 2 tiết 1, thứ 3 tiết 2...
+
+Một phân công có thể tạo ra nhiều tiết học trong thời khóa biểu.
+
+## 2. Database Schema
+
+### 2.1. Academic Management
+
+Các bảng dữ liệu nền tảng.
+
+`academic_year`
+
+| Column     | Type        | Constraint |
+| ---------- | ----------- | ---------- |
+| id         | BIGINT      | PK         |
+| name       | VARCHAR(20) | UNIQUE     |
+| start_date | DATE        | NOT NULL   |
+| end_date   | DATE        | NOT NULL   |
+| status     | VARCHAR(20) | NOT NULL   |
+
+`semester`
+
+| Column           | Type        | Constraint |
+| ---------------- | ----------- | ---------- |
+| id               | BIGINT      | PK         |
+| academic_year_id | BIGINT      | FK         |
+| name             | VARCHAR(30) | NOT NULL   |
+| start_date       | DATE        | NOT NULL   |
+| end_date         | DATE        | NOT NULL   |
+| status           | VARCHAR(20) | NOT NULL   |
+
+`school_class`
+
+| Column              | Type        | Constraint       |
+| ------------------- | ----------- | ---------------- |
+| id                  | BIGINT      | PK               |
+| name                | VARCHAR(50) | NOT NULL         |
+| grade_level         | INT         | NOT NULL         |
+| academic_year_id    | BIGINT      | FK               |
+| homeroom_teacher_id | BIGINT      | FK → employee.id |
+| capacity            | INT         | NULL             |
+| status              | VARCHAR(20) | NOT NULL         |
+
+`subject`
+
+| Column      | Type         | Constraint |
+| ----------- | ------------ | ---------- |
+| id          | BIGINT       | PK         |
+| code        | VARCHAR(30)  | UNIQUE     |
+| name        | VARCHAR(100) | NOT NULL   |
+| description | TEXT         | NULL       |
+| status      | VARCHAR(20)  | NOT NULL   |
+
+`class_subject`
+
+| Column           | Type   | Constraint |
+| ---------------- | ------ | ---------- |
+| id               | BIGINT | PK         |
+| class_id         | BIGINT | FK         |
+| subject_id       | BIGINT | FK         |
+| periods_per_week | INT    | NOT NULL   |
+| semester_id      | BIGINT | FK         |
+
+UNIQUE(class_id, subject_id, semester_id)
+
+`class_subject` rất quan trọng. Nó định nghĩa chương trình học của từng lớp trong một học kỳ: lớp đó học môn gì và cần bao nhiêu tiết mỗi tuần.
+
+Không nên để `periods_per_week` trong `Subject`, vì cùng một môn có thể có số tiết khác nhau giữa các khối lớp.
+
+### 2.2. Teacher Allocation
+
+`teacher_subject_qualification`
+
+Lưu các môn mà giáo viên đủ điều kiện giảng dạy.
+
+| Column              | Type        | Constraint       |
+| ------------------- | ----------- | ---------------- |
+| id                  | BIGINT      | PK               |
+| teacher_id          | BIGINT      | FK → employee.id |
+| subject_id          | BIGINT      | FK → subject.id  |
+| qualification_level | VARCHAR(30) | NULL             |
+| status              | VARCHAR(20) | NOT NULL         |
+
+Ràng buộc:
+
+```
+UNIQUE (teacher_id, subject_id)
 ```
 
-Hoặc:
+`teaching_assignment`
 
-```text
-businessType = PAYROLL
-businessId   = 456
+Lưu phân công giáo viên cho một môn học của một lớp trong một học kỳ.
+
+| Column           | Type        | Constraint       |
+| ---------------- | ----------- | ---------------- |
+| id               | BIGINT      | PK               |
+| class_subject_id | BIGINT      | FK               |
+| teacher_id       | BIGINT      | FK → employee.id |
+| assigned_by      | BIGINT      | FK → user.id     |
+| assigned_at      | TIMESTAMP   | NOT NULL         |
+| status           | VARCHAR(20) | NOT NULL         |
+
+Ràng buộc:
+
+```
+UNIQUE (class_subject_id)
 ```
 
-> **Ghi chú:** Đây là trade-off có chủ ý. Database không có FK trực tiếp tới từng business table, nhưng Approval Engine có thể tái sử dụng cho nhiều module.
+Ràng buộc này bảo đảm mỗi môn của một lớp trong một học kỳ chỉ có một giáo viên phụ trách tại một thời điểm.
 
----
+Nếu cần thay giáo viên, nên cập nhật assignment có kiểm soát và lưu lịch sử thay đổi, không tạo thêm assignment đang hoạt động cho cùng `class_subject_id`.
 
-# 3. Mô hình tổng thể
+### 2.3. Timetable Management
 
-```text
-                 CONFIGURATION
-                      │
-                      ▼
-              ┌─────────────────┐
-              │ ApprovalPolicy  │
-              └────────┬────────┘
-                       │ 1:N
-                       ▼
-              ┌─────────────────┐
-              │ ApprovalLevel   │
-              └─────────────────┘
+`time_slot`
 
-
-                 RUNTIME
-                      │
-                      ▼
-              ┌─────────────────┐
-              │ ApprovalRequest │
-              └────────┬────────┘
-                       │
-              ┌────────┴─────────┐
-              ▼                  ▼
-   ┌────────────────────┐ ┌──────────────────┐
-   │ ApprovalRequestStep│ │ ApprovalAction   │
-   └────────────────────┘ └──────────────────┘
-```
-
-Có thể hiểu đơn giản:
-
-```text
-ApprovalPolicy
-"Workflow này phải duyệt như thế nào?"
-
-ApprovalLevel
-"Từng cấp phải duyệt theo rule nào?"
-
-ApprovalRequest
-"Đơn cụ thể này đang chạy workflow nào?"
-
-ApprovalRequestStep
-"Trong đơn này, từng bước đang ở trạng thái nào và ai được assign?"
-
-ApprovalAction
-"Trong lịch sử, ai đã thực hiện hành động gì?"
-```
-
----
-
-# 4. `ApprovalPolicy`
-
-## 4.1. Mục đích
-
-`ApprovalPolicy` là **cấu hình workflow**.
+| Column        | Type        | Constraint |
+| ------------- | ----------- | ---------- |
+| id            | BIGINT      | PK         |
+| period_number | INT         | NOT NULL   |
+| start_time    | TIME        | NOT NULL   |
+| end_time      | TIME        | NOT NULL   |
+| session       | VARCHAR(20) | NOT NULL   |
 
 Ví dụ:
 
-```text
-LEAVE_APPROVAL_POLICY v1
+| Period | Session   | Start | End   |
+| ------ | --------- | ----- | ----- |
+| 1      | MORNING   | 07:00 | 07:45 |
+| 2      | MORNING   | 07:50 | 08:35 |
+| 3      | MORNING   | 08:45 | 09:30 |
+| 1      | AFTERNOON | 13:00 | 13:45 |
+| 2      | AFTERNOON | 13:50 | 14:35 |
+
+Nếu có cả ca sáng và chiều, `period_number` có thể lặp lại giữa các ca. Vì vậy nên có:
+
+```
+UNIQUE (session, period_number)
 ```
 
-quy định:
+`classroom`
 
-```text
-Level 1 → Direct Manager
-Level 2 → Parent Department Manager
+| Column    | Type         | Constraint |
+| --------- | ------------ | ---------- |
+| id        | BIGINT       | PK         |
+| code      | VARCHAR(30)  | UNIQUE     |
+| name      | VARCHAR(100) | NOT NULL   |
+| capacity  | INT          | NULL       |
+| room_type | VARCHAR(30)  | NULL       |
+| status    | VARCHAR(20)  | NOT NULL   |
+
+`timetable`
+
+Một bản thời khóa biểu của một lớp trong một học kỳ.
+
+| Column       | Type        | Constraint   |
+| ------------ | ----------- | ------------ |
+| id           | BIGINT      | PK           |
+| class_id     | BIGINT      | FK           |
+| semester_id  | BIGINT      | FK           |
+| version      | INT         | NOT NULL     |
+| status       | VARCHAR(20) | NOT NULL     |
+| created_by   | BIGINT      | FK → user.id |
+| published_at | TIMESTAMP   | NULL         |
+
+Ràng buộc:
+
+```
+UNIQUE (class_id, semester_id, version)
 ```
 
-## 4.2. Fields
+Không đặt `UNIQUE(class_id, semester_id)` vì một lớp có thể có nhiều phiên bản thời khóa biểu trong cùng học kỳ.
 
-```java
-@Entity
-public class ApprovalPolicy extends BaseEntity {
+`timetable_entry`
 
-    private String code;
+Một dòng tương ứng với một tiết học cụ thể.
 
-    private String name;
+| Column                 | Type     | Constraint |
+| ---------------------- | -------- | ---------- |
+| id                     | BIGINT   | PK         |
+| timetable_id           | BIGINT   | FK         |
+| teaching_assignment_id | BIGINT   | FK         |
+| day_of_week            | SMALLINT | NOT NULL   |
+| time_slot_id           | BIGINT   | FK         |
+| classroom_id           | BIGINT   | FK         |
 
-    private String businessType;
+Ví dụ:
 
-    private Integer version;
+```
+TimetableEntry
+----------------------------------------------------
+Timetable | Assignment | Day | Slot | Classroom
+----------------------------------------------------
+1         | 10         | 1   | 1    | P101
+1         | 11         | 1   | 2    | P101
+1         | 12         | 2   | 1    | P102
+```
 
-    private Boolean isActive;
+Quy ước `day_of_week`:
 
-    private String description;
+```
+1 = MONDAY
+2 = TUESDAY
+3 = WEDNESDAY
+4 = THURSDAY
+5 = FRIDAY
+6 = SATURDAY
+7 = SUNDAY
+```
+
+Nếu trường chỉ học từ thứ 2 đến thứ 6, validator sẽ giới hạn từ 1 đến 5.
+
+## 3. Quan hệ giữa các bảng
+
+Sơ đồ quan hệ logic:
+
+```
+AcademicYear
+    |
+    | 1 - N
+    v
+Semester
+    |
+    +--------------------+
+    |                    |
+    v                    v
+ClassSubject          SchoolClass
+    |                    |
+    | 1 - 1              | 1 - N
+    v                    v
+TeachingAssignment   Timetable
+    |                    |
+    | N - 1              | 1 - N
+    v                    v
+Employee            TimetableEntry
+                         |
+            +------------+-------------+
+            |            |             |
+            v            v             v
+      TimeSlot      Classroom    TeachingAssignment
+```
+
+Một số quan hệ bổ sung:
+
+```
+TeacherSubjectQualification
+    N
+    |
+    +---- Employee
+    |
+    +---- Subject
+```
+
+Lưu ý về lịch sử phân công: Nếu cần lưu lịch sử giáo viên từng phụ trách môn học, không nên xóa assignment cũ. Có thể bổ sung:
+
+`teaching_assignment_history`
+
+| Field                  | Ý nghĩa             |
+| ---------------------- | ------------------- |
+| teaching_assignment_id | Phân công liên quan |
+| old_teacher_id         | Giáo viên cũ        |
+| new_teacher_id         | Giáo viên mới       |
+| changed_by             | Người thay đổi      |
+| changed_at             | Thời điểm thay đổi  |
+| reason                 | Lý do               |
+
+## 4. Business Rules
+
+Đây là phần quan trọng hơn việc tạo các bảng. Database chỉ lưu được cấu trúc; Service phải đảm bảo các quy tắc nghiệp vụ.
+
+### 4.1. Quy tắc Academic Structure
+
+| ID    | Business Rule                                                                 |
+| ----- | ----------------------------------------------------------------------------- |
+| BR-01 | Ngày kết thúc năm học phải lớn hơn ngày bắt đầu.                              |
+| BR-02 | Học kỳ phải nằm trong khoảng thời gian của năm học.                           |
+| BR-03 | Các học kỳ trong cùng năm học không được chồng lấn nếu trường không cho phép. |
+| BR-04 | Lớp học phải thuộc một năm học.                                               |
+| BR-05 | Số tiết mỗi môn trong lớp phải lớn hơn 0.                                     |
+| BR-06 | Một lớp không được khai báo trùng môn trong cùng học kỳ.                      |
+
+### 4.2. Quy tắc Teacher Allocation
+
+| ID    | Business Rule                                                                  |
+| ----- | ------------------------------------------------------------------------------ |
+| BR-07 | Giáo viên phải tồn tại trong Employee.                                         |
+| BR-08 | Giáo viên phải có trạng thái làm việc hợp lệ.                                  |
+| BR-09 | Giáo viên phải có chuyên môn phù hợp với môn được phân công.                   |
+| BR-10 | Mỗi ClassSubject chỉ có một TeachingAssignment đang hoạt động.                 |
+| BR-11 | Một giáo viên có thể phụ trách nhiều lớp.                                      |
+| BR-12 | Tổng số tiết được phân công không được vượt giới hạn giảng dạy của giáo viên.  |
+| BR-13 | Không được phân công vào học kỳ đã kết thúc hoặc không còn cho phép chỉnh sửa. |
+
+Ví dụ kiểm tra tải giảng dạy:
+
+```
+Teacher A:
+- 10A1 - Math: 5 periods/week
+- 10A2 - Math: 5 periods/week
+- 10A3 - Math: 5 periods/week
+
+Total = 15 periods/week
+Max workload = 18 periods/week
+
+Result: VALID
+```
+
+Nên xây `TeacherWorkloadService` để tổng hợp tải giảng dạy từ các phân công đang hoạt động.
+
+### 4.3. Quy tắc Timetable
+
+| ID    | Business Rule                                                                     |
+| ----- | --------------------------------------------------------------------------------- |
+| BR-14 | Một lớp không được có hai môn cùng một ngày và tiết học.                          |
+| BR-15 | Một giáo viên không được dạy hai lớp cùng một thời điểm.                          |
+| BR-16 | Một phòng học không được được sử dụng bởi hai lớp cùng thời điểm.                 |
+| BR-17 | Một tiết học phải tham chiếu đến TeachingAssignment hợp lệ.                       |
+| BR-18 | Tổng số tiết đã xếp cho môn phải bằng số tiết yêu cầu mỗi tuần trước khi công bố. |
+| BR-19 | Chỉ được xếp lịch vào những ngày và khung giờ trường cho phép.                    |
+| BR-20 | Giáo viên không được xếp lịch vào thời gian đã đăng ký không thể giảng dạy.       |
+| BR-21 | Sức chứa phòng phải phù hợp với sĩ số lớp nếu trường áp dụng kiểm tra sức chứa.   |
+| BR-22 | Không được sửa trực tiếp thời khóa biểu đã công bố.                               |
+
+## 5. Kiểm tra trùng lịch
+
+Đây là ba điều kiện bắt buộc.
+
+### 5.1. Trùng lớp
+
+Một lớp chỉ có thể học một môn tại một thời điểm.
+
+```
+SELECT COUNT(*)
+FROM timetable_entry te
+JOIN timetable t ON t.id = te.timetable_id
+WHERE t.id = :timetableId
+  AND te.day_of_week = :day
+  AND te.time_slot_id = :timeSlotId;
+```
+
+Nếu kết quả lớn hơn 0 thì lớp đã có tiết học tại vị trí đó.
+
+### 5.2. Trùng giáo viên
+
+```
+SELECT COUNT(*)
+FROM timetable_entry te
+JOIN timetable t ON t.id = te.timetable_id
+JOIN teaching_assignment ta
+    ON ta.id = te.teaching_assignment_id
+WHERE t.semester_id = :semesterId
+  AND t.status IN ('DRAFT', 'REVIEW', 'PUBLISHED')
+  AND ta.teacher_id = :teacherId
+  AND te.day_of_week = :day
+  AND te.time_slot_id = :timeSlotId;
+```
+
+Nếu kết quả lớn hơn 0 thì giáo viên đã có lịch dạy tại thời điểm đó.
+
+### 5.3. Trùng phòng
+
+```
+SELECT COUNT(*)
+FROM timetable_entry te
+JOIN timetable t ON t.id = te.timetable_id
+WHERE t.semester_id = :semesterId
+  AND t.status IN ('DRAFT', 'REVIEW', 'PUBLISHED')
+  AND te.classroom_id = :classroomId
+  AND te.day_of_week = :day
+  AND te.time_slot_id = :timeSlotId;
+```
+
+Nếu kết quả lớn hơn 0 thì phòng đã được sử dụng.
+
+Lưu ý quan trọng: Ba câu query trên là logic minh họa. Khi triển khai thực tế, cần loại trừ chính bản ghi đang cập nhật, và chỉ kiểm tra các thời khóa biểu có hiệu lực hoặc đang được giữ chỗ. Đặc biệt, không nên kiểm tra riêng từng query rồi insert mà không kiểm soát đồng thời, vì hai request có thể cùng vượt qua kiểm tra.
+
+## 6. State Machine cho Timetable
+
+Tôi đề xuất vòng đời:
+
+```
+DRAFT
+  |
+  v
+VALIDATING
+  |
+  +---- Validation Failed ----> DRAFT
+  |
+  v
+REVIEW
+  |
+  +---- Rejected -------------> DRAFT
+  |
+  v
+PUBLISHED
+  |
+  v
+ARCHIVED
+```
+
+Enum:
+
+```
+public enum TimetableStatus {
+    DRAFT,
+    VALIDATING,
+    REVIEW,
+    PUBLISHED,
+    ARCHIVED
 }
 ```
 
+Quy tắc:
+
+- `DRAFT`: Được thêm, sửa, xóa các tiết học.
+- `VALIDATING`: Hệ thống đang kiểm tra tính hợp lệ.
+- `REVIEW`: Đã vượt qua validation, chờ người có quyền duyệt.
+- `PUBLISHED`: Đã công bố, không được sửa trực tiếp.
+- `ARCHIVED`: Phiên bản cũ, không còn được sử dụng.
+
+Khi cần thay đổi thời khóa biểu đã công bố:
+
+1. Tạo phiên bản mới.
+2. Sao chép các tiết học từ phiên bản hiện tại.
+3. Thực hiện điều chỉnh trên phiên bản mới.
+4. Validate và phê duyệt.
+5. Công bố phiên bản mới.
+6. Chuyển phiên bản cũ sang `ARCHIVED`.
+
 Ví dụ:
 
-```text
-code         = LEAVE_APPROVAL_POLICY
-businessType = LEAVE_REQUEST
-version      = 1
-isActive     = true
+```
+Timetable 10A1 - Semester 1
+
+Version 1: PUBLISHED
+Version 2: DRAFT
+
+Sau khi Version 2 được công bố:
+
+Version 1: ARCHIVED
+Version 2: PUBLISHED
 ```
 
----
+Nên có ràng buộc chỉ một phiên bản `PUBLISHED` cho mỗi lớp và học kỳ. Có thể sử dụng partial unique index nếu database hỗ trợ, hoặc kiểm soát trong transaction kết hợp locking.
 
-# 5. `ApprovalLevel`
+## 7. Thiết kế Service trong Spring Boot
 
-## 5.1. Mục đích
+Tôi đề xuất phân chia như sau:
 
-`ApprovalLevel` định nghĩa **một bước trong Policy**.
-
-Ví dụ:
-
-```text
-Level 1
-    Direct Manager
-
-Level 2
-    Parent Department Manager
+```
+modules/
+├── academic/
+│   ├── academic-year/
+│   ├── semester/
+│   ├── school-class/
+│   ├── subject/
+│   └── classroom/
+│
+├── teaching/
+│   ├── qualification/
+│   ├── class-subject/
+│   ├── assignment/
+│   └── workload/
+│
+└── scheduling/
+    ├── timetable/
+    ├── timetable-entry/
+    ├── validator/
+    └── publication/
 ```
 
-## 5.2. Fields
+Các Service:
 
-```java
-@Entity
-public class ApprovalLevel extends BaseEntity {
+| Service                       | Trách nhiệm                     |
+| ----------------------------- | ------------------------------- |
+| `AcademicYearService`         | Quản lý năm học                 |
+| `SemesterService`             | Quản lý học kỳ                  |
+| `ClassSubjectService`         | Quản lý môn học của từng lớp    |
+| `TeachingAssignmentService`   | Phân công giáo viên             |
+| `TeacherWorkloadService`      | Tính tổng số tiết giảng dạy     |
+| `TimetableService`            | Quản lý thời khóa biểu          |
+| `TimetableEntryService`       | Thêm, sửa, xóa tiết học         |
+| `TimetableValidator`          | Kiểm tra các điều kiện xếp lịch |
+| `TimetablePublicationService` | Phê duyệt và công bố            |
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    private ApprovalPolicy approvalPolicy;
+Ví dụ validator:
 
-    private Integer levelOrder;
-
-    private String levelName;
-
-    @Enumerated(EnumType.STRING)
-    private ApproverType approverType;
-
-    private String approverRole;
-
-    private Long specificApproverId;
-
-    private String conditionExpression;
+```
+public interface TimetableValidator {
+    ValidationResult validate(Long timetableId);
 }
 ```
 
----
+Có thể chia thành các validator nhỏ:
 
-# 6. ApproverType
-
-```java
-public enum ApproverType {
-
-    DIRECT_MANAGER,
-
-    PARENT_DEPARTMENT_MANAGER,
-
-    SPECIFIC_ROLE,
-
-    SPECIFIC_EMPLOYEE
+```
+public interface ScheduleConstraint {
+    List<ValidationError> validate(Timetable timetable);
 }
 ```
 
-Ví dụ:
+Các implementation:
 
-| ApproverType                | Ý nghĩa                        |
-| --------------------------- | ------------------------------ |
-| `DIRECT_MANAGER`            | Manager trực tiếp của Employee |
-| `PARENT_DEPARTMENT_MANAGER` | Manager của Department cha     |
-| `SPECIFIC_ROLE`             | Một người có Role cụ thể       |
-| `SPECIFIC_EMPLOYEE`         | Một User/Employee cụ thể       |
-
----
-
-# 7. Lưu ý quan trọng: Rule và Approver thực tế là hai thứ khác nhau
-
-Không nên nhầm:
-
-```text
-ApprovalLevel
-    ↓
-DIRECT_MANAGER
+```
+ClassConflictConstraint
+TeacherConflictConstraint
+ClassroomConflictConstraint
+SubjectPeriodConstraint
+TeacherQualificationConstraint
+TeacherWorkloadConstraint
 ```
 
-với:
+Cách này giúp thêm các quy tắc mới mà không phải sửa một class validator quá lớn.
 
-```text
-Nguyễn Văn A
-```
+## 8. Các vấn đề cần xử lý khi triển khai thực tế
 
-`DIRECT_MANAGER` là **rule**.
-
-Nguyễn Văn A là **kết quả resolution**.
-
-Flow:
-
-```text
-ApprovalLevel
-    │
-    │ approverType = DIRECT_MANAGER
-    ▼
-Approver Resolver
-    │
-    ▼
-Employee.department.manager
-    │
-    ▼
-Nguyễn Văn A
-```
-
-> **Ghi chú:** `ApprovalLevel` không nên trở thành nơi lưu người duyệt thực tế của từng request.
-
----
-
-# 8. `ApprovalRequest`
-
-## 8.1. Mục đích
-
-`ApprovalRequest` là **một workflow instance cụ thể**.
+### 8.1. Không cho phép hai request cùng xếp một giáo viên
 
 Ví dụ:
 
-```text
-LeaveRequest #100
-```
+- Admin A xếp giáo viên X vào lớp 10A1, thứ 2 tiết 1.
+- Admin B đồng thời xếp giáo viên X vào lớp 10A2, thứ 2 tiết 1.
 
-được submit.
+Cả hai request đều kiểm tra thấy chưa trùng lịch và cùng insert.
 
-Hệ thống tạo:
+Đây là race condition.
 
-```text
-ApprovalRequest #500
-```
+Giải pháp:
 
-## 8.2. Fields
+- Transaction.
+- Pessimistic locking hoặc cơ chế serialize thao tác theo học kỳ.
+- Kiểm tra lại xung đột ngay trước khi ghi dữ liệu.
+- Sử dụng unique constraints phù hợp ở database.
 
-```java
-@Entity
-public class ApprovalRequest extends BaseEntity {
+Không nên chỉ dựa vào frontend để ngăn trùng lịch.
 
-    private String businessType;
+### 8.2. Giáo viên nghỉ việc hoặc thay đổi hợp đồng
 
-    private Long businessId;
+Nếu giáo viên nghỉ việc giữa học kỳ:
 
-    private String businessRefCode;
+1. HRM cập nhật trạng thái Employee.
+2. Hệ thống xác định các TeachingAssignment bị ảnh hưởng.
+3. Thông báo cho quản trị viên.
+4. Phân công giáo viên thay thế.
+5. Tạo phiên bản thời khóa biểu mới.
+6. Công bố lại.
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    private ApprovalPolicy policy;
+Không nên tự động xóa các tiết học cũ vì cần giữ lịch sử.
 
-    private Integer policyVersion;
-
-    private Integer currentLevel;
-
-    @Enumerated(EnumType.STRING)
-    private ApprovalStatus status;
-
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    private User requester;
-
-    @Version
-    private Long version;
-}
-```
-
-### Status
-
-```java
-public enum ApprovalStatus {
-
-    PENDING,
-
-    APPROVED,
-
-    REJECTED,
-
-    CANCELLED
-}
-```
-
-> **Ghi chú:** `@Version` giúp xử lý trường hợp hai request approve cùng lúc. Không nên bỏ qua concurrency control khi approval là nghiệp vụ thực tế.
-
----
-
-# 9. Tại sao cần `ApprovalRequestStep`?
-
-Đây là entity được bổ sung sau khi đánh giá thiết kế ban đầu.
-
-Không nên chỉ có:
-
-```text
-ApprovalRequest
-    ↓
-policySnapshotJson
-```
-
-mà nên có:
-
-```text
-ApprovalRequest
-    │
-    ├── ApprovalRequestStep Level 1
-    │
-    └── ApprovalRequestStep Level 2
-```
-
-## 9.1. Lý do
-
-`ApprovalLevel` là configuration.
-
-`ApprovalRequestStep` là runtime state.
+### 8.3. Thay đổi số tiết môn học
 
 Ví dụ:
 
-```text
-ApprovalLevel
+- Ban đầu Toán 10A1 có 5 tiết/tuần.
+- Sau đó nhà trường điều chỉnh còn 4 tiết/tuần.
 
-Level 1
-approverType = DIRECT_MANAGER
-```
+Cần cập nhật `ClassSubject`, sau đó kiểm tra và điều chỉnh `TimetableEntry`. Không được để thời khóa biểu công bố vẫn có 5 tiết nhưng chương trình học chỉ yêu cầu 4 tiết.
 
-Khi LeaveRequest được submit:
+# 9. Giao diện UI nên thiết kế như thế nào?
 
-```text
-ApprovalRequestStep
+Tôi đề xuất ba màn hình chính.
 
-Level 1
-approverType = DIRECT_MANAGER
-assignedApprover = Nguyễn Văn A
-status = PENDING
-```
+Màn hình 1 — Teacher Allocation
 
-Nếu Department Manager thay đổi sau đó:
+Phân công giáo viên cho các lớp và môn học
 
-```text
-Nguyễn Văn A
-        ↓
-Nguyễn Văn C
-```
+| Lớp  | Môn  | Giáo viên    | Tiết/tuần |
+| ---- | ---- | ------------ | --------- |
+| 10A1 | Toán | Nguyễn Văn A | 5         |
+| 10A1 | Văn  | Trần Thị B   | 4         |
+| 10A2 | Toán | Nguyễn Văn A | 5         |
+| 10A2 | Văn  | Trần Thị B   | 4         |
 
-thì request cũ vẫn giữ:
+Đã phân công
 
-```text
-assignedApprover = Nguyễn Văn A
-```
+Màn hình 2 — Timetable Editor
 
----
+Giao diện thời khóa biểu dạng lưới
 
-# 10. Đề xuất `ApprovalRequestStep`
+| Tiết | Thứ 2 | Thứ 3 | Thứ 4 |
+| ---- | ----- | ----- | ----- |
+| 1    | Toán  | Văn   | Anh   |
+| 2    | Văn   | Toán  | Toán  |
+| 3    | Anh   | Toán  | Văn   |
+| 4    | Toán  | Anh   | Toán  |
+| 5    | Văn   | Văn   | Anh   |
 
-```java
-@Entity
-public class ApprovalRequestStep extends BaseEntity {
+Các ô có thể kéo thả để thay đổi vị trí. Backend phải validate lại sau mỗi thao tác lưu.
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    private ApprovalRequest approvalRequest;
+Màn hình 3 — Teacher Workload
 
-    private Integer levelOrder;
+Theo dõi tải giảng dạy của giáo viên
 
-    private String levelName;
+| Giáo viên    | Số tiết/tuần | Giới hạn |
+| ------------ | ------------ | -------- |
+| Nguyễn Văn A | 15           | 18       |
+| Trần Thị B   | 20           | 18       |
+| Lê Văn C     | 12           | 18       |
 
-    @Enumerated(EnumType.STRING)
-    private ApproverType approverType;
+Vượt tải: Trần Thị B
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    private User assignedApprover;
+# 10. Thứ tự triển khai database và backend
 
-    @Enumerated(EnumType.STRING)
-    private ApprovalStatus status;
+Tôi khuyên bạn triển khai theo thứ tự này:
 
-    private String conditionSnapshot;
+| Thứ tự | Công việc                            | Ưu tiên                 |
+| ------ | ------------------------------------ | ----------------------- |
+| 1      | AcademicYear, Semester               | Cao                     |
+| 2      | Subject, SchoolClass, Classroom      | Cao                     |
+| 3      | TimeSlot                             | Cao                     |
+| 4      | ClassSubject                         | Cao                     |
+| 5      | TeacherSubjectQualification          | Trung bình              |
+| 6      | TeachingAssignment                   | Cao                     |
+| 7      | TeacherWorkloadService               | Trung bình              |
+| 8      | Timetable, TimetableEntry            | Cao                     |
+| 9      | TimetableValidator                   | Rất cao                 |
+| 10     | Timetable State Machine, Publication | Cao                     |
+| 11     | UI kéo thả                           | Sau khi backend ổn định |
+| 12     | Automatic Scheduling                 | Để giai đoạn sau        |
 
-    private LocalDateTime assignedAt;
+Một số quyết định tôi khuyên chốt ngay:
 
-    private LocalDateTime completedAt;
-}
-```
+1. Dùng `Employee` làm giáo viên, không tạo entity `Teacher` riêng.
+2. `ClassSubject` quản lý số tiết yêu cầu mỗi tuần.
+3. `TeachingAssignment` quản lý giáo viên được phân công.
+4. `TimetableEntry` quản lý từng tiết học cụ thể.
+5. Không cho phép sửa trực tiếp thời khóa biểu đã công bố.
+6. Dùng `TimetableValidator` để kiểm soát xung đột tập trung.
+7. Lưu lịch sử phân công và phiên bản thời khóa biểu.
 
-Có thể bổ sung:
-
-```text
-resolvedApproverType
-resolvedApproverId
-```
-
-nếu muốn lưu rõ kết quả resolution.
-
----
-
-# 11. `ApprovalAction`
-
-## 11.1. Mục đích
-
-`ApprovalAction` là **audit history**.
-
-Không dùng nó để thay thế `ApprovalRequestStep`.
-
-### Step
-
-Cho biết:
-
-```text
-Level 1
-Status = APPROVED
-```
-
-### Action
-
-Cho biết:
-
-```text
-Nguyễn Văn A
-APPROVE
-09:30
-comment = "Đồng ý"
-```
-
-Do đó:
-
-```text
-ApprovalRequestStep = Current State
-
-ApprovalAction = History
-```
-
----
-
-# 12. `ApprovalAction`
-
-```java
-@Entity
-public class ApprovalAction extends BaseEntity {
-
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    private ApprovalRequest approvalRequest;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    private ApprovalRequestStep step;
-
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    private User actor;
-
-    private Integer level;
-
-    @Enumerated(EnumType.STRING)
-    private ApprovalActionType action;
-
-    private String comment;
-
-    private LocalDateTime actionAt;
-}
-```
-
----
-
-# 13. ApprovalActionType
-
-```java
-public enum ApprovalActionType {
-
-    SUBMIT,
-
-    APPROVE,
-
-    REJECT,
-
-    CANCEL,
-
-    FORWARD
-}
-```
-
-Quy ước:
-
-```text
-SUBMIT
-    level = null
-
-APPROVE
-    level != null
-
-REJECT
-    level != null
-
-FORWARD
-    level != null
-```
-
-> **Ghi chú:** `SUBMIT` là hành động đặc biệt vì nó xảy ra khi khởi tạo workflow, không phải hành động duyệt một level.
-
----
-
-# 14. Policy Versioning
-
-Không sửa trực tiếp Policy version cũ nếu nó đã được sử dụng.
-
-Không nên:
-
-```text
-LEAVE_POLICY v1
-```
-
-sửa:
-
-```text
->= 2 ngày
-```
-
-thành:
-
-```text
->= 3 ngày
-```
-
-mà nên:
-
-```text
-LEAVE_POLICY v1
-        │
-        │ immutable
-        ▼
-LEAVE_POLICY v2
-```
-
-Kết quả:
-
-```text
-Request #100 → Policy v1
-
-Request #101 → Policy v2
-```
-
-> **Ghi chú:** Policy version cũ nên được xem như immutable configuration để bảo toàn lịch sử.
-
----
-
-# 15. Snapshot Policy
-
-Snapshot cần giải quyết vấn đề:
-
-> Policy hoặc cơ cấu tổ chức thay đổi sau khi request được submit thì request cũ phải chạy theo cấu hình nào?
-
-Câu trả lời:
-
-```text
-Theo configuration tại thời điểm submit.
-```
-
-Ví dụ:
-
-```text
-2026-09-01
-
-Policy v1
-Level 1 → Manager
-Level 2 → Principal
-```
-
-Request được tạo:
-
-```text
-ApprovalRequest #100
-```
-
-Sau đó:
-
-```text
-2026-09-02
-
-Policy v2
-Level 1 → Manager
-Level 2 → HR Manager
-```
-
-Request #100 vẫn:
-
-```text
-Level 1 → Manager
-Level 2 → Principal
-```
-
----
-
-# 16. Snapshot cái gì?
-
-Không chỉ snapshot:
-
-```text
-Policy rule
-```
-
-mà nên snapshot cả:
-
-```text
-Approval Level
-+
-Approver Resolution
-+
-Condition
-```
-
-Ví dụ:
-
-```text
-ApprovalRequest #100
-
-Step 1
-------------------
-level = 1
-approverType = DIRECT_MANAGER
-assignedApprover = Nguyễn Văn A
-
-Step 2
-------------------
-level = 2
-approverType = PARENT_DEPARTMENT_MANAGER
-assignedApprover = Trần Văn B
-condition = totalDays >= 2
-```
-
-> **Ghi chú quan trọng:** Snapshot runtime phải bảo đảm request cũ không bị ảnh hưởng bởi thay đổi Manager, Role, Department hoặc Policy sau này.
-
----
-
-# 17. JSON Snapshot hay `ApprovalRequestStep`?
-
-## Khuyến nghị
-
-Dùng:
-
-```text
-ApprovalRequestStep
-```
-
-làm dữ liệu runtime chính.
-
-Không cần phụ thuộc hoàn toàn vào:
-
-```text
-policySnapshotJson
-```
-
-### Vì sao?
-
-Các query như:
-
-```text
-Ai đang duyệt?
-Level hiện tại là ai?
-Level nào đã approve?
-Level nào pending?
-```
-
-đều dễ thực hiện bằng relational table.
-
-Ví dụ:
-
-```text
-ApprovalRequest
-       │
-       ├── Step 1 → APPROVED
-       │
-       └── Step 2 → PENDING
-```
-
-thay vì phải parse JSON.
-
-Nếu muốn giữ JSON để debug/audit đầy đủ:
-
-```text
-ApprovalRequest
-    ├── policyVersion
-    ├── policySnapshotJson   optional
-    └── ApprovalRequestStep
-```
-
-Nhưng JSON không nên là source of truth cho runtime workflow.
-
----
-
-# 18. Condition Expression
-
-Ban đầu không nên triển khai SpEL tự do:
-
-```text
-totalDays >= 2
-```
-
-và evaluate trực tiếp từ database.
-
-Cách này làm hệ thống phức tạp về:
-
-```text
-Security
-Validation
-Debugging
-Testing
-Versioning
-```
-
-## Nên bắt đầu bằng condition có cấu trúc
-
-Ví dụ:
-
-```text
-conditionType = MIN_LEAVE_DAYS
-conditionValue = 2
-```
-
-Hoặc:
-
-```json
-{
-  "type": "MIN_LEAVE_DAYS",
-  "value": 2
-}
-```
-
-Sau này có thể mở rộng:
-
-```text
-MIN_LEAVE_DAYS
-SALARY_THRESHOLD
-EMPLOYEE_ROLE
-DEPARTMENT
-CONTRACT_TYPE
-```
-
-> **Ghi chú:** Đừng xây một expression engine hoàn chỉnh khi nghiệp vụ hiện tại chỉ cần vài loại condition cố định.
-
----
-
-# 19. Approver Resolution
-
-Khi workflow được initiate:
-
-```text
-ApprovalLevel
-      │
-      ▼
-Approver Resolver
-      │
-      ▼
-Actual Approver
-```
-
-Ví dụ:
-
-### DIRECT_MANAGER
-
-```text
-LeaveRequest
-    ↓
-Employee
-    ↓
-Department
-    ↓
-Department.manager
-```
-
-### PARENT_DEPARTMENT_MANAGER
-
-```text
-Employee
-    ↓
-Department
-    ↓
-Parent Department
-    ↓
-Parent Department.manager
-```
-
-### SPECIFIC_ROLE
-
-```text
-Role
-    ↓
-Users
-    ↓
-Eligible Approver
-```
-
-### SPECIFIC_EMPLOYEE
-
-```text
-specificApproverId
-```
-
----
-
-# 20. `SPECIFIC_ROLE` cần quy định cardinality
-
-Nếu Role có nhiều người:
-
-```text
-HR_MANAGER
-    ├── A
-    ├── B
-    └── C
-```
-
-cần biết:
-
-```text
-A OR B OR C
-```
-
-hay:
-
-```text
-A AND B AND C
-```
-
-Nên có rule như:
-
-```text
-ANY_ONE
-ALL
-```
-
-Ví dụ:
-
-```text
-SPECIFIC_ROLE
-role = HR_MANAGER
-mode = ANY_ONE
-```
-
-nghĩa là chỉ cần một HR Manager approve.
-
----
-
-# 21. Transfer / Forward
-
-Không nên đơn giản:
-
-```sql
-UPDATE approval_request_step
-SET assigned_approver = B
-```
-
-mà không lưu lịch sử.
-
-Ví dụ:
-
-```text
-Step 1
-assignedApprover = A
-```
-
-A chuyển tiếp:
-
-```text
-ApprovalAction
-actor = A
-action = FORWARD
-comment = "Đang nghỉ phép"
-```
-
-Sau đó:
-
-```text
-Step 1
-assignedApprover = B
-```
-
-Lịch sử vẫn thể hiện:
-
-```text
-A từng được assign
-A đã forward
-B là người tiếp nhận hiện tại
-```
-
-> **Ghi chú:** Nếu sau này nghiệp vụ delegation/ủy quyền trở nên phức tạp, có thể tách thêm `ApprovalAssignment`. Hiện tại chưa cần.
-
----
-
-# 22. ApprovalEngineService
-
-Generic engine chịu trách nhiệm:
-
-```text
-initiate()
-approve()
-reject()
-cancel()
-getCurrentStep()
-getCurrentApprovers()
-```
-
-Không chịu trách nhiệm:
-
-```text
-LeaveBalance
-LeaveRequest status
-Payroll calculation
-Contract status
-```
-
----
-
-# 23. Service Architecture
-
-```text
-                    ┌─────────────────────┐
-                    │ ApprovalEngineService│
-                    └──────────┬──────────┘
-                               │
-             ┌─────────────────┼─────────────────┐
-             ▼                 ▼                 ▼
-       LeaveService      PayrollService    OvertimeService
-             │                 │                 │
-             ▼                 ▼                 ▼
-     LeaveBalance        Payroll Logic     Overtime Logic
-```
-
-Generic Engine không được làm:
-
-```text
-ApprovalEngine
-      ↓
-LeaveBalanceService
-```
-
-vì như vậy generic engine lại phụ thuộc vào Leave.
-
----
-
-# 24. LeaveRequestService vẫn là nơi orchestration nghiệp vụ
-
-Ví dụ:
-
-```java
-@Transactional
-public void approve(Long requestId, User currentUser) {
-
-    LeaveRequest request = findRequest(requestId);
-
-    ApprovalResult result =
-            approvalEngineService.approve(
-                    "LEAVE_REQUEST",
-                    request.getId(),
-                    currentUser
-            );
-
-    if (result.isFullyApproved()) {
-
-        request.approve();
-
-        leaveBalanceService.consume(
-                request.getEmployee(),
-                request.getTotalDays(),
-                request.getStartDate(),
-                "LEAVE_REQUEST",
-                request.getId()
-        );
-    }
-}
-```
-
-Flow:
-
-```text
-Controller
-    ↓
-LeaveRequestService
-    ↓
-ApprovalEngine
-    ↓
-ApprovalResult
-    ↓
-LeaveRequestService
-    ├── LeaveRequest → APPROVED
-    └── LeaveBalance → consume
-```
-
----
-
-# 25. Create Leave Request
-
-```text
-POST /leave-requests
-        │
-        ▼
-LeaveRequestService
-        │
-        ├── Validate Employee
-        ├── Validate LeaveType
-        ├── Validate Dates
-        ├── Calculate Leave Days
-        ├── Check Overlap
-        ├── Check Balance
-        │
-        ├── Create LeaveRequest(PENDING)
-        │
-        ├── Reserve pendingDays
-        │
-        └── ApprovalEngine.initiate()
-```
-
-Tất cả nên nằm trong:
-
-```java
-@Transactional
-```
-
-để tránh tình trạng:
-
-```text
-LeaveRequest created
-    ↓
-Balance reserved
-    ↓
-ApprovalRequest creation failed
-```
-
----
-
-# 26. Approval Initiate
-
-```text
-ApprovalEngine.initiate()
-        │
-        ├── Find active ApprovalPolicy
-        │
-        ├── Determine Policy version
-        │
-        ├── Evaluate conditions
-        │
-        ├── Resolve approvers
-        │
-        ├── Create ApprovalRequest
-        │
-        ├── Create ApprovalRequestStep
-        │
-        └── Create ApprovalAction(SUBMIT)
-```
-
-Ví dụ Leave 1 ngày:
-
-```text
-Policy
-
-Level 1 → Direct Manager
-Level 2 → >= 2 days
-```
-
-Request:
-
-```text
-totalDays = 1
-```
-
-kết quả:
-
-```text
-ApprovalRequest
-    │
-    └── Step 1 → Manager
-```
-
-Leave 3 ngày:
-
-```text
-ApprovalRequest
-    │
-    ├── Step 1 → Manager
-    └── Step 2 → Parent Manager
-```
-
----
-
-# 27. Approval Flow
-
-## Level 1 approve
-
-```text
-Manager
-   │
-   ▼
-ApprovalEngine.approve()
-   │
-   ├── Validate current step
-   ├── Validate actor
-   ├── Create ApprovalAction(APPROVE)
-   ├── Step 1 → APPROVED
-   │
-   └── Move currentLevel → 2
-```
-
-Request vẫn:
-
-```text
-ApprovalRequest = PENDING
-LeaveRequest = PENDING
-```
-
----
-
-# 28. Final Approval
-
-```text
-Level 2
-   │
-   ▼
-APPROVE
-   │
-   ├── Create ApprovalAction
-   ├── Step 2 → APPROVED
-   └── ApprovalRequest → APPROVED
-```
-
-Sau đó `LeaveRequestService`:
-
-```text
-LeaveRequest → APPROVED
-LeaveBalance → consume
-```
-
-Ledger:
-
-```text
-LEAVE -3 days
-```
-
----
-
-# 29. Reject
-
-Nếu Level 1 reject:
-
-```text
-ApprovalEngine
-      │
-      ├── ApprovalAction(REJECT)
-      └── ApprovalRequest → REJECTED
-```
-
-Sau đó:
-
-```text
-LeaveRequest → REJECTED
-LeaveBalance → release pendingDays
-```
-
-Nếu Level 2 reject:
-
-```text
-ApprovalEngine
-      │
-      ├── ApprovalAction(REJECT)
-      └── ApprovalRequest → REJECTED
-```
-
-Sau đó:
-
-```text
-LeaveRequest → REJECTED
-LeaveBalance → release pendingDays
-```
-
-> **Ghi chú:** ApprovalEngine chỉ trả về kết quả workflow. Business Service quyết định hậu quả nghiệp vụ.
-
----
-
-# 30. Các trạng thái
-
-## ApprovalRequest
-
-```text
-PENDING
-   ├── APPROVED
-   ├── REJECTED
-   └── CANCELLED
-```
-
-Không nên cho:
-
-```text
-APPROVED → PENDING
-REJECTED → PENDING
-```
-
-trong flow bình thường.
-
-Nếu muốn reopen/re-submit, nên thiết kế thành business flow riêng.
-
----
-
-# 31. Concurrency
-
-Approval là nghiệp vụ cần kiểm soát concurrent update.
-
-Ví dụ:
-
-```text
-Tab 1 → Manager APPROVE
-Tab 2 → Manager APPROVE
-```
-
-Cả hai cùng đọc:
-
-```text
-currentLevel = 1
-```
-
-Nếu không kiểm soát có thể tạo duplicate action.
-
-Nên dùng:
-
-```java
-@Version
-private Long version;
-```
-
-trên `ApprovalRequest`.
-
-Kết hợp:
-
-```java
-@Transactional
-```
-
-và unique constraint nếu cần.
-
-> **Ghi chú:** Không nên giải quyết mọi concurrency bằng distributed lock ngay từ đầu. Optimistic locking thường đủ cho workflow approval thông thường.
-
----
-
-# 32. Migration từ `LeaveApproval`
-
-Không nên duy trì lâu dài hai source of truth:
-
-```text
-LeaveApproval
-ApprovalRequest
-```
-
-Nếu cả hai cùng lưu:
-
-```text
-status
-approver
-level
-```
-
-có nguy cơ:
-
-```text
-LeaveApproval     = APPROVED
-ApprovalRequest   = PENDING
-```
-
-## Migration strategy
-
-### Phase 1
-
-```text
-LeaveApproval
-      +
-ApprovalEngine
-```
-
-Xây framework mới nhưng chưa xóa code cũ.
-
-### Phase 2
-
-Chuyển:
-
-```text
-LeaveService
-```
-
-sang:
-
-```text
-ApprovalEngine
-```
-
-### Phase 3
-
-Dừng ghi:
-
-```text
-LeaveApproval
-```
-
-### Phase 4
-
-Migrate dữ liệu lịch sử nếu cần.
-
-### Phase 5
-
-Xóa:
-
-```text
-LeaveApproval
-LeaveApprovalService
-LeaveApprovalRepository
-```
-
----
-
-# 33. Implementation Plan
-
-## Phase 1 — Core Entity
-
-* [ ] `ApprovalPolicy`
-* [ ] `ApprovalLevel`
-* [ ] `ApprovalRequest`
-* [ ] `ApprovalRequestStep`
-* [ ] `ApprovalAction`
-
-Enums:
-
-* [ ] `ApproverType`
-* [ ] `ApprovalStatus`
-* [ ] `ApprovalActionType`
-
----
-
-## Phase 2 — Repository
-
-* [ ] `ApprovalPolicyRepository`
-* [ ] `ApprovalLevelRepository`
-* [ ] `ApprovalRequestRepository`
-* [ ] `ApprovalRequestStepRepository`
-* [ ] `ApprovalActionRepository`
-
----
-
-## Phase 3 — Policy Engine
-
-* [ ] Find active policy
-* [ ] Policy versioning
-* [ ] Condition evaluation
-* [ ] Approver resolution
-* [ ] Create ApprovalRequest
-* [ ] Create ApprovalRequestStep
-* [ ] Snapshot resolved approvers
-* [ ] Create SUBMIT action
-
----
-
-## Phase 4 — Approval Engine
-
-* [ ] `initiate()`
-* [ ] `approve()`
-* [ ] `reject()`
-* [ ] `cancel()`
-* [ ] `getCurrentStep()`
-* [ ] `getCurrentApprovers()`
-* [ ] Actor validation
-* [ ] Optimistic locking
-* [ ] Transaction handling
-
----
-
-## Phase 5 — Leave Integration
-
-* [ ] LeaveRequest → ApprovalEngine
-* [ ] Remove hardcoded approval rule
-* [ ] Reserve `pendingDays`
-* [ ] Consume balance after final approval
-* [ ] Release balance after rejection
-* [ ] Update LeaveResponse
-* [ ] Return approval status/current approver/history
-
----
-
-## Phase 6 — Migration
-
-* [ ] Test old/new flow
-* [ ] Stop writing `LeaveApproval`
-* [ ] Migrate historical data
-* [ ] Remove `LeaveApprovalService`
-* [ ] Remove `LeaveApproval`
-* [ ] Remove old repository/query
-
----
-
-# 34. Test Cases bắt buộc
-
-## Leave 1 ngày
-
-```text
-Create
-  ↓
-Level 1
-  ↓
-Manager APPROVE
-  ↓
-ApprovalRequest APPROVED
-  ↓
-LeaveRequest APPROVED
-  ↓
-Balance consumed
-```
-
----
-
-## Leave >= 2 ngày
-
-```text
-Create
-  ↓
-Level 1
-  ↓
-Manager APPROVE
-  ↓
-Level 2
-  ↓
-Parent Manager APPROVE
-  ↓
-ApprovalRequest APPROVED
-  ↓
-LeaveRequest APPROVED
-  ↓
-Balance consumed
-```
-
----
-
-## Reject Level 1
-
-```text
-Create
-  ↓
-Manager REJECT
-  ↓
-ApprovalRequest REJECTED
-  ↓
-LeaveRequest REJECTED
-  ↓
-pendingDays released
-```
-
----
-
-## Reject Level 2
-
-```text
-Create
-  ↓
-Level 1 APPROVE
-  ↓
-Level 2 REJECT
-  ↓
-ApprovalRequest REJECTED
-  ↓
-LeaveRequest REJECTED
-  ↓
-pendingDays released
-```
-
----
-
-## Policy thay đổi
-
-```text
-Request #100
-    ↓
-Policy v1
-```
-
-Sau đó:
-
-```text
-Policy v2
-```
-
-Kiểm tra:
-
-```text
-Request #100 vẫn chạy theo v1
-```
-
----
-
-## Manager thay đổi
-
-Submit:
-
-```text
-Manager = A
-```
-
-Sau đó đổi:
-
-```text
-Manager = B
-```
-
-Kiểm tra:
-
-```text
-Request cũ → A
-Request mới → B
-```
-
----
-
-## Double Approve
-
-```text
-Tab 1 → APPROVE
-Tab 2 → APPROVE
-```
-
-Kiểm tra:
-
-```text
-Không tạo workflow sai
-Không consume balance 2 lần
-Không tạo duplicate approval action
-```
-
----
-
-# 35. Nguyên tắc kiến trúc cần nhớ
-
-### 1. Policy ≠ Request
-
-```text
-Policy = Rule
-Request = Runtime
-```
-
----
-
-### 2. Level ≠ Step
-
-```text
-ApprovalLevel
-= configuration
-
-ApprovalRequestStep
-= runtime instance
-```
-
----
-
-### 3. Step ≠ Action
-
-```text
-Step
-= current state
-
-Action
-= immutable history
-```
-
----
-
-### 4. Rule ≠ Actual Approver
-
-```text
-DIRECT_MANAGER
-        ↓
-Resolution
-        ↓
-Nguyễn Văn A
-```
-
----
-
-### 5. ApprovalEngine ≠ LeaveService
-
-```text
-ApprovalEngine
-= workflow
-
-LeaveService
-= Leave business logic
-```
-
----
-
-### 6. Policy version cũ phải immutable
-
-```text
-v1 → immutable
-v2 → new configuration
-```
-
----
-
-### 7. Request phải giữ runtime snapshot
-
-Thay đổi:
-
-```text
-Policy
-Department
-Manager
-Role
-```
-
-không được làm thay đổi workflow của request cũ.
-
----
-
-### 8. Không có hai source of truth
-
-Không duy trì lâu dài:
-
-```text
-LeaveApproval
-+
-ApprovalRequest
-```
-
-cùng quản lý approval state.
-
----
-
-# 36. Kiến trúc cuối cùng
-
-```text
-                         ┌───────────────────┐
-                         │ ApprovalPolicy    │
-                         │                   │
-                         │ code              │
-                         │ version           │
-                         │ businessType      │
-                         │ isActive          │
-                         └─────────┬─────────┘
-                                   │
-                                   │ 1:N
-                                   ▼
-                         ┌───────────────────┐
-                         │ ApprovalLevel     │
-                         │                   │
-                         │ levelOrder        │
-                         │ approverType      │
-                         │ condition         │
-                         └─────────┬─────────┘
-                                   │
-                                   │ resolve
-                                   ▼
-┌──────────────┐          ┌───────────────────┐
-│ LeaveRequest │─────────▶│ ApprovalRequest   │
-└──────────────┘          │                   │
-                          │ businessType      │
-┌──────────────┐          │ businessId        │
-│ Payroll      │─────────▶│ policyVersion     │
-└──────────────┘          │ currentLevel      │
-                          │ status            │
-┌──────────────┐          └─────────┬─────────┘
-│ Overtime     │                    │
-└──────────────┘          ┌─────────┴─────────┐
-                           │                   │
-                           ▼                   ▼
-                 ┌──────────────────┐  ┌──────────────────┐
-                 │ RequestStep       │  │ ApprovalAction   │
-                 │                  │  │                  │
-                 │ level            │  │ actor            │
-                 │ approver         │  │ action           │
-                 │ status           │  │ comment          │
-                 │ resolved info    │  │ actionAt         │
-                 └──────────────────┘  └──────────────────┘
-```
-
-## Core principle
-
-```text
-                    "Policy nói phải duyệt thế nào"
-
-                              ↓
-
-                    "Request nói đơn này
-                     đang chạy workflow nào"
-
-                              ↓
-
-                    "Step nói hiện tại
-                     mỗi cấp đang thế nào"
-
-                              ↓
-
-                    "Action nói lịch sử
-                     ai đã làm gì"
-```
-
-Đây là cấu trúc nên dùng làm **baseline để bắt đầu refactor `LeaveApproval`**.
+Thiết kế này đủ để triển khai xếp thời khóa biểu thủ công trước, sau đó mở rộng sang tự động xếp lịch mà không phải thay đổi toàn bộ domain model.

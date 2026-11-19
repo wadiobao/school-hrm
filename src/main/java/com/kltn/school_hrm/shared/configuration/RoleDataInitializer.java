@@ -2,6 +2,7 @@ package com.kltn.school_hrm.shared.configuration;
 
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 import com.kltn.school_hrm.module.core.entity.Role;
@@ -11,6 +12,7 @@ import com.kltn.school_hrm.module.core.repository.RoleRepository;
 import lombok.RequiredArgsConstructor;
 
 @Component
+@Order(1)
 @RequiredArgsConstructor
 public class RoleDataInitializer implements ApplicationRunner {
 

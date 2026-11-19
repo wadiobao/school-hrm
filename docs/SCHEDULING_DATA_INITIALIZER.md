@@ -166,3 +166,4 @@ Tạo sẵn 1 thời khóa biểu chính thức đã công bố để kiểm th�
    === SchedulingDataInitializer: Hoàn tất khởi tạo dữ liệu mẫu Học vụ & Thời khóa biểu ===
    ```
 2. Đăng nhập với tài khoản `hrmanager` hoặc `viceprincipal` và truy cập `http://localhost:8080/scheduling`, chọn Lớp `10A1` để thấy ngay ma trận thời khóa biểu hoàn chỉnh.
+

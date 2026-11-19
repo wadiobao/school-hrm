@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -48,6 +49,7 @@ import lombok.RequiredArgsConstructor;
  * </pre>
  */
 @Component
+@Order(1)
 @RequiredArgsConstructor
 public class DataInitializer implements ApplicationRunner {
 
