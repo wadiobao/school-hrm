@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.context.annotation.DependsOn;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
@@ -70,8 +71,9 @@ import lombok.RequiredArgsConstructor;
  * Chạy sau DataInitializer nền tảng (@Order(2)), tự động kiểm tra trùng lặp (idempotent).
  * </p>
  */
-@Component
-@Order(2)
+@Component("schedulingDataInitializer")
+@Order(3)
+@DependsOn({"roleDataInitializer", "dataInitializer"})
 @RequiredArgsConstructor
 public class SchedulingDataInitializer implements ApplicationRunner {
 
@@ -113,9 +115,30 @@ public class SchedulingDataInitializer implements ApplicationRunner {
             return positionRepository.save(pos);
         });
 
-        Role boardRole = roleRepository.findByRoleCode(RoleCode.BOARD_OF_DIRECTORS).orElse(null);
-        Role teacherRole = roleRepository.findByRoleCode(RoleCode.TEACHER).orElse(null);
-        Position teacherPos = positionRepository.findByCode(PositionCode.TEACHER).orElse(null);
+        Role boardRole = roleRepository.findByRoleCode(RoleCode.BOARD_OF_DIRECTORS).orElseGet(() -> {
+            Role r = Role.builder()
+                    .roleCode(RoleCode.BOARD_OF_DIRECTORS)
+                    .roleName("Ban Giám hiệu")
+                    .description("Ban Giám hiệu")
+                    .build();
+            return roleRepository.save(r);
+        });
+        Role teacherRole = roleRepository.findByRoleCode(RoleCode.TEACHER).orElseGet(() -> {
+            Role r = Role.builder()
+                    .roleCode(RoleCode.TEACHER)
+                    .roleName("Giáo viên")
+                    .description("Giáo viên giảng dạy")
+                    .build();
+            return roleRepository.save(r);
+        });
+        Position teacherPos = positionRepository.findByCode(PositionCode.TEACHER).orElseGet(() -> {
+            Position pos = Position.builder()
+                    .code(PositionCode.TEACHER)
+                    .name("Giáo viên")
+                    .positionAllowanceRate(new BigDecimal("0.20"))
+                    .build();
+            return positionRepository.save(pos);
+        });
 
         Department adminDept = departmentRepository.findByCode("BAN-GIAM-HOC").orElse(null);
         Department mathDept = departmentRepository.findByCode("BAN-TOAN").orElse(null);
@@ -252,6 +275,11 @@ public class SchedulingDataInitializer implements ApplicationRunner {
     private Employee seedEmployee(String username, String rawPassword, String empCode,
                                   String fullName, String email, String phone,
                                   String gender, Role role, Department dept, Position pos) {
+        if (role == null) {
+            log.error("Role bị null khi seed user '{}'! Không thể tạo tài khoản người dùng.", username);
+            return null;
+        }
+
         if (userRepository.existsByUsername(username)) {
             return employeeRepository.findByEmployeeCode(empCode).orElse(null);
         }

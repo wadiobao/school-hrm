@@ -66,5 +66,9 @@ public interface TimetableEntryRepository extends JpaRepository<TimetableEntry, 
             @Param("classroomId") Long classroomId,
             @Param("dayOfWeek") Integer dayOfWeek,
             @Param("timeSlotId") Long timeSlotId);
+
+    // Kiểm tra xem tiết học có đang được sử dụng trong thời khóa biểu đã công bố không (SCH-06)
+    @Query("SELECT COUNT(te) FROM TimetableEntry te JOIN te.timetable t WHERE te.timeSlot.id = :timeSlotId AND t.status = 'PUBLISHED'")
+    long countEntriesByTimeSlotIdInPublishedTimetable(@Param("timeSlotId") Long timeSlotId);
 }
 

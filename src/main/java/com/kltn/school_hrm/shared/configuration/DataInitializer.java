@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.context.annotation.DependsOn;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
@@ -48,8 +49,9 @@ import lombok.RequiredArgsConstructor;
  *   MathHead  : username=mathhead   | password=MathHead@123
  * </pre>
  */
-@Component
-@Order(1)
+@Component("dataInitializer")
+@Order(2)
+@DependsOn("roleDataInitializer")
 @RequiredArgsConstructor
 public class DataInitializer implements ApplicationRunner {
 

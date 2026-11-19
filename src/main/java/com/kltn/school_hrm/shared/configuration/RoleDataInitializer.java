@@ -11,7 +11,7 @@ import com.kltn.school_hrm.module.core.repository.RoleRepository;
 
 import lombok.RequiredArgsConstructor;
 
-@Component
+@Component("roleDataInitializer")
 @Order(1)
 @RequiredArgsConstructor
 public class RoleDataInitializer implements ApplicationRunner {

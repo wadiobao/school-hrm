@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,6 +35,8 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class TeacherWorkloadServiceImpl implements TeacherWorkloadService {
+
+    private static final Logger log = LoggerFactory.getLogger(TeacherWorkloadServiceImpl.class);
 
     private final EmployeeRepository employeeRepository;
     private final SemesterRepository semesterRepository;
@@ -78,17 +82,26 @@ public class TeacherWorkloadServiceImpl implements TeacherWorkloadService {
         double totalAssignedPeriods = 0.0;
 
         for (TeachingAssignment ta : assignments) {
+            // SCH-03: Chỉ tính các assignment có hiệu lực và có cấu hình ClassSubject trong học kỳ đang xét
             if (ta.getSchoolClass() != null && ta.getSubject() != null) {
-                // Tra cứu số tiết yêu cầu trong học kỳ từ ClassSubject
+                // Kiểm tra sự tương thích về Năm học nếu có
+                if (ta.getSchoolClass().getAcademicYear() != null && semester.getAcademicYear() != null) {
+                    if (!ta.getSchoolClass().getAcademicYear().getId().equals(semester.getAcademicYear().getId())) {
+                        continue; // Bỏ qua phân công thuộc năm học khác
+                    }
+                }
+
+                // Tra cứu số tiết yêu cầu chuẩn từ ClassSubject thuộc đúng học kỳ đang xét
                 Optional<ClassSubject> csOpt = classSubjectRepository.findBySchoolClassIdAndSubjectIdAndSemesterId(
                         ta.getSchoolClass().getId(), ta.getSubject().getId(), semester.getId());
-                if (csOpt.isPresent()) {
+
+                if (csOpt.isPresent() && csOpt.get().getPeriodsPerWeek() != null) {
                     totalAssignedPeriods += csOpt.get().getPeriodsPerWeek();
-                } else if (ta.getWeeklyContactHours() != null) {
-                    totalAssignedPeriods += ta.getWeeklyContactHours();
+                } else {
+                    log.warn("SCH-03: Giáo viên '{}' (ID: {}) có phân công '{}' cho lớp '{}' nhưng không có cấu hình ClassSubject trong học kỳ '{}' (ID: {}). Không tự ý cộng số tiết.",
+                            teacher.getFullName(), teacher.getId(), ta.getSubjectName(),
+                            ta.getSchoolClass().getName(), semester.getName(), semester.getId());
                 }
-            } else if (ta.getWeeklyContactHours() != null) {
-                totalAssignedPeriods += ta.getWeeklyContactHours();
             }
         }
 

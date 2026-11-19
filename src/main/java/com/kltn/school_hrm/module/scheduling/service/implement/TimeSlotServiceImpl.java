@@ -11,6 +11,7 @@ import com.kltn.school_hrm.module.scheduling.dto.request.TimeSlotRequest;
 import com.kltn.school_hrm.module.scheduling.dto.response.TimeSlotResponse;
 import com.kltn.school_hrm.module.scheduling.entity.TimeSlot;
 import com.kltn.school_hrm.module.scheduling.repository.TimeSlotRepository;
+import com.kltn.school_hrm.module.scheduling.repository.TimetableEntryRepository;
 import com.kltn.school_hrm.module.scheduling.service.TimeSlotService;
 import com.kltn.school_hrm.shared.enums.Enums.TimeSlotSession;
 import com.kltn.school_hrm.shared.exception.custom.BusinessException;
@@ -27,10 +28,12 @@ import lombok.RequiredArgsConstructor;
 public class TimeSlotServiceImpl implements TimeSlotService {
 
     private final TimeSlotRepository timeSlotRepository;
+    private final TimetableEntryRepository timetableEntryRepository;
 
     @Override
     public TimeSlotResponse create(TimeSlotRequest request) {
-        validateTimeRange(request.getStartTime(), request.getEndTime());
+        // SCH-06: Kiểm tra tính hợp lệ và chồng lấn khung giờ
+        validateTimeRangeAndOverlap(request.getSession(), request.getStartTime(), request.getEndTime(), null);
 
         if (timeSlotRepository.existsBySessionAndPeriodNumber(request.getSession(), request.getPeriodNumber())) {
             throw new BusinessException(String.format(
@@ -53,7 +56,14 @@ public class TimeSlotServiceImpl implements TimeSlotService {
         TimeSlot entity = timeSlotRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy tiết học với id: " + id));
 
-        validateTimeRange(request.getStartTime(), request.getEndTime());
+        // SCH-06: Kiểm tra tiết học có đang sử dụng trong TKB đã công bố không
+        long publishedUsages = timetableEntryRepository.countEntriesByTimeSlotIdInPublishedTimetable(id);
+        if (publishedUsages > 0) {
+            throw new BusinessException("Không thể điều chỉnh tiết học đang được sử dụng trong thời khóa biểu chính thức (PUBLISHED)");
+        }
+
+        // SCH-06: Kiểm tra tính hợp lệ và chồng lấn khung giờ
+        validateTimeRangeAndOverlap(request.getSession(), request.getStartTime(), request.getEndTime(), id);
 
         if (timeSlotRepository.existsBySessionAndPeriodNumberAndIdNot(request.getSession(), request.getPeriodNumber(), id)) {
             throw new BusinessException(String.format(
@@ -98,6 +108,13 @@ public class TimeSlotServiceImpl implements TimeSlotService {
         if (!timeSlotRepository.existsById(id)) {
             throw new ResourceNotFoundException("Không tìm thấy tiết học với id: " + id);
         }
+
+        // SCH-06: Không được xóa TimeSlot đang dùng trong TKB đã công bố
+        long publishedUsages = timetableEntryRepository.countEntriesByTimeSlotIdInPublishedTimetable(id);
+        if (publishedUsages > 0) {
+            throw new BusinessException("Không thể xóa tiết học đang được sử dụng trong thời khóa biểu chính thức (PUBLISHED)");
+        }
+
         timeSlotRepository.deleteById(id);
     }
 
@@ -138,9 +155,35 @@ public class TimeSlotServiceImpl implements TimeSlotService {
         }
     }
 
-    private void validateTimeRange(LocalTime start, LocalTime end) {
-        if (start != null && end != null && !end.isAfter(start)) {
+    /**
+     * BR-13 & SCH-06: Kiểm tra giờ kết thúc sau giờ bắt đầu và không bị chồng lấn khung giờ với tiết khác trong cùng buổi.
+     * Công thức chồng lấn: newStart < existingEnd && newEnd > existingStart.
+     */
+    private void validateTimeRangeAndOverlap(TimeSlotSession session, LocalTime start, LocalTime end, Long excludeId) {
+        if (start == null || end == null) {
+            throw new BusinessException("Thời gian bắt đầu và kết thúc tiết học không được để trống");
+        }
+        if (!end.isAfter(start)) {
             throw new BusinessException("Giờ kết thúc tiết học phải sau giờ bắt đầu");
+        }
+
+        List<TimeSlot> existingSlots = timeSlotRepository.findBySessionOrderByPeriodNumberAsc(session);
+        for (TimeSlot existing : existingSlots) {
+            if (excludeId != null && existing.getId().equals(excludeId)) {
+                continue;
+            }
+            if (existing.getStartTime() == null || existing.getEndTime() == null) {
+                continue;
+            }
+
+            // Kiểm tra chồng lấn thời gian
+            boolean isOverlapping = start.isBefore(existing.getEndTime()) && end.isAfter(existing.getStartTime());
+            if (isOverlapping) {
+                throw new BusinessException(String.format(
+                        "Khung giờ %s - %s bị chồng lấn với Tiết %d (%s - %s) trong buổi %s",
+                        start, end, existing.getPeriodNumber(),
+                        existing.getStartTime(), existing.getEndTime(), session.getLabel()));
+            }
         }
     }
 

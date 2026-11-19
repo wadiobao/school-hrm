@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.kltn.school_hrm.module.academic.entity.Classroom;
+import com.kltn.school_hrm.module.academic.repository.ClassSubjectRepository;
 import com.kltn.school_hrm.module.academic.repository.ClassroomRepository;
 import com.kltn.school_hrm.module.employee.entity.Employee;
 import com.kltn.school_hrm.module.employee.repository.EmployeeRepository;
@@ -21,7 +22,11 @@ import com.kltn.school_hrm.module.scheduling.repository.TimetableRepository;
 import com.kltn.school_hrm.module.scheduling.service.TimetableEntryService;
 import com.kltn.school_hrm.module.scheduling.statemachine.TimetableStateMachine;
 import com.kltn.school_hrm.module.teaching.entity.TeachingAssignment;
+import com.kltn.school_hrm.module.teaching.repository.TeacherSubjectQualificationRepository;
 import com.kltn.school_hrm.module.teaching.repository.TeachingAssignmentRepository;
+import com.kltn.school_hrm.shared.enums.Enums.ClassroomStatus;
+import com.kltn.school_hrm.shared.enums.Enums.EmployeeStatus;
+import com.kltn.school_hrm.shared.enums.Enums.TeachingAssignmentStatus;
 import com.kltn.school_hrm.shared.exception.custom.BusinessException;
 import com.kltn.school_hrm.shared.exception.custom.ResourceNotFoundException;
 
@@ -42,6 +47,8 @@ public class TimetableEntryServiceImpl implements TimetableEntryService {
     private final TimeSlotRepository timeSlotRepository;
     private final ClassroomRepository classroomRepository;
     private final EmployeeRepository employeeRepository;
+    private final ClassSubjectRepository classSubjectRepository;
+    private final TeacherSubjectQualificationRepository qualificationRepository;
     private final TimetableStateMachine stateMachine;
 
     @Override
@@ -73,6 +80,9 @@ public class TimetableEntryServiceImpl implements TimetableEntryService {
             substituteTeacher = employeeRepository.findById(request.getSubstituteTeacherId())
                     .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy giáo viên thay thế với id: " + request.getSubstituteTeacherId()));
         }
+
+        // Kiểm tra tính hợp lệ của phân công, giáo viên và phòng học (SCH-01, SCH-04, SCH-05)
+        validateAssignmentAndTeachers(timetable, assignment, substituteTeacher, classroom);
 
         // Kiểm tra xung đột trước khi insert
         validateConflicts(timetable, assignment, substituteTeacher, classroom, request.getDayOfWeek(), timeSlot, null);
@@ -118,6 +128,9 @@ public class TimetableEntryServiceImpl implements TimetableEntryService {
             substituteTeacher = employeeRepository.findById(request.getSubstituteTeacherId())
                     .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy giáo viên thay thế với id: " + request.getSubstituteTeacherId()));
         }
+
+        // Kiểm tra tính hợp lệ của phân công, giáo viên và phòng học (SCH-01, SCH-04, SCH-05)
+        validateAssignmentAndTeachers(timetable, assignment, substituteTeacher, classroom);
 
         validateConflicts(timetable, assignment, substituteTeacher, classroom, request.getDayOfWeek(), timeSlot, id);
 
@@ -200,6 +213,100 @@ public class TimetableEntryServiceImpl implements TimetableEntryService {
                 throw new BusinessException(String.format(
                         "Phòng '%s' đã được xếp cho lớp khác vào Thứ %d, Tiết %d",
                         classroom.getCode(), dayOfWeek + 1, timeSlot.getPeriodNumber()));
+            }
+        }
+    }
+
+    /**
+     * Kiểm tra tính hợp lệ nghiệp vụ của TeachingAssignment, Giáo viên chính, Giáo viên dạy thay và Phòng học.
+     * Đáp ứng SCH-01, SCH-04, SCH-05 theo req.md.
+     */
+    private void validateAssignmentAndTeachers(Timetable timetable, TeachingAssignment assignment,
+                                               Employee substituteTeacher, Classroom classroom) {
+        // SCH-01.1: Phân công phải thuộc lớp của thời khóa biểu
+        if (assignment.getSchoolClass() == null || timetable.getSchoolClass() == null
+                || !assignment.getSchoolClass().getId().equals(timetable.getSchoolClass().getId())) {
+            throw new BusinessException(String.format(
+                    "Phân công giảng dạy môn '%s' không thuộc lớp '%s' của thời khóa biểu",
+                    assignment.getSubjectName(),
+                    timetable.getSchoolClass() != null ? timetable.getSchoolClass().getName() : "N/A"));
+        }
+
+        // SCH-01.2: Phân công giảng dạy phải ở trạng thái ACTIVE
+        if (assignment.getStatus() != TeachingAssignmentStatus.ACTIVE) {
+            throw new BusinessException(String.format(
+                    "Phân công giảng dạy môn '%s' đang ở trạng thái '%s', không thể xếp vào thời khóa biểu",
+                    assignment.getSubjectName(),
+                    assignment.getStatus() != null ? assignment.getStatus().name() : "INACTIVE"));
+        }
+
+        // SCH-01.3: Giáo viên chính phải có trạng thái làm việc hợp lệ (WORKING)
+        if (assignment.getTeacher() != null && assignment.getTeacher().getStatus() != EmployeeStatus.WORKING) {
+            throw new BusinessException(String.format(
+                    "Giáo viên chính '%s' hiện không ở trạng thái làm việc (%s)",
+                    assignment.getTeacher().getFullName(),
+                    assignment.getTeacher().getStatus() != null ? assignment.getTeacher().getStatus().name() : "N/A"));
+        }
+
+        // SCH-01.4: Môn học của assignment phải phù hợp với chương trình học của lớp trong học kỳ (ClassSubject)
+        if (timetable.getSemester() != null && assignment.getSubject() != null && timetable.getSchoolClass() != null) {
+            boolean subjectInCurriculum = classSubjectRepository.existsBySchoolClassIdAndSubjectIdAndSemesterId(
+                    timetable.getSchoolClass().getId(), assignment.getSubject().getId(), timetable.getSemester().getId());
+            if (!subjectInCurriculum) {
+                throw new BusinessException(String.format(
+                        "Môn '%s' không nằm trong chương trình học của lớp '%s' trong học kỳ '%s'",
+                        assignment.getSubjectName(),
+                        timetable.getSchoolClass().getName(),
+                        timetable.getSemester().getName()));
+            }
+        }
+
+        // SCH-04: Kiểm tra giáo viên dạy thay
+        if (substituteTeacher != null) {
+            // Không được trùng với giáo viên chính
+            if (assignment.getTeacher() != null && substituteTeacher.getId().equals(assignment.getTeacher().getId())) {
+                throw new BusinessException("Giáo viên dạy thay không được trùng với giáo viên chính của phân công");
+            }
+
+            // Trạng thái làm việc của giáo viên dạy thay
+            if (substituteTeacher.getStatus() != EmployeeStatus.WORKING) {
+                throw new BusinessException(String.format(
+                        "Giáo viên dạy thay '%s' không ở trạng thái làm việc (%s)",
+                        substituteTeacher.getFullName(),
+                        substituteTeacher.getStatus() != null ? substituteTeacher.getStatus().name() : "N/A"));
+            }
+
+            // Chuyên môn phù hợp với môn học
+            if (assignment.getSubject() != null) {
+                boolean hasQualification = qualificationRepository.existsByTeacherIdAndSubjectId(
+                        substituteTeacher.getId(), assignment.getSubject().getId());
+                if (!hasQualification) {
+                    throw new BusinessException(String.format(
+                            "Giáo viên dạy thay '%s' không có chuyên môn / chứng chỉ hợp lệ môn '%s'",
+                            substituteTeacher.getFullName(), assignment.getSubject().getName()));
+                }
+            }
+        }
+
+        // SCH-05: Kiểm tra điều kiện phòng học
+        if (classroom != null) {
+            if (classroom.getStatus() != null && classroom.getStatus() != ClassroomStatus.AVAILABLE) {
+                throw new BusinessException(String.format(
+                        "Phòng học '%s' đang ở trạng thái '%s', không thể sử dụng",
+                        classroom.getName() != null ? classroom.getName() : classroom.getCode(),
+                        classroom.getStatus().getLabel()));
+            }
+
+            if (classroom.getCapacity() != null && timetable.getSchoolClass() != null
+                    && timetable.getSchoolClass().getCapacity() != null) {
+                if (classroom.getCapacity() < timetable.getSchoolClass().getCapacity()) {
+                    throw new BusinessException(String.format(
+                            "Sức chứa của phòng '%s' (%d chỗ) không đủ cho sĩ số lớp '%s' (%d học sinh)",
+                            classroom.getName() != null ? classroom.getName() : classroom.getCode(),
+                            classroom.getCapacity(),
+                            timetable.getSchoolClass().getName(),
+                            timetable.getSchoolClass().getCapacity()));
+                }
             }
         }
     }
