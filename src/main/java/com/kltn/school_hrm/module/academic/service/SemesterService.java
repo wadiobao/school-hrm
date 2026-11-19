@@ -9,6 +9,7 @@ public interface SemesterService {
     SemesterResponse create(SemesterRequest request);
     SemesterResponse update(Long id, SemesterRequest request);
     SemesterResponse getById(Long id);
+    List<SemesterResponse> getAll();
     List<SemesterResponse> getByAcademicYearId(Long academicYearId);
     void delete(Long id);
 }

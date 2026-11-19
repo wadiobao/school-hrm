@@ -55,13 +55,19 @@ public class SchoolClassController {
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<SchoolClassResponse>>> getClasses(
-            @RequestParam Long academicYearId,
+            @RequestParam(required = false) Long academicYearId,
             @RequestParam(required = false) Integer gradeLevel) {
         List<SchoolClassResponse> response;
-        if (gradeLevel != null) {
+        if (academicYearId != null && gradeLevel != null) {
             response = schoolClassService.getByAcademicYearIdAndGradeLevel(academicYearId, gradeLevel);
-        } else {
+        } else if (academicYearId != null) {
             response = schoolClassService.getByAcademicYearId(academicYearId);
+        } else if (gradeLevel != null) {
+            response = schoolClassService.getAll().stream()
+                    .filter(c -> gradeLevel.equals(c.getGradeLevel()))
+                    .toList();
+        } else {
+            response = schoolClassService.getAll();
         }
         return ResponseEntity.ok(ApiResponse.success(response, "Lấy danh sách lớp học thành công"));
     }

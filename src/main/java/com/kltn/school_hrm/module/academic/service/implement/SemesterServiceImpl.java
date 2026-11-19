@@ -81,6 +81,14 @@ public class SemesterServiceImpl implements SemesterService {
 
     @Override
     @Transactional(readOnly = true)
+    public List<SemesterResponse> getAll() {
+        return semesterRepository.findAll().stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public List<SemesterResponse> getByAcademicYearId(Long academicYearId) {
         return semesterRepository.findByAcademicYearIdOrderByStartDateAsc(academicYearId).stream()
                 .map(this::mapToResponse)

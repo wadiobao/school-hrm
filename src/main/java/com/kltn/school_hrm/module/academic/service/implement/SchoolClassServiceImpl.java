@@ -100,6 +100,14 @@ public class SchoolClassServiceImpl implements SchoolClassService {
 
     @Override
     @Transactional(readOnly = true)
+    public List<SchoolClassResponse> getAll() {
+        return schoolClassRepository.findAll().stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public List<SchoolClassResponse> getByAcademicYearId(Long academicYearId) {
         return schoolClassRepository.findByAcademicYearId(academicYearId).stream()
                 .map(this::mapToResponse)

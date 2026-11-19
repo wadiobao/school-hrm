@@ -9,6 +9,7 @@ public interface SchoolClassService {
     SchoolClassResponse create(SchoolClassRequest request);
     SchoolClassResponse update(Long id, SchoolClassRequest request);
     SchoolClassResponse getById(Long id);
+    List<SchoolClassResponse> getAll();
     List<SchoolClassResponse> getByAcademicYearId(Long academicYearId);
     List<SchoolClassResponse> getByAcademicYearIdAndGradeLevel(Long academicYearId, Integer gradeLevel);
     void delete(Long id);

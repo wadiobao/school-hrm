@@ -55,8 +55,10 @@ public class SemesterController {
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<SemesterResponse>>> getByAcademicYearId(
-            @RequestParam Long academicYearId) {
-        List<SemesterResponse> response = semesterService.getByAcademicYearId(academicYearId);
+            @RequestParam(required = false) Long academicYearId) {
+        List<SemesterResponse> response = (academicYearId != null)
+                ? semesterService.getByAcademicYearId(academicYearId)
+                : semesterService.getAll();
         return ResponseEntity.ok(ApiResponse.success(response, "Lấy danh sách học kỳ thành công"));
     }
 
