@@ -7,7 +7,7 @@
 
     <div th:fragment="content">
         <!-- Banner thông báo quyền hạn -->
-        <div class="alert alert-info border-0 shadow-sm d-flex align-items-center mb-4 py-2 px-3 bg-primary bg-opacity-10 text-primary">
+        <div class="alert alert-info border-0 shadow-sm d-flex align-items-center mb-4 py-2 px-3 bg-primary bg-opacity-10 text-primary" data-roles="SUPER_ADMIN,HR_MANAGER,BOARD_OF_DIRECTORS">
             <i class="bi bi-shield-lock-fill fs-5 me-2"></i>
             <div class="small">
                 <strong>Phân quyền quản lý:</strong> Chỉ có <strong>Trưởng ban nhân sự (HEAD_OF_HR)</strong> hoặc <strong>Phó hiệu trưởng / Ban Giám hiệu (VICE_PRINCIPAL)</strong> mới có thẩm quyền thiết lập, xếp lịch, kiểm tra ràng buộc và công bố thời khóa biểu.
@@ -16,27 +16,27 @@
 
         <!-- Module Navigation Tabs -->
         <ul class="nav nav-pills mb-4 gap-2" id="schedulingNavTabs" role="tablist">
-            <li class="nav-item" role="presentation">
+            <li class="nav-item" role="presentation" id="tab-nav-timetable">
                 <button class="nav-link active px-4 py-2 fw-semibold rounded-pill" id="tab-timetable-btn" data-bs-toggle="pill" data-bs-target="#pane-timetable" type="button" role="tab">
                     <i class="bi bi-calendar3-week me-1"></i> 1. Thời khóa biểu theo lớp
                 </button>
             </li>
-            <li class="nav-item" role="presentation">
+            <li class="nav-item" role="presentation" id="tab-nav-teacher-schedule">
                 <button class="nav-link px-4 py-2 fw-semibold rounded-pill" id="tab-teacher-schedule-btn" data-bs-toggle="pill" data-bs-target="#pane-teacher-schedule" type="button" role="tab" onclick="onTeacherScheduleTabClicked()">
-                    <i class="bi bi-person-workspace me-1"></i> 2. Thời khóa biểu theo giáo viên
+                    <i class="bi bi-person-workspace me-1"></i> <span id="label-teacher-schedule-tab">2. Thời khóa biểu theo giáo viên</span>
                 </button>
             </li>
-            <li class="nav-item" role="presentation">
+            <li class="nav-item" role="presentation" data-roles="SUPER_ADMIN,HR_MANAGER,BOARD_OF_DIRECTORS,HEAD_OF_DEPARTMENT">
                 <button class="nav-link px-4 py-2 fw-semibold rounded-pill" id="tab-workload-btn" data-bs-toggle="pill" data-bs-target="#pane-workload" type="button" role="tab" onclick="loadWorkloadData()">
                     <i class="bi bi-bar-chart-line me-1"></i> 3. Định mức & Khối lượng GV
                 </button>
             </li>
-            <li class="nav-item" role="presentation">
+            <li class="nav-item" role="presentation" data-roles="SUPER_ADMIN,HR_MANAGER,BOARD_OF_DIRECTORS,HEAD_OF_DEPARTMENT">
                 <button class="nav-link px-4 py-2 fw-semibold rounded-pill" id="tab-assignments-btn" data-bs-toggle="pill" data-bs-target="#pane-assignments" type="button" role="tab" onclick="loadAssignmentsData()">
                     <i class="bi bi-person-badge me-1"></i> 4. Phân công Lớp - Môn (1 năm học)
                 </button>
             </li>
-            <li class="nav-item" role="presentation">
+            <li class="nav-item" role="presentation" data-roles="SUPER_ADMIN,HR_MANAGER,BOARD_OF_DIRECTORS,HEAD_OF_DEPARTMENT">
                 <button class="nav-link px-4 py-2 fw-semibold rounded-pill" id="tab-qualifications-btn" data-bs-toggle="pill" data-bs-target="#pane-qualifications" type="button" role="tab" onclick="loadQualificationsData()">
                     <i class="bi bi-award me-1"></i> 5. Chuyên môn giáo viên
                 </button>
@@ -221,7 +221,7 @@
                 <!-- Bảng thời khóa biểu dạng Giáo viên | Thứ 2 | Thứ 3... -->
                 <div class="card border-0 shadow-sm">
                     <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
-                        <h6 class="m-0 fw-bold text-dark">
+                        <h6 class="m-0 fw-bold text-dark" id="teacher-sch-card-title">
                             <i class="bi bi-table me-2 text-primary"></i>Lịch giảng dạy theo Giáo viên
                         </h6>
                         <div class="d-flex gap-2">
@@ -1172,6 +1172,19 @@
                         await onAcademicYearChanged();
                         await onTeacherScheduleYearChanged();
                     }
+
+                    // Tự động chuyển đến Thời khóa biểu của tôi nếu người dùng là Giáo viên / Nhân viên thông thường
+                    const currentUser = typeof getCurrentUser === 'function' ? getCurrentUser() : null;
+                    if (currentUser && (currentUser.roleCode === 'TEACHER' || currentUser.roleCode === 'STAFF')) {
+                        const labelTab = document.getElementById('label-teacher-schedule-tab');
+                        if (labelTab) labelTab.textContent = 'Thời khóa biểu của tôi';
+                        const teacherTabBtn = document.getElementById('tab-teacher-schedule-btn');
+                        if (teacherTabBtn) {
+                            const tabInstance = bootstrap.Tab.getOrCreateInstance(teacherTabBtn);
+                            tabInstance.show();
+                            await onTeacherScheduleTabClicked();
+                        }
+                    }
                 } catch (e) {
                     console.error('Lỗi khi tải danh mục:', e);
                 }
@@ -1755,10 +1768,12 @@
                 } else {
                     banner.className = 'alert alert-info d-flex align-items-center mb-3 py-2 px-3 shadow-sm border-0 bg-primary bg-opacity-10 text-primary';
                     icon.className = 'bi bi-person-check-fill fs-5 me-2';
-                    text.innerHTML = `<strong>Chế độ xem cá nhân:</strong> Hiển thị lịch giảng dạy cá nhân của bạn: <strong>${data.currentEmployeeName || ''}</strong>.`;
+                    text.innerHTML = `<strong>Chế độ xem cá nhân:</strong> Hiển thị lịch giảng dạy của chính bạn: <strong>${data.currentEmployeeName || ''}</strong> (Giáo viên chỉ có quyền xem thời khóa biểu của chính mình).`;
                     banner.classList.remove('d-none');
                     if (deptWrapper) deptWrapper.classList.add('d-none');
                     if (teacherWrapper) teacherWrapper.classList.add('d-none');
+                    const tabTitleEl = document.getElementById('teacher-sch-card-title');
+                    if (tabTitleEl) tabTitleEl.innerHTML = `<i class="bi bi-person-workspace me-2 text-primary"></i>Thời khóa biểu cá nhân: ${data.currentEmployeeName || ''}`;
                 }
 
                 if (!data.rows || data.rows.length === 0) {

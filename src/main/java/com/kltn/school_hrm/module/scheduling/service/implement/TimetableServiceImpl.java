@@ -338,12 +338,21 @@ public class TimetableServiceImpl implements TimetableService {
                         .collect(Collectors.toList());
             }
         } else {
-            // Cá nhân thông thường: CHỈ HIỂN THỊ CÁ NHÂN
+            // Cá nhân thông thường (Giáo viên bình thường / Nhân viên): CHỈ ĐƯỢC PHÉP XEM TKB CỦA CHÍNH MÌNH
             viewScope = "INDIVIDUAL";
             if (currentEmpOpt.isEmpty()) {
                 throw new BusinessException("Tài khoản hiện tại chưa được liên kết với hồ sơ nhân viên/giáo viên");
             }
-            targetTeachers = List.of(currentEmpOpt.get());
+            Employee currentEmp = currentEmpOpt.get();
+            // Chặn truy cập trái phép: Giáo viên không được phép xem thời khóa biểu của giáo viên khác
+            if (teacherId != null && !teacherId.equals(currentEmp.getId())) {
+                throw new BusinessException("Giáo viên chỉ có quyền xem thời khóa biểu giảng dạy của chính mình");
+            }
+            // Chặn truy cập trái phép: Không được phép xem bộ môn khác
+            if (departmentId != null && (currentEmp.getDepartment() == null || !departmentId.equals(currentEmp.getDepartment().getId()))) {
+                throw new BusinessException("Giáo viên chỉ có quyền xem thời khóa biểu trong phạm vi bộ môn của mình");
+            }
+            targetTeachers = List.of(currentEmp);
         }
 
         // 2. Lấy danh sách tiết học trong học kỳ này
