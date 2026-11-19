@@ -333,26 +333,27 @@
                     </div>
                 </div>
 
-                <!-- Bảng danh sách Khối lượng Giảng dạy -->
+                <!-- Bảng danh sách Khối lượng Giảng dạy theo Thông tư 05/2025/TT-BGDĐT & Thông tư 21/2025/TT-BGDĐT -->
                 <div class="card border-0 shadow-sm">
                     <div class="card-body p-0">
                         <div class="table-responsive">
                             <table class="table table-hover align-middle mb-0">
-                                <thead class="table-light">
+                                <thead class="table-light small">
                                     <tr>
                                         <th>Giáo viên</th>
-                                        <th>Chức vụ</th>
-                                        <th>Học kỳ</th>
-                                        <th class="text-center">Số tiết phân công / tuần</th>
-                                        <th class="text-center">Định mức chuẩn</th>
-                                        <th class="text-center">Định mức áp dụng</th>
-                                        <th class="text-center">Chênh lệch</th>
-                                        <th class="text-center">Trạng thái tải</th>
+                                        <th>Bộ môn / Chức vụ</th>
+                                        <th class="text-center">ĐM chuẩn<br><span class="text-muted fw-normal">(TT 05/2025)</span></th>
+                                        <th class="text-center">Giảm trừ kiêm nhiệm<br><span class="text-muted fw-normal">(Tối đa 2 NV)</span></th>
+                                        <th class="text-center">ĐM thực tế<br><span class="text-muted fw-normal">($ĐM_{\text{thực}}$)</span></th>
+                                        <th class="text-center">Thực dạy / tuần<br><span class="text-muted fw-normal">($T_{\text{giao}}$)</span></th>
+                                        <th class="text-center">Chênh lệch / tuần<br><span class="text-muted fw-normal">($T_{\text{giao}} - ĐM_{\text{thực}}$)</span></th>
+                                        <th class="text-center">Cả năm (35 tuần)<br><span class="text-muted fw-normal">(Trần 200 tiết)</span></th>
+                                        <th class="text-center">Đánh giá định mức</th>
                                     </tr>
                                 </thead>
                                 <tbody id="workload-table-body">
                                     <tr>
-                                        <td colspan="8" class="text-center py-4 text-muted">Vui lòng chọn học kỳ để xem báo cáo định mức.</td>
+                                        <td colspan="9" class="text-center py-4 text-muted">Vui lòng chọn học kỳ để xem báo cáo định mức.</td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -1118,10 +1119,10 @@
                                         <div class="row g-2 mb-3">
                                             <div class="col-6">
                                                 <label class="form-label small fw-semibold mb-1">Buổi học chính</label>
-                                                <select id="auto-sch-session" class="form-select form-select-sm" onchange="recalculateHamiltonPreview()">
-                                                    <option value="MORNING" selected>Buổi sáng (Tiết 1 - 5)</option>
-                                                    <option value="AFTERNOON">Buổi chiều (Tiết 6 - 9)</option>
-                                                    <option value="BOTH">Cả ngày (Sáng + Chiều)</option>
+                                                <select id="auto-sch-session" class="form-select form-select-sm" onchange="onAutoScheduleSessionChanged()">
+                                                    <option value="MORNING" selected>1 Buổi sáng (Tối đa 5 tiết/buổi)</option>
+                                                    <option value="AFTERNOON">1 Buổi chiều (Tối đa 4-5 tiết/buổi)</option>
+                                                    <option value="BOTH">2 Buổi/ngày (Tối đa 7 tiết/ngày)</option>
                                                 </select>
                                             </div>
                                             <div class="col-6">
@@ -1133,7 +1134,7 @@
                                         <div class="row g-2">
                                             <div class="col-6">
                                                 <label class="form-label small fw-semibold mb-1">Tổng số tiết / tuần / lớp</label>
-                                                <input type="number" id="auto-sch-target-weekly" class="form-control form-control-sm fw-bold text-primary" value="23" min="5" max="45" oninput="recalculateHamiltonPreview()">
+                                                <input type="number" id="auto-sch-target-weekly" class="form-control form-control-sm fw-bold text-primary" value="25" min="5" max="42" oninput="recalculateHamiltonPreview()">
                                             </div>
                                             <div class="col-6">
                                                 <label class="form-label small fw-semibold mb-1">Tối đa cùng 1 môn / ngày</label>
@@ -1148,13 +1149,13 @@
 
                                 <div class="card border shadow-sm">
                                     <div class="card-header bg-light py-2 fw-bold small text-uppercase text-primary">
-                                        <i class="bi bi-sliders me-1"></i> 2. Tùy chọn Phân công & Công bố
+                                        <i class="bi bi-sliders me-1"></i> 2. Tùy chọn Phân công (TT 05/2025 & TT 21/2025)
                                     </div>
                                     <div class="card-body">
                                         <div class="form-check form-switch mb-2">
                                             <input class="form-check-input" type="checkbox" id="auto-sch-assign-teachers" checked>
                                             <label class="form-check-label small fw-semibold" for="auto-sch-assign-teachers">
-                                                Tự động phân công giáo viên từ 10 Ban (Cân bằng tải & Ưu tiên GVCN)
+                                                Tự động phân công GV theo $ĐM_{\text{thực}} = 19 - T_{\text{giảm trừ}}$ (GVCN -4t, Tổ trưởng -3t, Trần 200t/năm)
                                             </label>
                                         </div>
                                         <div class="form-check form-switch mb-2">
@@ -1176,16 +1177,19 @@
                             <!-- Cột phải: Cấu hình Tỉ lệ / Trọng số các môn học -->
                             <div class="col-lg-7">
                                 <div class="card border shadow-sm h-100">
-                                    <div class="card-header bg-light py-2 d-flex justify-content-between align-items-center">
+                                    <div class="card-header bg-light py-2 d-flex flex-wrap justify-content-between align-items-center gap-1">
                                         <span class="fw-bold small text-uppercase text-primary">
-                                            <i class="bi bi-pie-chart-fill me-1"></i> 3. Tỉ lệ / Trọng số các Môn học & Quy đổi số tiết
+                                            <i class="bi bi-pie-chart-fill me-1"></i> 3. Phân bổ tiết chuẩn GDPT 2018 (CV 4567/BGDĐT)
                                         </span>
                                         <div class="btn-group btn-group-sm">
-                                            <button type="button" class="btn btn-outline-primary btn-sm py-0" onclick="applySubjectRatioPreset('MOET_23')">
-                                                Chuẩn Bộ GD (23 tiết)
+                                            <button type="button" class="btn btn-outline-primary btn-sm py-0" onclick="applySubjectRatioPreset('THCS_67_25')">
+                                                Khối 6-7 (25 tiết)
                                             </button>
-                                            <button type="button" class="btn btn-outline-secondary btn-sm py-0" onclick="applySubjectRatioPreset('INTENSIVE_26')">
-                                                Tăng cường (26 tiết)
+                                            <button type="button" class="btn btn-outline-primary btn-sm py-0" onclick="applySubjectRatioPreset('THCS_89_26')">
+                                                Khối 8-9 (26 tiết)
+                                            </button>
+                                            <button type="button" class="btn btn-outline-secondary btn-sm py-0" onclick="applySubjectRatioPreset('THCS_FULL_29')">
+                                                Đủ Buổi 1 (29 tiết)
                                             </button>
                                         </div>
                                     </div>
@@ -1196,19 +1200,21 @@
                                                     <tr>
                                                         <th class="ps-3">Mã môn</th>
                                                         <th>Tên môn học</th>
-                                                        <th style="width: 115px;" class="text-center">Trọng số / Tỉ lệ</th>
-                                                        <th style="width: 90px;" class="text-center">Tỉ trọng (%)</th>
-                                                        <th style="width: 115px;" class="text-center">Số tiết / tuần</th>
+                                                        <th style="width: 110px;" class="text-center">Tiết chuẩn / tuần</th>
+                                                        <th style="width: 85px;" class="text-center">Tỉ trọng (%)</th>
+                                                        <th style="width: 95px;" class="text-center">Tiết / năm (35t)</th>
+                                                        <th style="width: 105px;" class="text-center">Phân bổ tuần</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody id="auto-sch-subject-ratios-body">
                                                 </tbody>
                                                 <tfoot class="table-light fw-bold small">
                                                     <tr>
-                                                        <td colspan="2" class="ps-3">TỔNG CỘNG</td>
-                                                        <td class="text-center" id="auto-sch-total-weight">23.0</td>
+                                                        <td colspan="2" class="ps-3">TỔNG CỘNG (35 TUẦN THỰC HỌC)</td>
+                                                        <td class="text-center" id="auto-sch-total-weight">25.0</td>
                                                         <td class="text-center">100%</td>
-                                                        <td class="text-center text-primary fs-6" id="auto-sch-total-periods">23 tiết</td>
+                                                        <td class="text-center text-secondary" id="auto-sch-total-yearly">875 tiết</td>
+                                                        <td class="text-center text-primary fs-6" id="auto-sch-total-periods">25 tiết</td>
                                                     </tr>
                                                 </tfoot>
                                             </table>
@@ -2033,13 +2039,13 @@
             }
 
             // =================================================================
-            // 5. TAB 2: ĐỊNH MỨC & KHỐI LƯỢNG GIẢNG DẠY (TEACHER WORKLOAD)
+            // 5. TAB 3: ĐỊNH MỨC & KHỐI LƯỢNG GIẢNG DẠY (THÔNG TƯ 05/2025 & 21/2025)
             // =================================================================
             async function loadWorkloadData() {
                 const semesterId = document.getElementById('workload-semester-select').value;
                 if (!semesterId) {
                     document.getElementById('workload-table-body').innerHTML = `
-                        <tr><td colspan="8" class="text-center py-4 text-muted">Vui lòng chọn học kỳ để xem báo cáo định mức.</td></tr>
+                        <tr><td colspan="9" class="text-center py-4 text-muted">Vui lòng chọn học kỳ để xem báo cáo định mức.</td></tr>
                     `;
                     return;
                 }
@@ -2055,7 +2061,7 @@
                     let countUnderload = 0;
 
                     if (workloads.length === 0) {
-                        tbody.innerHTML = `<tr><td colspan="8" class="text-center py-4 text-muted">Chưa có dữ liệu phân công giảng dạy trong học kỳ này.</td></tr>`;
+                        tbody.innerHTML = `<tr><td colspan="9" class="text-center py-4 text-muted">Chưa có dữ liệu phân công giảng dạy trong học kỳ này.</td></tr>`;
                         return;
                     }
 
@@ -2064,24 +2070,36 @@
                         else if (w.workloadStatus === 'BALANCED') countBalanced++;
                         else countUnderload++;
 
-                        const badgeClass = w.workloadStatus === 'OVERLOAD' ? 'bg-danger' :
-                                           w.workloadStatus === 'BALANCED' ? 'bg-success' : 'bg-warning text-dark';
-                        const badgeText = w.workloadStatus === 'OVERLOAD' ? 'Quá tải (Overload)' :
-                                          w.workloadStatus === 'BALANCED' ? 'Cân bằng (Balanced)' : 'Thiếu tiết (Underload)';
+                        const diff = w.difference || 0;
+                        const yearlyDiff = w.yearlyDifference35Weeks !== undefined ? w.yearlyDifference35Weeks : (diff * 35);
+                        const diffSign = diff > 0 ? `+${diff}` : `${diff}`;
+                        const yearlySign = yearlyDiff > 0 ? `+${yearlyDiff}` : `${yearlyDiff}`;
+                        const diffClass = diff > 0 ? 'text-danger fw-bold' : (diff === 0 ? 'text-success fw-bold' : 'text-warning text-dark fw-bold');
 
-                        const diffSign = w.difference > 0 ? `+${w.difference}` : `${w.difference}`;
-                        const diffClass = w.difference > 0 ? 'text-danger fw-bold' : (w.difference === 0 ? 'text-success' : 'text-warning text-dark fw-bold');
+                        let badgeClass = 'bg-success';
+                        if (yearlyDiff > 200 || diff > 9.5) {
+                            badgeClass = 'bg-danger';
+                        } else if (diff < 0) {
+                            badgeClass = 'bg-warning text-dark';
+                        }
 
                         const tr = document.createElement('tr');
                         tr.innerHTML = `
                             <td class="fw-semibold">${w.teacherName}</td>
-                            <td class="text-muted small">${w.positionName || 'Giáo viên'}</td>
-                            <td class="small">${w.semesterName || '--'}</td>
-                            <td class="text-center fw-bold fs-6">${w.totalAssignedPeriods}</td>
-                            <td class="text-center">${w.standardHours || 17}</td>
-                            <td class="text-center">${w.effectiveNormHours || w.standardHours || 17}</td>
-                            <td class="text-center ${diffClass}">${diffSign}</td>
-                            <td class="text-center"><span class="badge ${badgeClass}">${badgeText}</span></td>
+                            <td class="small">
+                                <div class="fw-semibold text-dark">${w.departmentName || '--'}</div>
+                                <div class="text-muted">${w.positionName || 'Giáo viên'}</div>
+                            </td>
+                            <td class="text-center fw-semibold">${w.standardHours || 19} tiết</td>
+                            <td class="text-center small">
+                                <span class="badge bg-secondary bg-opacity-10 text-secondary border">-${w.reductionHours || 0} tiết</span>
+                                <div class="text-muted" style="font-size: 0.72rem;">${w.reductionDetails || 'Không kiêm nhiệm'}</div>
+                            </td>
+                            <td class="text-center fw-bold text-primary">${w.effectiveNormHours || w.standardHours || 19} tiết</td>
+                            <td class="text-center fw-bold fs-6">${w.totalAssignedPeriods} tiết</td>
+                            <td class="text-center ${diffClass}">${diffSign} tiết</td>
+                            <td class="text-center ${diffClass}">${yearlySign} tiết/năm</td>
+                            <td class="text-center"><span class="badge ${badgeClass}">${w.complianceNote || 'Hợp lệ'}</span></td>
                         `;
                         tbody.appendChild(tr);
                     });
@@ -2591,32 +2609,59 @@
 
             // =================================================================
             // 11. TỰ ĐỘNG PHÂN BỔ GIÁO VIÊN & XẾP THỜI KHÓA BIỂU TOÀN TRƯỜNG
+            //     Theo Chương trình GDPT 2018, Thông tư 05/2025 & Thông tư 21/2025
             // =================================================================
+            // Chuẩn 10 môn học bắt buộc cấp THCS (Khối 6-7: 25 tiết/tuần = 875 tiết/năm 35 tuần)
             const DEFAULT_MOET_RATIOS = {
-                'MATH': 4.0,
                 'LIT': 4.0,
+                'MATH': 4.0,
+                'KHTN': 4.0,
                 'ENG': 3.0,
-                'KHTN': 3.0,
-                'HIST_GEO': 2.0,
-                'IT': 2.0,
+                'HIST_GEO': 3.0,
                 'PE': 2.0,
+                'ART': 2.0,
                 'GDCD': 1.0,
-                'TECH': 1.0,
-                'ART': 1.0
+                'IT': 1.0,
+                'TECH': 1.0
             };
 
-            const INTENSIVE_26_RATIOS = {
-                'MATH': 5.0,
+            // Chuẩn THCS Khối 8-9 (Công nghệ 2 tiết/tuần = 26 tiết/tuần)
+            const THCS_89_26_RATIOS = {
                 'LIT': 4.0,
-                'ENG': 4.0,
-                'KHTN': 3.0,
-                'HIST_GEO': 2.0,
-                'IT': 3.0,
+                'MATH': 4.0,
+                'KHTN': 4.0,
+                'ENG': 3.0,
+                'HIST_GEO': 3.0,
                 'PE': 2.0,
+                'ART': 2.0,
                 'GDCD': 1.0,
-                'TECH': 1.0,
-                'ART': 1.0
+                'IT': 1.0,
+                'TECH': 2.0
             };
+
+            // Đủ quỹ tiết Buổi 1 (29 tiết/tuần = 1.015 tiết/năm)
+            const THCS_FULL_29_RATIOS = {
+                'LIT': 5.0,
+                'MATH': 5.0,
+                'KHTN': 5.0,
+                'ENG': 4.0,
+                'HIST_GEO': 3.0,
+                'PE': 2.0,
+                'ART': 2.0,
+                'GDCD': 1.0,
+                'IT': 1.0,
+                'TECH': 1.0
+            };
+
+            function onAutoScheduleSessionChanged() {
+                const mode = document.getElementById('auto-sch-session')?.value || 'MORNING';
+                const maxPerDayEl = document.getElementById('auto-sch-max-per-day');
+                if (maxPerDayEl) {
+                    // Mục 1.1: Học 1 buổi/ngày tối đa 5 tiết/buổi; Học 2 buổi/ngày tối đa 7 tiết/ngày
+                    maxPerDayEl.value = (mode === 'BOTH') ? 7 : 5;
+                }
+                recalculateHamiltonPreview();
+            }
 
             async function openAutoScheduleModal() {
                 populateSelect('auto-sch-year', cachedYears, 'id', (y) => `${y.name}`);
@@ -2659,16 +2704,16 @@
                 if (!tbody) return;
 
                 const subjects = (cachedSubjects && cachedSubjects.length > 0) ? cachedSubjects : [
-                    { code: 'MATH', name: 'Toán' },
                     { code: 'LIT', name: 'Ngữ văn' },
-                    { code: 'ENG', name: 'Ngoại ngữ 1' },
+                    { code: 'MATH', name: 'Toán' },
                     { code: 'KHTN', name: 'Khoa học tự nhiên' },
+                    { code: 'ENG', name: 'Ngoại ngữ 1' },
                     { code: 'HIST_GEO', name: 'Lịch sử và Địa lí' },
-                    { code: 'IT', name: 'Tin học' },
                     { code: 'PE', name: 'Giáo dục thể chất' },
+                    { code: 'ART', name: 'Nghệ thuật' },
                     { code: 'GDCD', name: 'Giáo dục công dân' },
-                    { code: 'TECH', name: 'Công nghệ' },
-                    { code: 'ART', name: 'Nghệ thuật' }
+                    { code: 'IT', name: 'Tin học' },
+                    { code: 'TECH', name: 'Công nghệ' }
                 ];
 
                 let html = '';
@@ -2687,6 +2732,7 @@
                                        oninput="recalculateHamiltonPreview()">
                             </td>
                             <td class="text-center small text-muted" id="auto-pct-${s.code}">0%</td>
+                            <td class="text-center small text-secondary fw-semibold" id="auto-yearly-${s.code}">0 tiết</td>
                             <td class="text-center">
                                 <span class="badge bg-primary bg-opacity-10 text-primary border border-primary-subtle px-2 py-1"
                                       id="auto-periods-${s.code}">0 tiết</span>
@@ -2698,11 +2744,14 @@
             }
 
             function applySubjectRatioPreset(type) {
-                if (type === 'INTENSIVE_26') {
+                if (type === 'THCS_89_26') {
                     document.getElementById('auto-sch-target-weekly').value = 26;
-                    renderAutoScheduleSubjectTable(INTENSIVE_26_RATIOS);
+                    renderAutoScheduleSubjectTable(THCS_89_26_RATIOS);
+                } else if (type === 'THCS_FULL_29') {
+                    document.getElementById('auto-sch-target-weekly').value = 29;
+                    renderAutoScheduleSubjectTable(THCS_FULL_29_RATIOS);
                 } else {
-                    document.getElementById('auto-sch-target-weekly').value = 23;
+                    document.getElementById('auto-sch-target-weekly').value = 25;
                     renderAutoScheduleSubjectTable(DEFAULT_MOET_RATIOS);
                 }
                 recalculateHamiltonPreview();
@@ -2712,7 +2761,7 @@
                 const daysChecked = Array.from(document.querySelectorAll('.auto-day-cb:checked')).length;
                 const maxPerDay = parseInt(document.getElementById('auto-sch-max-per-day')?.value || '5', 10);
                 const capacity = daysChecked * maxPerDay;
-                const targetTotal = parseInt(document.getElementById('auto-sch-target-weekly')?.value || '23', 10);
+                const targetTotal = parseInt(document.getElementById('auto-sch-target-weekly')?.value || '25', 10);
 
                 const hintEl = document.getElementById('auto-sch-capacity-hint');
                 if (hintEl) {
@@ -2781,6 +2830,8 @@
                 Object.keys(allocated).forEach(code => {
                     const p = allocated[code];
                     finalSum += p;
+                    const yearlyEl = document.getElementById(`auto-yearly-${code}`);
+                    if (yearlyEl) yearlyEl.textContent = `${p * 35} tiết`;
                     const badge = document.getElementById(`auto-periods-${code}`);
                     if (badge) {
                         badge.textContent = `${p} tiết`;
@@ -2790,6 +2841,8 @@
                     }
                 });
 
+                const totalYearlyEl = document.getElementById('auto-sch-total-yearly');
+                if (totalYearlyEl) totalYearlyEl.textContent = `${finalSum * 35} tiết`;
                 const totalPeriodsEl = document.getElementById('auto-sch-total-periods');
                 if (totalPeriodsEl) totalPeriodsEl.textContent = `${finalSum} tiết`;
             }
@@ -2820,7 +2873,7 @@
                     activeDays: activeDays,
                     sessionMode: document.getElementById('auto-sch-session').value,
                     maxPeriodsPerDay: parseInt(document.getElementById('auto-sch-max-per-day').value || '5', 10),
-                    targetWeeklyPeriods: parseInt(document.getElementById('auto-sch-target-weekly').value || '23', 10),
+                    targetWeeklyPeriods: parseInt(document.getElementById('auto-sch-target-weekly').value || '25', 10),
                     maxPeriodsPerSubjectPerDay: parseInt(document.getElementById('auto-sch-max-subj-day').value || '2', 10),
                     subjectRatios: subjectRatios,
                     autoAssignTeachers: document.getElementById('auto-sch-assign-teachers').checked,
@@ -2874,21 +2927,23 @@
 
                 let teachersHtml = '';
                 (data.teacherLoads || []).forEach(t => {
-                    const barColor = t.loadPercentage > 100 ? 'bg-danger' : (t.loadPercentage >= 70 ? 'bg-success' : 'bg-primary');
+                    const effNorm = t.effectiveNormHours || t.standardNormHours || 19;
+                    const wDiff = t.weeklyDifference !== undefined ? t.weeklyDifference : (t.assignedWeeklyPeriods - effNorm);
+                    const yDiff = t.yearlyDifference35Weeks !== undefined ? t.yearlyDifference35Weeks : (wDiff * 35);
+                    const wSign = wDiff > 0 ? `+${wDiff}` : `${wDiff}`;
+                    const ySign = yDiff > 0 ? `+${yDiff}` : `${yDiff}`;
+                    const statusBadge = yDiff > 200 ? 'bg-danger' : (wDiff < 0 ? 'bg-warning text-dark' : 'bg-success');
+
                     teachersHtml += `
                         <tr>
                             <td class="fw-semibold">${t.teacherName} <span class="text-muted small font-monospace">(${t.teacherCode})</span></td>
                             <td class="small">${t.departmentName}</td>
-                            <td class="text-center">${t.classesCount} lớp</td>
-                            <td class="text-center fw-bold">${t.assignedWeeklyPeriods} / ${t.standardNormHours} tiết</td>
-                            <td style="width: 150px;">
-                                <div class="d-flex align-items-center gap-2">
-                                    <div class="progress flex-grow-1" style="height: 6px;">
-                                        <div class="progress-bar ${barColor}" style="width: ${Math.min(100, t.loadPercentage)}%"></div>
-                                    </div>
-                                    <span class="small fw-semibold">${t.loadPercentage}%</span>
-                                </div>
-                            </td>
+                            <td class="text-center">${t.standardNormHours || 19}t</td>
+                            <td class="text-center small text-secondary" title="${t.reductionDetails || ''}">-${t.reductionHours || 0}t</td>
+                            <td class="text-center fw-bold text-primary">${effNorm}t</td>
+                            <td class="text-center fw-bold">${t.assignedWeeklyPeriods}t (${t.classesCount} lớp)</td>
+                            <td class="text-center small fw-semibold">${wSign}t/tuần (${ySign}t/năm)</td>
+                            <td class="text-center"><span class="badge ${statusBadge}">${t.complianceStatus || 'Hợp lệ'}</span></td>
                         </tr>
                     `;
                 });
@@ -2942,16 +2997,19 @@
                                 </table>
                             </div>
 
-                            <h6 class="fw-bold small text-uppercase text-secondary mb-2">2. Thống kê Cân bằng tải Giảng dạy của Giáo viên</h6>
-                            <div class="table-responsive" style="max-height: 240px;">
+                            <h6 class="fw-bold small text-uppercase text-secondary mb-2">2. Bảng Phân công Chuyên môn & Kiểm soát Định mức Giáo viên (TT 05/2025 & TT 21/2025)</h6>
+                            <div class="table-responsive" style="max-height: 260px;">
                                 <table class="table table-sm table-bordered table-hover align-middle mb-0">
                                     <thead class="table-light small">
                                         <tr>
                                             <th>Giáo viên</th>
                                             <th>Bộ môn / Ban</th>
-                                            <th class="text-center">Số lớp</th>
-                                            <th class="text-center">Tải / Định mức</th>
-                                            <th>Tỉ lệ tải</th>
+                                            <th class="text-center">ĐM chuẩn</th>
+                                            <th class="text-center">Giảm trừ</th>
+                                            <th class="text-center">ĐM thực (I2)</th>
+                                            <th class="text-center">Thực dạy (J2)</th>
+                                            <th class="text-center">Chênh lệch (K2 / L2)</th>
+                                            <th class="text-center">Kiểm soát trần (M2)</th>
                                         </tr>
                                     </thead>
                                     <tbody>${teachersHtml}</tbody>

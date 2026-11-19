@@ -38,7 +38,8 @@ public class AutoScheduleResultResponse {
     private List<ClassScheduleSummary> classResults;
 
     /**
-     * Tổng hợp tải giảng dạy (số tiết/tuần) của các giáo viên sau khi phân bổ tự động.
+     * Tổng hợp tải giảng dạy (số tiết/tuần) của các giáo viên sau khi phân bổ tự động
+     * theo Thông tư 05/2025/TT-BGDĐT & Thông tư 21/2025/TT-BGDĐT.
      */
     private List<TeacherLoadSummary> teacherLoads;
 
@@ -70,8 +71,14 @@ public class AutoScheduleResultResponse {
         private String teacherName;
         private String departmentName;
         private int standardNormHours;
+        private int reductionHours;
+        private String reductionDetails;
+        private int effectiveNormHours;
         private int assignedWeeklyPeriods;
+        private int weeklyDifference;
+        private int yearlyDifference35Weeks;
         private int classesCount;
         private double loadPercentage;
+        private String complianceStatus;
     }
 }

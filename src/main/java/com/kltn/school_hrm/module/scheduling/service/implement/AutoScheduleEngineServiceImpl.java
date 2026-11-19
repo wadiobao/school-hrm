@@ -86,20 +86,36 @@ public class AutoScheduleEngineServiceImpl implements AutoScheduleEngineService 
     private final TimetableValidator timetableValidator;
 
     /**
-     * Trọng số mặc định của 10 môn học chuẩn Chương trình GDPT (tổng = 23 tiết/tuần).
+     * Trọng số mặc định của 10 môn học bắt buộc cấp THCS theo Chương trình GDPT 2018 & Công văn 4567/BGDĐT-GDPT:
+     * - Ngữ văn (LIT): 4 tiết/tuần (140 tiết/năm)
+     * - Toán (MATH): 4 tiết/tuần (140 tiết/năm)
+     * - Khoa học tự nhiên (KHTN): 4 tiết/tuần (140 tiết/năm)
+     * - Ngoại ngữ 1 (ENG): 3 tiết/tuần (105 tiết/năm)
+     * - Lịch sử và Địa lí (HIST_GEO): 3 tiết/tuần (105 tiết/năm)
+     * - Giáo dục thể chất (PE): 2 tiết/tuần (70 tiết/năm)
+     * - Nghệ thuật (ART): 2 tiết/tuần (70 tiết/năm)
+     * - Giáo dục công dân (GDCD): 1 tiết/tuần (35 tiết/năm)
+     * - Tin học (IT): 1 tiết/tuần (35 tiết/năm)
+     * - Công nghệ (TECH): 1 tiết/tuần (35 tiết/năm; Lớp 8, 9 có 1 kỳ 2 tiết/tuần)
+     * Tổng cộng 10 môn văn hóa cốt lõi = 25 tiết/tuần.
      */
     private static final Map<String, Double> DEFAULT_SUBJECT_WEIGHTS = Map.of(
-            "MATH", 4.0,
             "LIT", 4.0,
+            "MATH", 4.0,
+            "KHTN", 4.0,
             "ENG", 3.0,
-            "KHTN", 3.0,
-            "HIST_GEO", 2.0,
-            "IT", 2.0,
+            "HIST_GEO", 3.0,
             "PE", 2.0,
+            "ART", 2.0,
             "GDCD", 1.0,
-            "TECH", 1.0,
-            "ART", 1.0
+            "IT", 1.0,
+            "TECH", 1.0
     );
+
+    public static final int DEFAULT_STANDARD_NORM_THCS = 19;
+    public static final int WEEKS_PER_YEAR = 35;
+    public static final int MAX_PAID_OVERTIME_YEARLY = 200;
+    public static final double MAX_WEEKLY_OVERTIME_50_PCT = 9.5;
 
     private static class PlannedCell {
         SchoolClass schoolClass;
@@ -110,6 +126,13 @@ public class AutoScheduleEngineServiceImpl implements AutoScheduleEngineService 
         int dayOfWeek;
         TimeSlot timeSlot;
     }
+
+    private record TeacherNormProfile(
+            int standardNorm,
+            int reductionHours,
+            String reductionDetails,
+            int effectiveNorm
+    ) {}
 
     private record SchedulingTask(
             SchoolClass schoolClass,
@@ -157,7 +180,7 @@ public class AutoScheduleEngineServiceImpl implements AutoScheduleEngineService 
 
         int maxPeriodsPerDay = (request.getMaxPeriodsPerDay() != null && request.getMaxPeriodsPerDay() > 0)
                 ? request.getMaxPeriodsPerDay()
-                : ("BOTH".equals(sessionMode) ? 8 : 5);
+                : ("BOTH".equals(sessionMode) ? 7 : 5);
 
         List<TimeSlot> allSlots = timeSlotRepository.findAll().stream()
                 .sorted(Comparator.comparing(TimeSlot::getPeriodNumber))
@@ -183,7 +206,7 @@ public class AutoScheduleEngineServiceImpl implements AutoScheduleEngineService 
         int weeklySlotCapacity = activeDays.size() * candidateSlots.size();
         int targetWeeklyPeriods = (request.getTargetWeeklyPeriods() != null && request.getTargetWeeklyPeriods() > 0)
                 ? request.getTargetWeeklyPeriods()
-                : 23;
+                : 25;
 
         if (targetWeeklyPeriods > weeklySlotCapacity) {
             throw new BusinessException(String.format(
@@ -247,8 +270,8 @@ public class AutoScheduleEngineServiceImpl implements AutoScheduleEngineService 
             }
         }
 
-        // 5. PHA 1B: Công thức tự động phân công Giáo viên cho các Lớp theo Cân bằng tải chuẩn hóa & Ưu tiên GVCN
-        Map<Long, Integer> teacherStandardNorms = loadTeacherStandardNorms(academicYear.getName());
+        // 5. PHA 1B: Công thức tự động phân công Giáo viên theo Thông tư 05/2025/TT-BGDĐT (ĐM_thực = 19 - Giảm trừ kiêm nhiệm)
+        Map<Long, TeacherNormProfile> teacherNormProfiles = loadTeacherNormProfiles(academicYear.getName(), activeClasses);
         Map<Long, Integer> teacherRunningPeriods = new HashMap<>();
         Map<Long, Integer> teacherRunningClasses = new HashMap<>();
         Map<Long, Employee> trackedTeachers = new HashMap<>();
@@ -296,22 +319,33 @@ public class AutoScheduleEngineServiceImpl implements AutoScheduleEngineService 
                         && existingAsgOpt.get().getTeacher().getStatus() == EmployeeStatus.WORKING) {
                     selectedTeacher = existingAsgOpt.get().getTeacher();
                 } else {
-                    // Công thức chọn giáo viên tối ưu:
-                    // Cost(t, c, s) = (W(t) + p) / Norm(t) + 0.06 * Classes(t) - 0.30 * I(t == Homeroom(c)) + 0.15 * I(t is HOD)
+                    // Công thức chọn giáo viên tối ưu theo ĐM_thực (Thông tư 05/2025 & Thông tư 21/2025):
+                    // Cost(t, c, s) = (W(t) + p) / ĐM_thực(t) + 0.06 * Classes(t) - 0.30 * I(t == Homeroom(c)) + OvertimeCapPenalty
                     double bestScore = Double.MAX_VALUE;
                     for (Employee candidate : candidates) {
                         int currentLoad = teacherRunningPeriods.getOrDefault(candidate.getId(), 0);
                         int currentClasses = teacherRunningClasses.getOrDefault(candidate.getId(), 0);
-                        int norm = teacherStandardNorms.getOrDefault(candidate.getId(), 17);
+                        TeacherNormProfile profile = teacherNormProfiles.getOrDefault(
+                                candidate.getId(), new TeacherNormProfile(DEFAULT_STANDARD_NORM_THCS, 0, "Không kiêm nhiệm", DEFAULT_STANDARD_NORM_THCS));
+                        int effectiveNorm = Math.max(2, profile.effectiveNorm());
 
-                        double loadRatio = (double) (currentLoad + periods) / Math.max(1, norm);
+                        int projectedLoad = currentLoad + periods;
+                        double loadRatio = (double) projectedLoad / effectiveNorm;
                         double classPenalty = 0.06 * currentClasses;
                         double homeroomBonus = (clazz.getHomeroomTeacher() != null
                                 && clazz.getHomeroomTeacher().getId().equals(candidate.getId())) ? -0.30 : 0.0;
-                        double hodOffset = (candidate.getPosition() != null
-                                && candidate.getPosition().getCode() == PositionCode.HEAD_OF_DEPARTMENT) ? 0.15 : 0.0;
 
-                        double score = loadRatio + classPenalty + homeroomBonus + hodOffset;
+                        // Phạt nếu vượt trần thanh toán 200 tiết/năm (~5.71 tiết/tuần) hoặc vượt 50% ĐM chuẩn (9.5 tiết/tuần)
+                        double projectedOvertimeWeekly = projectedLoad - effectiveNorm;
+                        double overtimeCapPenalty = 0.0;
+                        if (projectedOvertimeWeekly * WEEKS_PER_YEAR > MAX_PAID_OVERTIME_YEARLY) {
+                            overtimeCapPenalty += 0.80;
+                        }
+                        if (projectedOvertimeWeekly > MAX_WEEKLY_OVERTIME_50_PCT) {
+                            overtimeCapPenalty += 2.50;
+                        }
+
+                        double score = loadRatio + classPenalty + homeroomBonus + overtimeCapPenalty;
                         if (score < bestScore) {
                             bestScore = score;
                             selectedTeacher = candidate;
@@ -558,23 +592,45 @@ public class AutoScheduleEngineServiceImpl implements AutoScheduleEngineService 
                     .build());
         }
 
-        // 9. Tổng hợp báo cáo tải giảng dạy của Giáo viên
+        // 9. Tổng hợp báo cáo tải giảng dạy của Giáo viên theo Thông tư 05/2025 & Thông tư 21/2025
         List<TeacherLoadSummary> teacherLoadSummaries = trackedTeachers.values().stream()
                 .filter(t -> teacherRunningPeriods.getOrDefault(t.getId(), 0) > 0)
                 .map(t -> {
-                    int norm = teacherStandardNorms.getOrDefault(t.getId(), 17);
+                    TeacherNormProfile profile = teacherNormProfiles.getOrDefault(
+                            t.getId(), new TeacherNormProfile(DEFAULT_STANDARD_NORM_THCS, 0, "Không kiêm nhiệm", DEFAULT_STANDARD_NORM_THCS));
                     int assigned = teacherRunningPeriods.getOrDefault(t.getId(), 0);
                     int clsCount = teacherRunningClasses.getOrDefault(t.getId(), 0);
-                    double pct = Math.round(((double) assigned / Math.max(1, norm)) * 1000.0) / 10.0;
+                    int effectiveNorm = Math.max(1, profile.effectiveNorm());
+                    int weeklyDiff = assigned - effectiveNorm;
+                    int yearlyDiff35Weeks = weeklyDiff * WEEKS_PER_YEAR;
+                    double pct = Math.round(((double) assigned / effectiveNorm) * 1000.0) / 10.0;
+
+                    String complianceStatus;
+                    if (weeklyDiff > MAX_WEEKLY_OVERTIME_50_PCT) {
+                        complianceStatus = "Vượt giới hạn 50% ĐM (> 9.5 tiết/tuần)";
+                    } else if (yearlyDiff35Weeks > MAX_PAID_OVERTIME_YEARLY) {
+                        complianceStatus = "Vượt trần 200 tiết/năm";
+                    } else if (yearlyDiff35Weeks < 0) {
+                        complianceStatus = "Thiếu định mức";
+                    } else {
+                        complianceStatus = "Hợp lệ";
+                    }
+
                     return TeacherLoadSummary.builder()
                             .teacherId(t.getId())
                             .teacherCode(t.getEmployeeCode())
                             .teacherName(t.getFullName())
                             .departmentName(t.getDepartment() != null ? t.getDepartment().getName() : "")
-                            .standardNormHours(norm)
+                            .standardNormHours(profile.standardNorm())
+                            .reductionHours(profile.reductionHours())
+                            .reductionDetails(profile.reductionDetails())
+                            .effectiveNormHours(effectiveNorm)
                             .assignedWeeklyPeriods(assigned)
+                            .weeklyDifference(weeklyDiff)
+                            .yearlyDifference35Weeks(yearlyDiff35Weeks)
                             .classesCount(clsCount)
                             .loadPercentage(pct)
+                            .complianceStatus(complianceStatus)
                             .build();
                 })
                 .sorted(Comparator.comparing(TeacherLoadSummary::getDepartmentName)
@@ -1017,7 +1073,7 @@ public class AutoScheduleEngineServiceImpl implements AutoScheduleEngineService 
         return map;
     }
 
-    private Map<Long, Integer> loadTeacherStandardNorms(String academicYearName) {
+    private Map<Long, TeacherNormProfile> loadTeacherNormProfiles(String academicYearName, List<SchoolClass> activeClasses) {
         Map<Long, Integer> positionNormMap = new HashMap<>();
         for (TeachingNorm norm : teachingNormRepository.findAll()) {
             if (norm.getPosition() != null && norm.getStandardHours() != null) {
@@ -1025,15 +1081,58 @@ public class AutoScheduleEngineServiceImpl implements AutoScheduleEngineService 
             }
         }
 
-        Map<Long, Integer> teacherNorms = new HashMap<>();
-        for (Employee emp : employeeRepository.findAll()) {
-            int defaultNorm = (emp.getPosition() != null && emp.getPosition().getCode() == PositionCode.HEAD_OF_DEPARTMENT)
-                    ? 14 : 17;
-            if (emp.getPosition() != null && positionNormMap.containsKey(emp.getPosition().getId())) {
-                defaultNorm = positionNormMap.get(emp.getPosition().getId());
+        // Map teacherId -> tên lớp chủ nhiệm
+        Map<Long, String> homeroomClassByTeacherId = new HashMap<>();
+        for (SchoolClass sc : activeClasses) {
+            if (sc.getHomeroomTeacher() != null) {
+                homeroomClassByTeacherId.put(sc.getHomeroomTeacher().getId(), sc.getName());
             }
-            teacherNorms.put(emp.getId(), defaultNorm);
         }
-        return teacherNorms;
+
+        Map<Long, TeacherNormProfile> profiles = new HashMap<>();
+        for (Employee emp : employeeRepository.findAll()) {
+            PositionCode posCode = (emp.getPosition() != null) ? emp.getPosition().getCode() : null;
+
+            // Định mức tiết dạy chuẩn theo Thông tư 05/2025/TT-BGDĐT: Giáo viên THCS = 19 tiết/tuần
+            int standardNorm = DEFAULT_STANDARD_NORM_THCS;
+            if (posCode == PositionCode.PRINCIPAL) {
+                standardNorm = 2;
+            } else if (posCode == PositionCode.VICE_PRINCIPAL) {
+                standardNorm = 4;
+            } else if (emp.getPosition() != null && positionNormMap.containsKey(emp.getPosition().getId())) {
+                int configured = positionNormMap.get(emp.getPosition().getId());
+                if (configured >= 19) {
+                    standardNorm = configured;
+                }
+            }
+
+            // Tính giảm trừ kiêm nhiệm (tối đa 2 nhiệm vụ cao nhất: LARGE(F2:H2, 1) + LARGE(F2:H2, 2))
+            List<Integer> reductions = new ArrayList<>();
+            List<String> reductionLabels = new ArrayList<>();
+
+            // 1. Kiêm nhiệm Giáo viên chủ nhiệm lớp: giảm 4 tiết/tuần
+            if (homeroomClassByTeacherId.containsKey(emp.getId())) {
+                reductions.add(4);
+                reductionLabels.add("GVCN lớp " + homeroomClassByTeacherId.get(emp.getId()) + " (-4 tiết)");
+            }
+
+            // 2. Kiêm nhiệm Tổ trưởng chuyên môn / Trưởng bộ môn: giảm 3 tiết/tuần
+            boolean isHod = (posCode == PositionCode.HEAD_OF_DEPARTMENT)
+                    || (emp.getDepartment() != null
+                        && emp.getDepartment().getManager() != null
+                        && emp.getDepartment().getManager().getId().equals(emp.getId()));
+            if (isHod) {
+                reductions.add(3);
+                reductionLabels.add("Tổ trưởng CM (-3 tiết)");
+            }
+
+            reductions.sort(Comparator.reverseOrder());
+            int totalReduction = reductions.stream().limit(2).mapToInt(Integer::intValue).sum();
+            int effectiveNorm = Math.max(2, standardNorm - totalReduction);
+            String details = reductionLabels.isEmpty() ? "Không kiêm nhiệm" : String.join(", ", reductionLabels);
+
+            profiles.put(emp.getId(), new TeacherNormProfile(standardNorm, totalReduction, details, effectiveNorm));
+        }
+        return profiles;
     }
 }

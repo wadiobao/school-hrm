@@ -339,11 +339,12 @@ public class SchedulingDataInitializer implements ApplicationRunner {
         // 7. Khởi tạo 9 Tiết học chuẩn (TimeSlots)
         seedTimeSlots();
 
-        // 8. Khởi tạo Định mức giảng dạy (Teaching Norms)
-        seedTeachingNorm(teacherPos, "2025-2026", 17);
-        seedTeachingNorm(hodPos, "2025-2026", 14);
+        // 8. Khởi tạo Định mức giảng dạy chuẩn THCS theo Thông tư 05/2025/TT-BGDĐT (Giáo viên: 19 tiết/tuần, Phó HT: 4 tiết/tuần)
+        seedTeachingNorm(teacherPos, "2025-2026", 19);
+        seedTeachingNorm(hodPos, "2025-2026", 19);
+        seedTeachingNorm(vicePrincipalPos, "2025-2026", 4);
 
-        // 9. Tự động phân bổ giáo viên (cân bằng tải) và xếp thời khóa biểu cho tất cả các lớp trong Học kỳ 1
+        // 9. Tự động phân bổ giáo viên (cân bằng tải) và xếp thời khóa biểu cho tất cả các lớp trong Học kỳ 1 (25 tiết/tuần cho 10 môn văn hóa bắt buộc)
         if (!timetableRepository.existsBySchoolClassIdAndSemesterIdAndVersion(class10A2.getId(), semester1.getId(), 1)) {
             autoScheduleEngineService.generateSemesterSchedule(AutoScheduleSettingRequest.builder()
                     .semesterId(semester1.getId())
@@ -351,7 +352,7 @@ public class SchedulingDataInitializer implements ApplicationRunner {
                     .sessionMode("MORNING")
                     .maxPeriodsPerDay(5)
                     .maxPeriodsPerSubjectPerDay(2)
-                    .targetWeeklyPeriods(23)
+                    .targetWeeklyPeriods(25)
                     .autoAssignTeachers(true)
                     .overwriteExisting(true)
                     .autoPublish(true)
@@ -568,7 +569,14 @@ public class SchedulingDataInitializer implements ApplicationRunner {
 
     private void seedTeachingNorm(Position pos, String academicYear, int hours) {
         if (pos == null) return;
-        if (teachingNormRepository.findByPositionIdAndAcademicYear(pos.getId(), academicYear).isEmpty()) {
+        Optional<TeachingNorm> existingOpt = teachingNormRepository.findByPositionIdAndAcademicYear(pos.getId(), academicYear);
+        if (existingOpt.isPresent()) {
+            TeachingNorm existing = existingOpt.get();
+            if (existing.getStandardHours() == null || existing.getStandardHours() != hours) {
+                existing.setStandardHours(hours);
+                teachingNormRepository.save(existing);
+            }
+        } else {
             TeachingNorm norm = TeachingNorm.builder()
                     .position(pos)
                     .academicYear(academicYear)
