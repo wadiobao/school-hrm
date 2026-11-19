@@ -16,14 +16,14 @@
 
         <!-- Module Navigation Tabs -->
         <ul class="nav nav-pills mb-4 gap-2" id="schedulingNavTabs" role="tablist">
-            <li class="nav-item" role="presentation" id="tab-nav-timetable">
-                <button class="nav-link active px-4 py-2 fw-semibold rounded-pill" id="tab-timetable-btn" data-bs-toggle="pill" data-bs-target="#pane-timetable" type="button" role="tab">
-                    <i class="bi bi-calendar3-week me-1"></i> 1. Thời khóa biểu theo lớp
+            <li class="nav-item" role="presentation" id="tab-nav-teacher-schedule">
+                <button class="nav-link active px-4 py-2 fw-semibold rounded-pill" id="tab-teacher-schedule-btn" data-bs-toggle="pill" data-bs-target="#pane-teacher-schedule" type="button" role="tab" onclick="onTeacherScheduleTabClicked()">
+                    <i class="bi bi-person-workspace me-1"></i> <span id="label-teacher-schedule-tab">1. Thời khóa biểu theo giáo viên</span>
                 </button>
             </li>
-            <li class="nav-item" role="presentation" id="tab-nav-teacher-schedule">
-                <button class="nav-link px-4 py-2 fw-semibold rounded-pill" id="tab-teacher-schedule-btn" data-bs-toggle="pill" data-bs-target="#pane-teacher-schedule" type="button" role="tab" onclick="onTeacherScheduleTabClicked()">
-                    <i class="bi bi-person-workspace me-1"></i> <span id="label-teacher-schedule-tab">2. Thời khóa biểu theo giáo viên</span>
+            <li class="nav-item" role="presentation" id="tab-nav-timetable" data-roles="SUPER_ADMIN,HR_MANAGER,BOARD_OF_DIRECTORS,HEAD_OF_DEPARTMENT">
+                <button class="nav-link px-4 py-2 fw-semibold rounded-pill" id="tab-timetable-btn" data-bs-toggle="pill" data-bs-target="#pane-timetable" type="button" role="tab">
+                    <i class="bi bi-calendar3-week me-1"></i> 2. Thời khóa biểu theo lớp
                 </button>
             </li>
             <li class="nav-item" role="presentation" data-roles="SUPER_ADMIN,HR_MANAGER,BOARD_OF_DIRECTORS,HEAD_OF_DEPARTMENT">
@@ -51,9 +51,9 @@
         <div class="tab-content" id="schedulingTabContent">
 
             <!-- ================================================================= -->
-            <!-- TAB 1: THỜI KHÓA BIỂU THEO LỚP (TIMETABLE GRID MATRIX)            -->
+            <!-- TAB: THỜI KHÓA BIỂU THEO LỚP (TIMETABLE GRID MATRIX)             -->
             <!-- ================================================================= -->
-            <div class="tab-pane fade show active" id="pane-timetable" role="tabpanel">
+            <div class="tab-pane fade" id="pane-timetable" role="tabpanel">
 
                 <!-- Thanh công cụ lọc & chọn Lớp / Học kỳ -->
                 <div class="card mb-4 border-0 shadow-sm">
@@ -93,8 +93,8 @@
                                 </select>
                             </div>
                             <div class="col-md-3 d-flex gap-2">
-                                <button class="btn btn-primary btn-sm flex-grow-1" onclick="loadTimetableForSelectedClass()">
-                                    <i class="bi bi-search me-1"></i> Xem TKB
+                                <button class="btn btn-outline-primary btn-sm flex-grow-1" onclick="loadTimetableForSelectedClass()">
+                                    <i class="bi bi-search me-1"></i> Xem TKB theo lớp
                                 </button>
                                 <button class="btn btn-outline-success btn-sm" data-roles="SUPER_ADMIN,HR_MANAGER,BOARD_OF_DIRECTORS" onclick="openCreateTimetableModal()" title="Tạo thời khóa biểu cho lớp này">
                                     <i class="bi bi-plus-lg me-1"></i> Tạo TKB
@@ -176,15 +176,15 @@
             </div>
 
             <!-- ================================================================= -->
-            <!-- TAB 2: THỜI KHÓA BIỂU THEO GIÁO VIÊN (TEACHER TIMETABLE MATRIX)   -->
+            <!-- TAB 1: THỜI KHÓA BIỂU THEO GIÁO VIÊN (TEACHER TIMETABLE MATRIX)   -->
             <!-- ================================================================= -->
-            <div class="tab-pane fade" id="pane-teacher-schedule" role="tabpanel">
+            <div class="tab-pane fade show active" id="pane-teacher-schedule" role="tabpanel">
 
                 <!-- Thanh công cụ lọc & chọn Giáo viên / Học kỳ -->
                 <div class="card mb-4 border-0 shadow-sm">
                     <div class="card-body">
                         <div class="row g-3 align-items-end">
-                            <div class="col-md-3">
+                            <div class="col-md-2">
                                 <label class="form-label small fw-semibold text-muted mb-1">Năm học</label>
                                 <select id="teacher-sch-filter-year" class="form-select form-select-sm" onchange="onTeacherScheduleYearChanged()">
                                     <option value="">-- Chọn năm học --</option>
@@ -202,11 +202,16 @@
                                     <option value="">-- Tất cả bộ môn --</option>
                                 </select>
                             </div>
-                            <div class="col-md-3" id="teacher-sch-teacher-wrapper">
+                            <div class="col-md-2" id="teacher-sch-teacher-wrapper">
                                 <label class="form-label small fw-semibold text-muted mb-1">Giáo viên</label>
                                 <select id="teacher-sch-filter-teacher" class="form-select form-select-sm" onchange="loadTeacherScheduleData()">
                                     <option value="">-- Tất cả giáo viên --</option>
                                 </select>
+                            </div>
+                            <div class="col-md-2 d-flex gap-2">
+                                <button class="btn btn-primary btn-sm flex-grow-1" id="btn-load-teacher-schedule" onclick="loadTeacherScheduleData()">
+                                    <i class="bi bi-search me-1"></i> Xem TKB
+                                </button>
                             </div>
                         </div>
                     </div>

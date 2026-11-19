@@ -122,12 +122,39 @@ public class TimetableServiceImpl implements TimetableService {
         Timetable timetable = timetableRepository.findById(timetableId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy thời khóa biểu với id: " + timetableId));
 
+        boolean canViewAll = schedulingSecurity.canViewAllTeacherSchedules();
+        boolean isHeadOfDept = !canViewAll && schedulingSecurity.isHeadOfDepartment();
+        Optional<Employee> currentEmpOpt = schedulingSecurity.getCurrentEmployee();
+
         List<TimeSlotResponse> allSlots = timeSlotService.getAll();
         List<TimetableEntryResponse> entries = entryService.getByTimetableId(timetableId);
 
         Map<String, TimetableEntryResponse> gridMap = new HashMap<>();
         for (TimetableEntryResponse entry : entries) {
             if (entry.getDayOfWeek() != null && entry.getTimeSlotId() != null) {
+                // Áp dụng bảo vệ thông tin giáo viên theo đúng thẩm quyền:
+                if (!canViewAll) {
+                    if (isHeadOfDept && currentEmpOpt.isPresent()) {
+                        Employee head = currentEmpOpt.get();
+                        Long deptId = head.getDepartment() != null ? head.getDepartment().getId() : null;
+                        if (entry.getTeacherId() != null) {
+                            Employee entryTeacher = employeeRepository.findById(entry.getTeacherId()).orElse(null);
+                            if (entryTeacher == null || entryTeacher.getDepartment() == null || !entryTeacher.getDepartment().getId().equals(deptId)) {
+                                entry.setTeacherName("Giáo viên bộ môn khác");
+                                entry.setSubstituteTeacherName(null);
+                            }
+                        }
+                    } else if (currentEmpOpt.isPresent()) {
+                        // Giáo viên bình thường / Cá nhân: chỉ xem chi tiết giáo viên nếu là tiết giảng dạy của chính mình
+                        Long myEmpId = currentEmpOpt.get().getId();
+                        boolean isMyLesson = myEmpId.equals(entry.getTeacherId()) || myEmpId.equals(entry.getSubstituteTeacherId());
+                        if (!isMyLesson) {
+                            entry.setTeacherName("Giáo viên khác");
+                            entry.setSubstituteTeacherName(null);
+                        }
+                    }
+                }
+
                 String key = entry.getDayOfWeek() + ":" + entry.getTimeSlotId();
                 gridMap.put(key, entry);
             }
