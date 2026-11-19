@@ -1718,14 +1718,40 @@
 
                 if (!data) return;
 
-                // Xử lý hiển thị Banner & Phân quyền
-                if (data.canViewAll) {
+                // Xử lý hiển thị Banner & Phân quyền (ALL / DEPARTMENT / INDIVIDUAL)
+                const deptSelect = document.getElementById('teacher-sch-filter-dept');
+                const teacherSelect = document.getElementById('teacher-sch-filter-teacher');
+
+                if (data.viewScope === 'ALL') {
                     banner.className = 'alert alert-success d-flex align-items-center mb-3 py-2 px-3 shadow-sm border-0 bg-success bg-opacity-10 text-success';
                     icon.className = 'bi bi-shield-check fs-5 me-2';
-                    text.innerHTML = `<strong>Chế độ xem toàn trường:</strong> Bạn có quyền xem thời khóa biểu của tất cả giáo viên (Hiệu trưởng / HR / Trưởng bộ môn).`;
+                    text.innerHTML = `<strong>Chế độ xem toàn trường:</strong> Bạn có quyền xem thời khóa biểu của tất cả giáo viên (Hiệu trưởng / HR / Ban Giám hiệu).`;
                     banner.classList.remove('d-none');
                     if (deptWrapper) deptWrapper.classList.remove('d-none');
+                    if (deptSelect) deptSelect.disabled = false;
                     if (teacherWrapper) teacherWrapper.classList.remove('d-none');
+                } else if (data.viewScope === 'DEPARTMENT') {
+                    banner.className = 'alert alert-warning d-flex align-items-center mb-3 py-2 px-3 shadow-sm border-0 bg-warning bg-opacity-10 text-dark';
+                    icon.className = 'bi bi-diagram-3-fill fs-5 me-2 text-warning';
+                    text.innerHTML = `<strong>Chế độ xem theo Bộ môn:</strong> Bạn có quyền xem thời khóa biểu của các giáo viên cùng ban <strong>${data.departmentName || ''}</strong> (Trưởng bộ môn).`;
+                    banner.classList.remove('d-none');
+                    if (deptWrapper) {
+                        deptWrapper.classList.remove('d-none');
+                        if (deptSelect) {
+                            deptSelect.innerHTML = `<option value="${data.departmentId}" selected>${data.departmentName}</option>`;
+                            deptSelect.disabled = true;
+                        }
+                    }
+                    if (teacherWrapper) {
+                        teacherWrapper.classList.remove('d-none');
+                        // Chỉ hiển thị các giáo viên trong cùng ban / bộ môn
+                        if (cachedTeachers && cachedTeachers.length > 0) {
+                            const currentVal = teacherSelect ? teacherSelect.value : '';
+                            const filtered = cachedTeachers.filter(t => t.department && t.department.id == data.departmentId);
+                            populateSelect('teacher-sch-filter-teacher', filtered, 'id', (t) => `${t.fullName} (${t.employeeCode})`);
+                            if (currentVal && teacherSelect) teacherSelect.value = currentVal;
+                        }
+                    }
                 } else {
                     banner.className = 'alert alert-info d-flex align-items-center mb-3 py-2 px-3 shadow-sm border-0 bg-primary bg-opacity-10 text-primary';
                     icon.className = 'bi bi-person-check-fill fs-5 me-2';

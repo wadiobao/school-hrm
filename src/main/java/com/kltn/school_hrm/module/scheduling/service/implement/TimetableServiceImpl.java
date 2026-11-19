@@ -285,14 +285,20 @@ public class TimetableServiceImpl implements TimetableService {
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy học kỳ với id: " + semesterId));
 
         boolean canViewAll = schedulingSecurity.canViewAllTeacherSchedules();
+        boolean isHeadOfDept = !canViewAll && schedulingSecurity.isHeadOfDepartment();
         Optional<Employee> currentEmpOpt = schedulingSecurity.getCurrentEmployee();
 
         Long currentEmployeeId = currentEmpOpt.map(Employee::getId).orElse(null);
         String currentEmployeeName = currentEmpOpt.map(Employee::getFullName).orElse("N/A");
 
+        String viewScope = "INDIVIDUAL";
+        Long scopedDeptId = null;
+        String scopedDeptName = null;
+
         // 1. Xác định danh sách giáo viên cần hiển thị theo phân quyền
         List<Employee> targetTeachers;
         if (canViewAll) {
+            viewScope = "ALL";
             if (teacherId != null) {
                 targetTeachers = employeeRepository.findById(teacherId).map(List::of).orElse(List.of());
             } else if (departmentId != null) {
@@ -305,8 +311,35 @@ public class TimetableServiceImpl implements TimetableService {
                         .filter(this::isTeacherOrHasAssignments)
                         .collect(Collectors.toList());
             }
+        } else if (isHeadOfDept) {
+            // Trưởng bộ môn: CHỈ XEM ĐƯỢC CÁC GIÁO VIÊN CÙNG BAN / BỘ MÔN
+            viewScope = "DEPARTMENT";
+            Employee currentEmp = currentEmpOpt.orElseThrow(() -> new BusinessException("Không tìm thấy thông tin Trưởng bộ môn"));
+            if (currentEmp.getDepartment() == null) {
+                throw new BusinessException("Trưởng bộ môn chưa được phân bổ vào phòng ban/bộ môn cụ thể");
+            }
+            scopedDeptId = currentEmp.getDepartment().getId();
+            scopedDeptName = currentEmp.getDepartment().getName();
+
+            final Long finalDeptId = scopedDeptId;
+            if (teacherId != null) {
+                Employee selectedTeacher = employeeRepository.findById(teacherId)
+                        .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy giáo viên với id: " + teacherId));
+                if (selectedTeacher.getDepartment() == null || !selectedTeacher.getDepartment().getId().equals(finalDeptId)) {
+                    throw new BusinessException(String.format(
+                            "Bạn là Trưởng bộ môn '%s', chỉ có thẩm quyền xem thời khóa biểu của các giáo viên thuộc bộ môn của mình",
+                            scopedDeptName));
+                }
+                targetTeachers = List.of(selectedTeacher);
+            } else {
+                targetTeachers = employeeRepository.findAll().stream()
+                        .filter(e -> e.getDepartment() != null && e.getDepartment().getId().equals(finalDeptId))
+                        .filter(this::isTeacherOrHasAssignments)
+                        .collect(Collectors.toList());
+            }
         } else {
             // Cá nhân thông thường: CHỈ HIỂN THỊ CÁ NHÂN
+            viewScope = "INDIVIDUAL";
             if (currentEmpOpt.isEmpty()) {
                 throw new BusinessException("Tài khoản hiện tại chưa được liên kết với hồ sơ nhân viên/giáo viên");
             }
@@ -389,7 +422,10 @@ public class TimetableServiceImpl implements TimetableService {
                 .semesterId(semester.getId())
                 .semesterName(semester.getName())
                 .academicYearName(academicYearName)
+                .viewScope(viewScope)
                 .canViewAll(canViewAll)
+                .departmentId(scopedDeptId)
+                .departmentName(scopedDeptName)
                 .currentEmployeeId(currentEmployeeId)
                 .currentEmployeeName(currentEmployeeName)
                 .rows(rows)

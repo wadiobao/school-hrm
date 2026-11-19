@@ -62,8 +62,8 @@ public class SchedulingSecurity {
     }
 
     /**
-     * Kiểm tra người dùng có quyền xem thời khóa biểu của tất cả giáo viên hay không.
-     * Hiệu trưởng, HR, Trưởng bộ môn có quyền xem toàn bộ. Giáo viên thông thường chỉ xem cá nhân.
+     * Kiểm tra người dùng có quyền xem thời khóa biểu của toàn trường hay không.
+     * Hiệu trưởng, Phó hiệu trưởng, HR Manager / Head of HR, Super Admin có quyền xem toàn bộ.
      */
     public boolean canViewAllTeacherSchedules() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
@@ -71,12 +71,12 @@ public class SchedulingSecurity {
             return false;
         }
 
-        // 1. Roles: SUPER_ADMIN, HR_MANAGER, BOARD_OF_DIRECTORS, HEAD_OF_DEPARTMENT
-        if (hasAnyRole(auth, "SUPER_ADMIN", "HR_MANAGER", "BOARD_OF_DIRECTORS", "HEAD_OF_DEPARTMENT")) {
+        // 1. Roles: SUPER_ADMIN, HR_MANAGER, BOARD_OF_DIRECTORS
+        if (hasAnyRole(auth, "SUPER_ADMIN", "HR_MANAGER", "BOARD_OF_DIRECTORS")) {
             return true;
         }
 
-        // 2. Positions: HEAD_OF_HR, VICE_PRINCIPAL, PRINCIPAL, HEAD_OF_DEPARTMENT
+        // 2. Positions: HEAD_OF_HR, VICE_PRINCIPAL, PRINCIPAL
         if (auth.getPrincipal() instanceof CustomPrincipal principal) {
             Long userId = principal.userId();
             return employeeRepository.findByUserId(userId)
@@ -87,8 +87,40 @@ public class SchedulingSecurity {
                         PositionCode posCode = emp.getPosition().getCode();
                         return posCode == PositionCode.HEAD_OF_HR
                                 || posCode == PositionCode.VICE_PRINCIPAL
-                                || posCode == PositionCode.PRINCIPAL
-                                || posCode == PositionCode.HEAD_OF_DEPARTMENT;
+                                || posCode == PositionCode.PRINCIPAL;
+                    })
+                    .orElse(false);
+        }
+
+        return false;
+    }
+
+    /**
+     * Kiểm tra người dùng có phải là Trưởng bộ môn (Head of Department) hay không.
+     * Trưởng bộ môn chỉ được xem thời khóa biểu của các giáo viên trong cùng ban / bộ môn.
+     */
+    public boolean isHeadOfDepartment() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated()) {
+            return false;
+        }
+
+        if (hasAnyRole(auth, "HEAD_OF_DEPARTMENT")) {
+            return true;
+        }
+
+        if (auth.getPrincipal() instanceof CustomPrincipal principal) {
+            Long userId = principal.userId();
+            return employeeRepository.findByUserId(userId)
+                    .map(emp -> {
+                        if (emp.getPosition() != null && emp.getPosition().getCode() == PositionCode.HEAD_OF_DEPARTMENT) {
+                            return true;
+                        }
+                        if (emp.getDepartment() != null && emp.getDepartment().getManager() != null
+                                && emp.getDepartment().getManager().getId().equals(emp.getId())) {
+                            return true;
+                        }
+                        return false;
                     })
                     .orElse(false);
         }

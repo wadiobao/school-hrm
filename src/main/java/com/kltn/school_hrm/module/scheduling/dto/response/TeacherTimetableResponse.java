@@ -20,7 +20,10 @@ public class TeacherTimetableResponse {
     private Long semesterId;
     private String semesterName;
     private String academicYearName;
+    private String viewScope; // "ALL" (Toàn trường), "DEPARTMENT" (Cùng bộ môn), "INDIVIDUAL" (Cá nhân)
     private boolean canViewAll;
+    private Long departmentId;
+    private String departmentName;
     private Long currentEmployeeId;
     private String currentEmployeeName;
     private List<TeacherScheduleRow> rows;
