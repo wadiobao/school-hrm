@@ -11,12 +11,24 @@ import org.springframework.stereotype.Repository;
 
 import com.kltn.school_hrm.module.attendance.entity.AttendanceRawLog;
 import com.kltn.school_hrm.shared.enums.Enums.AttendanceEventType;
+import com.kltn.school_hrm.shared.enums.Enums.AttendanceSource;
 
 @Repository
 public interface AttendanceRawLogRepository extends JpaRepository<AttendanceRawLog, Long> {
 
     /** Kiểm tra event_id đã tồn tại chưa (chống duplicate) */
     boolean existsByEventId(String eventId);
+
+    /** Lấy 30 log nhận diện khuôn mặt gần nhất để hiển thị Live Feed */
+    @Query("""
+        SELECT r FROM AttendanceRawLog r
+        JOIN FETCH r.employee e
+        LEFT JOIN FETCH e.department
+        LEFT JOIN FETCH e.position
+        WHERE r.source = :source
+        ORDER BY r.eventTime DESC
+        """)
+    List<AttendanceRawLog> findRecentBySource(@Param("source") AttendanceSource source);
 
     /** Lấy tất cả raw logs của một nhân viên trong khoảng thời gian */
     @Query("""

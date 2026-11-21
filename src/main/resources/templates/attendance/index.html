@@ -23,6 +23,11 @@
                     <i class="bi bi-fingerprint me-2"></i> Ghi nhận trực tiếp (Check-in/out)
                 </button>
             </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link px-4 py-2 fw-semibold text-primary border border-primary-subtle bg-primary bg-opacity-10" id="facecam-tab" data-bs-toggle="pill" data-bs-target="#facecam-pane" type="button" role="tab" onclick="onFaceCamTabOpened()">
+                    <i class="bi bi-camera-video-fill me-2"></i> Camera AI Face ID (Giả lập & Live)
+                </button>
+            </li>
         </ul>
 
         <div class="tab-content" id="attendanceTabContent">
@@ -163,6 +168,142 @@
                                     </tr>
                                 </tbody>
                             </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 4: CAMERA AI FACE ID (GIẢ LẬP & LIVE STREAM) -->
+            <div class="tab-pane fade" id="facecam-pane" role="tabpanel">
+                <div class="row g-4">
+                    <!-- Cột trái: Khung hình Camera AI (Viewfinder) & Điều khiển Giả lập -->
+                    <div class="col-lg-6">
+                        <div class="card border-0 shadow-sm overflow-hidden">
+                            <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center py-2 px-3">
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="badge bg-danger"><i class="bi bi-record-circle me-1"></i>LIVE AI</span>
+                                    <span class="fw-bold small font-monospace" id="cam-device-label">CAM-GATE-AI-01 • VGG-Face (MTCNN)</span>
+                                </div>
+                                <div class="d-flex gap-2">
+                                    <button class="btn btn-sm btn-outline-light py-0" id="btn-toggle-webcam" onclick="toggleBrowserWebcam()">
+                                        <i class="bi bi-camera-video me-1"></i> Bật Webcam thật
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="card-body p-0 bg-dark position-relative" style="min-height: 330px; display: flex; align-items: center; justify-content: center;">
+                                <!-- Luồng Video Webcam thật (ẩn mặc định) -->
+                                <video id="browser-webcam-video" autoplay playsinline muted class="w-100 d-none" style="max-height: 340px; object-fit: cover;"></video>
+
+                                <!-- Khung giả lập Camera AI (hiển thị mặc định) -->
+                                <div id="simulated-cam-canvas" class="w-100 text-center p-4 position-relative" style="min-height: 330px; background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%);">
+                                    <!-- Khung ngắm AI Bounding Box -->
+                                    <div id="ai-face-box" class="mx-auto position-relative d-flex flex-column align-items-center justify-content-center rounded-3"
+                                         style="width: 230px; height: 230px; border: 2px dashed #38bdf8; background: rgba(56, 189, 248, 0.06); transition: all 0.25s ease;">
+                                        <i class="bi bi-person-bounding-box text-info" style="font-size: 4.5rem;" id="ai-face-icon"></i>
+                                        <div class="mt-2 fw-bold text-white small" id="ai-detected-name">Đang chờ khuôn mặt...</div>
+                                        <div class="badge bg-info text-dark font-monospace mt-1" id="ai-detected-code">READY</div>
+                                    </div>
+
+                                    <!-- Thanh trạng thái OSD giống camera_client.py -->
+                                    <div class="position-absolute bottom-0 start-0 end-0 bg-black bg-opacity-75 text-start px-3 py-2 d-flex justify-content-between align-items-center">
+                                        <span class="font-monospace small fw-bold text-success" id="ai-osd-status">
+                                            SAN SANG CHAM CONG - PORT 8080 CONNECTED
+                                        </span>
+                                        <span class="badge bg-secondary font-monospace" id="ai-osd-clock">--:--:--</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Bảng điều khiển Giả lập Quét Khuôn mặt -->
+                        <div class="card border-0 shadow-sm mt-3">
+                            <div class="card-header bg-white py-2 fw-bold text-primary small text-uppercase">
+                                <i class="bi bi-sliders me-1"></i> Bảng Điều khiển Giả lập Quét Khuôn mặt (Face ID Simulator)
+                            </div>
+                            <div class="card-body">
+                                <div class="row g-2 mb-3">
+                                    <div class="col-md-7">
+                                        <label class="form-label small fw-semibold mb-1">Chọn Giáo viên / Nhân viên đứng trước Camera *</label>
+                                        <select id="sim-face-employee" class="form-select form-select-sm" onchange="onSimEmployeePreviewChanged()">
+                                            <option value="">-- Chọn nhân viên để quét khuôn mặt --</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-5">
+                                        <label class="form-label small fw-semibold mb-1">Kịch bản thời gian quét</label>
+                                        <select id="sim-face-scenario" class="form-select form-select-sm" onchange="onSimScenarioChanged()">
+                                            <option value="NOW">Thời gian thực (Hiện tại)</option>
+                                            <option value="MORNING_ONTIME">Vào ca đúng giờ (06:55)</option>
+                                            <option value="MORNING_LATE">Vào ca đi trễ (07:32 - Trễ 17p)</option>
+                                            <option value="AFTERNOON_OUT">Tan ca đúng giờ (17:05)</option>
+                                            <option value="EARLY_OUT">Tan ca về sớm (16:10 - Sớm 50p)</option>
+                                            <option value="CUSTOM">Tùy chỉnh ngày & giờ...</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="row g-2 mb-3 d-none" id="sim-custom-datetime-row">
+                                    <div class="col-6">
+                                        <label class="form-label small fw-semibold mb-1">Ngày chấm công</label>
+                                        <input type="date" id="sim-custom-date" class="form-control form-control-sm">
+                                    </div>
+                                    <div class="col-6">
+                                        <label class="form-label small fw-semibold mb-1">Giờ quét mặt</label>
+                                        <input type="time" id="sim-custom-time" class="form-control form-control-sm" value="07:00">
+                                    </div>
+                                </div>
+
+                                <div class="d-flex flex-wrap gap-2">
+                                    <button class="btn btn-primary btn-sm flex-grow-1 fw-semibold" onclick="triggerSimulatedFaceScan(null)">
+                                        <i class="bi bi-person-check-fill me-1"></i> Quét Khuôn Mặt (Tự động IN/OUT)
+                                    </button>
+                                    <button class="btn btn-outline-success btn-sm fw-semibold" onclick="triggerSimulatedFaceScan('IN')">
+                                        <i class="bi bi-box-arrow-in-right me-1"></i> Ép quét IN
+                                    </button>
+                                    <button class="btn btn-outline-danger btn-sm fw-semibold" onclick="triggerSimulatedFaceScan('OUT')">
+                                        <i class="bi bi-box-arrow-right me-1"></i> Ép quét OUT
+                                    </button>
+                                    <button class="btn btn-warning btn-sm text-dark fw-semibold" onclick="simulateBatchSchoolMorningCheckIn()" title="Giả lập 10 giáo viên quét mặt vào ca sáng và tan ca chiều">
+                                        <i class="bi bi-lightning-charge-fill me-1"></i> Giả lập Điểm danh Hàng loạt
+                                    </button>
+                                </div>
+                                <div class="mt-2 small text-muted">
+                                    <i class="bi bi-terminal me-1"></i>Hoặc chạy trực tiếp ứng dụng Python OpenCV: <code>python cam-simulation/camera_client.py --simulate</code>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Cột phải: Nhật ký Nhận diện Khuôn mặt Real-time (Live Event Feed) -->
+                    <div class="col-lg-6">
+                        <div class="card border-0 shadow-sm h-100">
+                            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                                <h6 class="m-0 fw-bold text-dark">
+                                    <i class="bi bi-broadcast text-danger me-2"></i>Nhật ký Điểm danh Khuôn mặt (Real-time Feed)
+                                </h6>
+                                <button class="btn btn-sm btn-outline-primary" onclick="loadRecentFaceLogs()">
+                                    <i class="bi bi-arrow-clockwise me-1"></i> Làm mới
+                                </button>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="table-responsive" style="max-height: 530px;">
+                                    <table class="table table-hover align-middle mb-0 small">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th class="ps-3">Thời gian</th>
+                                                <th>Nhân sự / Giáo viên</th>
+                                                <th>Bộ môn</th>
+                                                <th class="text-center">Loại</th>
+                                                <th>Thiết bị</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="face-logs-table-body">
+                                            <tr>
+                                                <td colspan="5" class="text-center py-5 text-muted">Chưa có lượt quét khuôn mặt nào. Hãy bấm "Quét Khuôn Mặt" để thử nghiệm!</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -395,13 +536,24 @@
                         employeeList = res.data.content;
                         const sel1 = document.getElementById('att-employeeId');
                         const sel2 = document.getElementById('reagg-employeeId');
+                        const sel3 = document.getElementById('sim-face-employee');
                         sel1.innerHTML = '<option value="">-- Chọn nhân sự --</option>';
                         sel2.innerHTML = '<option value="">-- Chọn nhân sự --</option>';
+                        if (sel3) sel3.innerHTML = '<option value="">-- Chọn nhân viên để quét khuôn mặt --</option>';
                         employeeList.forEach(emp => {
                             const opt = `<option value="${emp.id}">${emp.fullName} (${emp.employeeCode})</option>`;
                             sel1.innerHTML += opt;
                             sel2.innerHTML += opt;
+                            if (sel3) {
+                                const deptName = emp.department ? ` - ${emp.department.name}` : '';
+                                sel3.innerHTML += `<option value="${emp.employeeCode}" data-name="${emp.fullName}">${emp.fullName} (${emp.employeeCode}${deptName})</option>`;
+                            }
                         });
+                        if (sel3 && employeeList.length > 0) {
+                            const defaultTeacher = employeeList.find(e => e.employeeCode === 'EMP-GV-001') || employeeList[0];
+                            sel3.value = defaultTeacher.employeeCode;
+                            onSimEmployeePreviewChanged();
+                        }
                     }
                 } catch (e) {
                     console.error('Error loading employees', e);
@@ -788,6 +940,248 @@
                     return parts[1].substring(0, 5);
                 }
                 return dtStr.substring(0, 5);
+            }
+
+            // ─── TAB 4: CAMERA AI FACE ID (GIẢ LẬP & LIVE) ──────────────────
+            let webcamStream = null;
+            let faceLogTimer = null;
+
+            setInterval(() => {
+                const clockEl = document.getElementById('ai-osd-clock');
+                if (clockEl) {
+                    clockEl.textContent = new Date().toTimeString().split(' ')[0];
+                }
+            }, 1000);
+
+            async function onFaceCamTabOpened() {
+                const today = new Date().toISOString().split('T')[0];
+                const customDateEl = document.getElementById('sim-custom-date');
+                if (customDateEl && !customDateEl.value) {
+                    customDateEl.value = today;
+                }
+                await loadRecentFaceLogs();
+                if (!faceLogTimer) {
+                    // Tự động poll log mới mỗi 4 giây để bắt sự kiện từ Python camera_client.py
+                    faceLogTimer = setInterval(() => {
+                        const pane = document.getElementById('facecam-pane');
+                        if (pane && pane.classList.contains('active')) {
+                            loadRecentFaceLogs();
+                        }
+                    }, 4000);
+                }
+            }
+
+            function onSimEmployeePreviewChanged() {
+                const sel = document.getElementById('sim-face-employee');
+                if (!sel || !sel.value) return;
+                const opt = sel.options[sel.selectedIndex];
+                const empName = opt ? (opt.getAttribute('data-name') || sel.value) : sel.value;
+
+                document.getElementById('ai-detected-name').textContent = empName;
+                document.getElementById('ai-detected-code').textContent = `FACE ID: ${sel.value} (99.2%)`;
+            }
+
+            function onSimScenarioChanged() {
+                const scenario = document.getElementById('sim-face-scenario').value;
+                const customRow = document.getElementById('sim-custom-datetime-row');
+                if (scenario === 'CUSTOM') {
+                    customRow.classList.remove('d-none');
+                } else {
+                    customRow.classList.add('d-none');
+                }
+            }
+
+            function buildSimulatedTimeFromScenario() {
+                const scenario = document.getElementById('sim-face-scenario').value;
+                const today = document.getElementById('record-fromDate')?.value || new Date().toISOString().split('T')[0];
+
+                if (scenario === 'NOW') return null;
+                if (scenario === 'MORNING_ONTIME') return `${today}T06:55:10`;
+                if (scenario === 'MORNING_LATE') return `${today}T07:32:00`;
+                if (scenario === 'AFTERNOON_OUT') return `${today}T17:05:20`;
+                if (scenario === 'EARLY_OUT') return `${today}T16:10:00`;
+                if (scenario === 'CUSTOM') {
+                    const d = document.getElementById('sim-custom-date').value || today;
+                    const t = document.getElementById('sim-custom-time').value || '07:00';
+                    return `${d}T${t.length === 5 ? t + ':00' : t}`;
+                }
+                return null;
+            }
+
+            async function triggerSimulatedFaceScan(forceType) {
+                const empCode = document.getElementById('sim-face-employee').value;
+                if (!empCode) {
+                    showAlert('Vui lòng chọn Giáo viên / Nhân viên để giả lập quét khuôn mặt!', 'warning');
+                    return;
+                }
+
+                const faceBox = document.getElementById('ai-face-box');
+                const osdStatus = document.getElementById('ai-osd-status');
+                const simulatedTime = buildSimulatedTimeFromScenario();
+
+                faceBox.style.borderColor = '#fbbf24';
+                faceBox.style.background = 'rgba(251, 191, 36, 0.15)';
+                osdStatus.className = 'font-monospace small fw-bold text-warning';
+                osdStatus.textContent = `DANG NHAN DIEN KHUON MAT: ${empCode}...`;
+
+                try {
+                    const payload = {
+                        employee_code: empCode,
+                        device_id: 'CAM-GATE-AI-01',
+                        confidence: 99.3,
+                        simulated_time: simulatedTime,
+                        force_type: forceType,
+                        bypass_cooldown: true
+                    };
+
+                    const res = await fetchApi('/api/v1/attendance/scan-face', {
+                        method: 'POST',
+                        body: JSON.stringify(payload)
+                    });
+
+                    const data = res.data || res;
+                    if (data.status === 'SUCCESS') {
+                        faceBox.style.borderColor = '#22c55e';
+                        faceBox.style.background = 'rgba(34, 197, 94, 0.18)';
+                        document.getElementById('ai-detected-name').textContent = data.employeeName || empCode;
+                        document.getElementById('ai-detected-code').textContent = `${data.employeeCode} • [${data.type}] ${data.time}`;
+                        osdStatus.className = 'font-monospace small fw-bold text-success';
+                        osdStatus.textContent = `XAC NHAN: ${data.employeeCode} [${data.type}] - ${data.time}`;
+
+                        showAlert(data.message || `Điểm danh thành công: ${data.employeeName} (${data.type})`, 'success');
+                        await loadRecentFaceLogs();
+                        await loadAttendanceRecords();
+                        await loadLegacyAttendances();
+                    } else {
+                        osdStatus.className = 'font-monospace small fw-bold text-warning';
+                        osdStatus.textContent = data.message || 'Đã xác nhận trước đó!';
+                        showAlert(data.message || 'Đã xác nhận trước đó!', 'info');
+                    }
+                } catch (e) {
+                    faceBox.style.borderColor = '#ef4444';
+                    osdStatus.className = 'font-monospace small fw-bold text-danger';
+                    osdStatus.textContent = `LOI QUET KHUON MAT: ${e.message || empCode}`;
+                    showAlert(e.message || 'Lỗi khi gửi dữ liệu nhận diện khuôn mặt', 'danger');
+                }
+            }
+
+            async function simulateBatchSchoolMorningCheckIn() {
+                if (!employeeList || employeeList.length === 0) {
+                    showAlert('Chưa tải được danh sách nhân viên.', 'warning');
+                    return;
+                }
+
+                const today = document.getElementById('record-fromDate')?.value || new Date().toISOString().split('T')[0];
+                const sampleEmployees = employeeList.slice(0, Math.min(8, employeeList.length));
+                const osdStatus = document.getElementById('ai-osd-status');
+                osdStatus.textContent = `DANG GIA LAP DIEM DANH HANG LOAT CHO ${sampleEmployees.length} GIAO VIEN...`;
+
+                const inTimes = ['06:48:12', '06:52:30', '06:56:45', '07:02:10', '07:10:05', '07:22:40', '06:58:15', '07:04:50'];
+                const outTimes = ['17:02:15', '17:05:40', '17:10:00', '17:01:22', '17:08:11', '17:12:05', '16:35:00', '17:04:19'];
+
+                try {
+                    for (let i = 0; i < sampleEmployees.length; i++) {
+                        const emp = sampleEmployees[i];
+                        // Quét IN buổi sáng
+                        await fetchApi('/api/v1/attendance/scan-face', {
+                            method: 'POST',
+                            body: JSON.stringify({
+                                employee_code: emp.employeeCode,
+                                device_id: 'CAM-GATE-AI-01',
+                                confidence: 99.1,
+                                simulated_time: `${today}T${inTimes[i % inTimes.length]}`,
+                                force_type: 'IN',
+                                bypass_cooldown: true
+                            })
+                        });
+                        // Quét OUT buổi chiều
+                        await fetchApi('/api/v1/attendance/scan-face', {
+                            method: 'POST',
+                            body: JSON.stringify({
+                                employee_code: emp.employeeCode,
+                                device_id: 'CAM-GATE-AI-01',
+                                confidence: 99.4,
+                                simulated_time: `${today}T${outTimes[i % outTimes.length]}`,
+                                force_type: 'OUT',
+                                bypass_cooldown: true
+                            })
+                        });
+                    }
+
+                    osdStatus.className = 'font-monospace small fw-bold text-success';
+                    osdStatus.textContent = `HOAN TAT DIEM DANH HANG LOAT (${sampleEmployees.length} NHAN SU - IN & OUT)`;
+                    showAlert(`Đã giả lập quét mặt Check-in & Check-out thành công cho ${sampleEmployees.length} nhân sự!`, 'success');
+                    await loadRecentFaceLogs();
+                    await loadAttendanceRecords();
+                    await loadLegacyAttendances();
+                } catch (e) {
+                    showAlert('Có lỗi khi chạy giả lập hàng loạt: ' + (e.message || ''), 'danger');
+                }
+            }
+
+            async function loadRecentFaceLogs() {
+                const tbody = document.getElementById('face-logs-table-body');
+                if (!tbody) return;
+
+                try {
+                    const res = await fetchApi('/api/v1/attendance/recent-face-logs');
+                    const logs = res.data || [];
+                    if (logs.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="5" class="text-center py-5 text-muted">Chưa có lượt quét khuôn mặt nào. Hãy bấm "Quét Khuôn Mặt" hoặc chạy <code>camera_client.py</code>!</td></tr>';
+                        return;
+                    }
+
+                    tbody.innerHTML = logs.map(item => {
+                        const isIn = item.type === 'IN';
+                        const typeBadge = isIn
+                            ? '<span class="badge bg-success"><i class="bi bi-box-arrow-in-right me-1"></i>IN</span>'
+                            : '<span class="badge bg-danger"><i class="bi bi-box-arrow-right me-1"></i>OUT</span>';
+                        return `
+                            <tr>
+                                <td class="ps-3 font-monospace">
+                                    <div class="fw-bold text-dark">${item.time}</div>
+                                    <div class="text-muted" style="font-size: 0.72rem;">${item.workDate}</div>
+                                </td>
+                                <td>
+                                    <div class="fw-bold">${item.employeeName}</div>
+                                    <span class="badge bg-light text-dark border font-monospace">${item.employeeCode}</span>
+                                </td>
+                                <td class="text-muted">${item.departmentName || '--'}</td>
+                                <td class="text-center">${typeBadge}</td>
+                                <td>
+                                    <span class="badge bg-dark bg-opacity-10 text-dark border font-monospace">${item.deviceId || 'CAM-AI'}</span>
+                                </td>
+                            </tr>
+                        `;
+                    }).join('');
+                } catch (e) {
+                    console.error('Error loading face logs:', e);
+                }
+            }
+
+            async function toggleBrowserWebcam() {
+                const videoEl = document.getElementById('browser-webcam-video');
+                const simCanvas = document.getElementById('simulated-cam-canvas');
+                const btn = document.getElementById('btn-toggle-webcam');
+
+                if (webcamStream) {
+                    webcamStream.getTracks().forEach(t => t.stop());
+                    webcamStream = null;
+                    videoEl.classList.add('d-none');
+                    simCanvas.classList.remove('d-none');
+                    btn.innerHTML = '<i class="bi bi-camera-video me-1"></i> Bật Webcam thật';
+                    return;
+                }
+
+                try {
+                    webcamStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+                    videoEl.srcObject = webcamStream;
+                    videoEl.classList.remove('d-none');
+                    simCanvas.classList.add('d-none');
+                    btn.innerHTML = '<i class="bi bi-camera-video-off me-1"></i> Chuyển về Khung Giả lập AI';
+                } catch (e) {
+                    showAlert('Máy tính không có Webcam vật lý hoặc chưa cấp quyền Camera. Đang sử dụng Khung Giả lập Camera AI!', 'info');
+                }
             }
         </script>
     </div>

@@ -29,6 +29,10 @@ import com.kltn.school_hrm.module.academic.repository.ClassroomRepository;
 import com.kltn.school_hrm.module.academic.repository.SchoolClassRepository;
 import com.kltn.school_hrm.module.academic.repository.SemesterRepository;
 import com.kltn.school_hrm.module.academic.repository.SubjectRepository;
+import com.kltn.school_hrm.module.attendance.entity.EmployeeShiftAssignment;
+import com.kltn.school_hrm.module.attendance.entity.Shift;
+import com.kltn.school_hrm.module.attendance.repository.EmployeeShiftAssignmentRepository;
+import com.kltn.school_hrm.module.attendance.repository.ShiftRepository;
 import com.kltn.school_hrm.module.core.entity.Department;
 import com.kltn.school_hrm.module.core.entity.Position;
 import com.kltn.school_hrm.module.core.entity.Role;
@@ -105,6 +109,8 @@ public class SchedulingDataInitializer implements ApplicationRunner {
     private final TimetableRepository timetableRepository;
     private final TimetableEntryRepository timetableEntryRepository;
     private final AutoScheduleEngineService autoScheduleEngineService;
+    private final ShiftRepository shiftRepository;
+    private final EmployeeShiftAssignmentRepository shiftAssignmentRepository;
 
     private record DepartmentGroup(Department department, Subject subject, Employee head, Employee teacher1, Employee teacher2) {}
 
@@ -359,7 +365,48 @@ public class SchedulingDataInitializer implements ApplicationRunner {
                     .build());
         }
 
+        // 10. Khởi tạo Ca làm việc chuẩn của trường (CA-HC: 07:00 - 17:00, ân hạn 15p) và phân ca cho nhân sự phục vụ Chấm công Camera AI
+        seedDefaultSchoolShiftAndAssignments();
+
         log.info("=== SchedulingDataInitializer: Hoàn tất khởi tạo 10 Ban (30 nhân sự chuyên môn) & Thời khóa biểu ===");
+    }
+
+    private void seedDefaultSchoolShiftAndAssignments() {
+        Shift schoolShift = shiftRepository.findByCode("CA-HC").orElseGet(() -> {
+            Shift s = Shift.builder()
+                    .code("CA-HC")
+                    .name("Ca Hành chính & Giảng dạy (07:00 - 17:00)")
+                    .startTime(LocalTime.of(7, 0))
+                    .endTime(LocalTime.of(17, 0))
+                    .graceMinutes(15)
+                    .breakMinutes(90)
+                    .overNight(false)
+                    .isActive(true)
+                    .build();
+            return shiftRepository.save(s);
+        });
+
+        LocalDate effectiveFrom = LocalDate.of(2025, 1, 1);
+        List<DayOfWeek> workDays = List.of(
+                DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.WEDNESDAY,
+                DayOfWeek.THURSDAY, DayOfWeek.FRIDAY, DayOfWeek.SATURDAY
+        );
+
+        for (Employee emp : employeeRepository.findAll()) {
+            List<EmployeeShiftAssignment> existing = shiftAssignmentRepository.findActiveScheduleByEmployeeId(emp.getId());
+            if (existing.isEmpty()) {
+                for (DayOfWeek day : workDays) {
+                    EmployeeShiftAssignment esa = EmployeeShiftAssignment.builder()
+                            .employee(emp)
+                            .shift(schoolShift)
+                            .dayOfWeek(day)
+                            .effectiveFrom(effectiveFrom)
+                            .active(true)
+                            .build();
+                    shiftAssignmentRepository.save(esa);
+                }
+            }
+        }
     }
 
     // ─────────────────────────────────────────────────────────────────────────

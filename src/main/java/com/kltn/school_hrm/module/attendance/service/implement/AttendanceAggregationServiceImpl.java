@@ -63,18 +63,12 @@ public class AttendanceAggregationServiceImpl implements AttendanceAggregationSe
         final LocalDateTime windowStart;
         final LocalDateTime windowEnd;
 
-        if (assignment != null && assignment.getShift() != null) {
+        if (assignment != null && assignment.getShift() != null && Boolean.TRUE.equals(assignment.getShift().getOverNight())) {
             Shift shift = assignment.getShift();
-            windowStart = businessDate.atTime(shift.getStartTime());
-            if (Boolean.TRUE.equals(shift.getOverNight())) {
-                // Overnight: window kéo dài đến endTime của ngày hôm sau
-                windowEnd = businessDate.plusDays(1).atTime(shift.getEndTime());
-            } else {
-                // Ca bình thường: đến endTime cùng ngày (cộng thêm buffer 30 phút đề phòng OUT trễ)
-                windowEnd = businessDate.atTime(shift.getEndTime()).plusMinutes(30);
-            }
+            windowStart = businessDate.atTime(shift.getStartTime()).minusHours(2);
+            windowEnd = businessDate.plusDays(1).atTime(shift.getEndTime()).plusHours(2);
         } else {
-            // Không có shift → fallback: query cả ngày calendar
+            // Ca ban ngày hoặc không có shift: quét toàn bộ ngày (00:00 -> 24:00) để bắt cả check-in sớm và check-out muộn
             windowStart = businessDate.atStartOfDay();
             windowEnd   = businessDate.plusDays(1).atStartOfDay();
         }

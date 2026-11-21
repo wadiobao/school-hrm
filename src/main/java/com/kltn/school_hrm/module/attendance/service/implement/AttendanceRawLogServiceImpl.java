@@ -77,13 +77,11 @@ public class AttendanceRawLogServiceImpl implements AttendanceRawLogService {
         log.info("Raw log saved: employee={}, eventType={}, source={}, eventId={}",
                 employee.getId(), request.getEventType(), request.getSource(), eventId);
 
-        // 5. Trigger aggregation tự động sau mỗi event OUT
-        //    Với event IN chỉ lưu raw log, aggregation chạy khi OUT
-        if (request.getEventType() == AttendanceEventType.OUT) {
-            LocalDate workDate = eventTime.toLocalDate();
-            aggregationService.aggregate(employee.getId(), workDate);
-            log.info("Aggregation triggered: employee={}, workDate={}", employee.getId(), workDate);
-        }
+        // 5. Trigger aggregation tự động ngay sau cả sự kiện IN và OUT để Bảng tổng hợp công hiển thị tức thời
+        LocalDate workDate = eventTime.toLocalDate();
+        aggregationService.aggregate(employee.getId(), workDate);
+        log.info("Aggregation triggered: employee={}, eventType={}, workDate={}",
+                employee.getId(), request.getEventType(), workDate);
 
         return mapToResponse(rawLog);
     }
