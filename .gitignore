@@ -32,3 +32,31 @@ build/
 ### VS Code ###
 .vscode/
 
+### Python & Camera Simulation (cam-simulation) ###
+cam-simulation/python_embed/
+cam-simulation/venv/
+cam-simulation/.venv/
+cam-simulation/*.whl
+cam-simulation/*.db
+cam-simulation/*.sqlite3
+cam-simulation/dataset/*.pkl
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+.venv/
+ENV/
+
+### Environment & Logs ###
+.env
+.env.local
+*.log
+logs/
+
+### OS Generated ###
+.DS_Store
+Thumbs.db
+
+
