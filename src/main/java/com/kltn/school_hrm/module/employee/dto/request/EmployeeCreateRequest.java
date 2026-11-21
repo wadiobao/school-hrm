@@ -43,4 +43,12 @@ public class EmployeeCreateRequest {
 
 	// ID tài khoản User tương ứng (nếu đã tạo tài khoản đăng nhập trước đó)
 	private Long userId;
+
+	// Thông tin khởi tạo / cập nhật tài khoản đăng nhập cho nhân viên
+	private String username;
+	private String password;
+	private String roleCode;
+
+	// Ảnh khuôn mặt mẫu (Data URL Base64: data:image/jpeg;base64,...) dùng cho quét mặt Face ID
+	private String faceImageBase64;
 }

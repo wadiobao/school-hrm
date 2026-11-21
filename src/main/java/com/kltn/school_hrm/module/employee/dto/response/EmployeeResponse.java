@@ -20,9 +20,16 @@ public class EmployeeResponse {
 	private String phone;
 	private String address;
 	private String citizenId;
+	private Long departmentId;
 	private String departmentName;
+	private Long positionId;
 	private String positionName;
 	private EmployeeStatus status;
 	private LocalDate joinDate;
 	private WorkPermitResponse workPermitAndVisa;
+	private Long userId;
+	private String username;
+	private String roleCode;
+	private Boolean hasFaceSample;
+	private String faceImageUrl;
 }

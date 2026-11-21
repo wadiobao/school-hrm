@@ -96,6 +96,10 @@ public class Employee extends BaseEntity {
 	@Column(name = "dependent_count")
 	private Integer dependentCount;
 
+	/** Đường dẫn ảnh khuôn mặt mẫu dùng cho nhận diện Face ID điểm danh */
+	@Column(name = "face_image_url", length = 255)
+	private String faceImageUrl;
+
 	@OneToOne(mappedBy = "employee", fetch = FetchType.LAZY)
 	private WorkPermitAndVisa workPermitAndVisa;
 

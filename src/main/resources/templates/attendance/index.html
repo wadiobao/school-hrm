@@ -197,10 +197,13 @@
                                 <!-- Khung giả lập Camera AI (hiển thị mặc định) -->
                                 <div id="simulated-cam-canvas" class="w-100 text-center p-4 position-relative" style="min-height: 330px; background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%);">
                                     <!-- Khung ngắm AI Bounding Box -->
-                                    <div id="ai-face-box" class="mx-auto position-relative d-flex flex-column align-items-center justify-content-center rounded-3"
+                                    <div id="ai-face-box" class="mx-auto position-relative d-flex flex-column align-items-center justify-content-center rounded-3 overflow-hidden"
                                          style="width: 230px; height: 230px; border: 2px dashed #38bdf8; background: rgba(56, 189, 248, 0.06); transition: all 0.25s ease;">
+                                        <img id="ai-face-sample-img" src="" alt="Face Sample" class="rounded-circle border border-2 border-info mb-2 d-none shadow"
+                                             style="width: 112px; height: 112px; object-fit: cover;"
+                                             onerror="this.classList.add('d-none'); document.getElementById('ai-face-icon').classList.remove('d-none');">
                                         <i class="bi bi-person-bounding-box text-info" style="font-size: 4.5rem;" id="ai-face-icon"></i>
-                                        <div class="mt-2 fw-bold text-white small" id="ai-detected-name">Đang chờ khuôn mặt...</div>
+                                        <div class="mt-1 fw-bold text-white small" id="ai-detected-name">Đang chờ khuôn mặt...</div>
                                         <div class="badge bg-info text-dark font-monospace mt-1" id="ai-detected-code">READY</div>
                                     </div>
 
@@ -979,6 +982,16 @@
 
                 document.getElementById('ai-detected-name').textContent = empName;
                 document.getElementById('ai-detected-code').textContent = `FACE ID: ${sel.value} (99.2%)`;
+
+                const sampleImg = document.getElementById('ai-face-sample-img');
+                const faceIcon = document.getElementById('ai-face-icon');
+                if (sampleImg && faceIcon) {
+                    sampleImg.onload = () => {
+                        sampleImg.classList.remove('d-none');
+                        faceIcon.classList.add('d-none');
+                    };
+                    sampleImg.src = `/api/v1/employees/face-image/${encodeURIComponent(sel.value)}?t=${Date.now()}`;
+                }
             }
 
             function onSimScenarioChanged() {

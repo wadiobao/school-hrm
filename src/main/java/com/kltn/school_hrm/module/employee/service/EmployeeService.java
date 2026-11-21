@@ -24,4 +24,8 @@ public interface EmployeeService {
 	WorkPermitResponse updateWorkPermit(Long employeeId, WorkPermitRequest request);
 
 	List<WorkPermitResponse> getExpiringWorkPermitsAndVisas(int withinDays);
+
+	EmployeeResponse uploadFaceSample(Long employeeId, byte[] imageBytes);
+
+	byte[] getFaceSampleBytes(String employeeCode);
 }

@@ -132,6 +132,82 @@
                                     <label class="form-label">Địa chỉ liên hệ</label>
                                     <input type="text" id="emp-address" class="form-control" placeholder="Số nhà, đường, quận/huyện, tỉnh/TP">
                                 </div>
+
+                                <!-- Thiết lập Tài khoản Đăng nhập cho Nhân viên -->
+                                <div class="col-12 mt-3">
+                                    <div class="p-3 rounded-3 border bg-light">
+                                        <h6 class="fw-bold text-primary mb-2">
+                                            <i class="bi bi-person-badge me-1"></i> Tài khoản Đăng nhập Hệ thống
+                                        </h6>
+                                        <div class="row g-3">
+                                            <div class="col-md-4">
+                                                <label class="form-label small fw-semibold">Tên đăng nhập (Username)</label>
+                                                <input type="text" id="emp-username" class="form-control form-control-sm" placeholder="Tự tạo theo Mã NV nếu để trống">
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label small fw-semibold">Mật khẩu khởi tạo / Đổi mới</label>
+                                                <input type="password" id="emp-password" class="form-control form-control-sm" placeholder="Mặc định: 123456">
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label small fw-semibold">Vai trò hệ thống (Role)</label>
+                                                <select id="emp-roleCode" class="form-select form-select-sm">
+                                                    <option value="TEACHER">Giáo viên (TEACHER)</option>
+                                                    <option value="HEAD_OF_DEPARTMENT">Tổ trưởng Chuyên môn (HEAD_OF_DEPARTMENT)</option>
+                                                    <option value="STAFF">Nhân viên Hành chính (STAFF)</option>
+                                                    <option value="HR_MANAGER">Trưởng phòng Nhân sự (HR_MANAGER)</option>
+                                                    <option value="BOARD_OF_DIRECTORS">Ban Giám hiệu (BOARD_OF_DIRECTORS)</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Upload / Chụp Ảnh Khuôn mặt mẫu cho Camera AI Điểm danh -->
+                                <div class="col-12 mt-3">
+                                    <div class="p-3 rounded-3 border" style="background: #f0f9ff; border-color: #bae6fd !important;">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <h6 class="fw-bold text-info-emphasis m-0">
+                                                <i class="bi bi-person-bounding-box me-1 text-primary"></i> Ảnh Khuôn Mặt Mẫu (Dùng khi Quét mặt Điểm danh AI)
+                                            </h6>
+                                            <span class="badge bg-primary-subtle text-primary border" id="face-sample-status-badge">
+                                                Lưu vào cam-simulation/dataset/
+                                            </span>
+                                        </div>
+                                        <div class="row g-3 align-items-center">
+                                            <div class="col-md-4 text-center">
+                                                <div class="position-relative mx-auto rounded-3 overflow-hidden border bg-white d-flex align-items-center justify-content-center shadow-sm"
+                                                     style="width: 145px; height: 145px; border: 2px dashed #0284c7 !important;">
+                                                    <img id="emp-face-preview-img" src="" alt="Face Preview" class="w-100 h-100 d-none" style="object-fit: cover;">
+                                                    <video id="emp-face-webcam" autoplay playsinline muted class="w-100 h-100 d-none" style="object-fit: cover;"></video>
+                                                    <div id="emp-face-placeholder" class="text-muted small p-2">
+                                                        <i class="bi bi-camera text-info d-block mb-1" style="font-size: 2.2rem;"></i>
+                                                        Chưa có ảnh mẫu
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-8">
+                                                <div class="mb-2">
+                                                    <label class="form-label small fw-semibold mb-1">Cách 1: Tải lên file ảnh chân dung rõ mặt (.jpg, .png)</label>
+                                                    <input type="file" id="emp-face-file" class="form-control form-control-sm" accept="image/*" onchange="onFaceFileSelected(event)">
+                                                </div>
+                                                <div class="d-flex flex-wrap gap-2 mt-2">
+                                                    <button type="button" class="btn btn-sm btn-outline-primary" id="btn-emp-start-cam" onclick="toggleEmployeeModalWebcam()">
+                                                        <i class="bi bi-camera-video me-1"></i> Mở Webcam chụp trực tiếp
+                                                    </button>
+                                                    <button type="button" class="btn btn-sm btn-success d-none" id="btn-emp-capture-cam" onclick="captureEmployeeFaceFromWebcam()">
+                                                        <i class="bi bi-camera-fill me-1"></i> Chụp làm Ảnh mẫu
+                                                    </button>
+                                                    <button type="button" class="btn btn-sm btn-outline-secondary d-none" id="btn-emp-clear-face" onclick="clearSelectedFaceSample()">
+                                                        <i class="bi bi-x-circle me-1"></i> Xóa ảnh vừa chọn
+                                                    </button>
+                                                </div>
+                                                <div class="text-muted mt-2" style="font-size: 0.78rem;">
+                                                    <i class="bi bi-info-circle me-1"></i>Ảnh sẽ được chuẩn hóa RGB JPEG và lưu trực tiếp thành <code>cam-simulation/dataset/&lt;Mã_NV&gt;.jpg</code> để Camera AI nhận diện ngay lập tức.
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </form>
                     </div>
@@ -251,14 +327,25 @@
                                                 emp.status === 'RESIGNED' ? '<span class="badge bg-danger">Đã nghỉ việc</span>' :
                                                 '<span class="badge bg-success">Đang làm việc</span>';
 
+                            const avatarHtml = emp.hasFaceSample
+                                ? `<img src="/api/v1/employees/face-image/${encodeURIComponent(emp.employeeCode)}?t=${Date.now()}"
+                                        alt="${emp.fullName}" class="rounded-circle me-3 border border-2 border-info"
+                                        style="width: 40px; height: 40px; object-fit: cover;"
+                                        onerror="this.outerHTML='<div class=\\'avatar-circle me-3\\'>${initials}</div>'">`
+                                : `<div class="avatar-circle me-3">${initials}</div>`;
+
+                            const faceBadge = emp.hasFaceSample
+                                ? `<span class="badge bg-info-subtle text-info-emphasis border border-info-subtle ms-1" title="Đã đăng ký ảnh khuôn mặt mẫu cho Camera AI"><i class="bi bi-person-bounding-box me-1"></i>Face ID</span>`
+                                : `<span class="badge bg-light text-muted border ms-1" title="Chưa có ảnh khuôn mặt mẫu">Chưa có ảnh mặt</span>`;
+
                             return `
                                 <tr>
                                     <td>
                                         <div class="d-flex align-items-center">
-                                            <div class="avatar-circle me-3">${initials}</div>
+                                            ${avatarHtml}
                                             <div>
-                                                <div class="fw-bold">${emp.fullName || 'N/A'}</div>
-                                                <small class="text-muted">${emp.gender || ''}</small>
+                                                <div class="fw-bold">${emp.fullName || 'N/A'} ${faceBadge}</div>
+                                                <small class="text-muted">${emp.gender || ''} ${emp.username ? '• @' + emp.username : ''}</small>
                                             </div>
                                         </div>
                                     </td>
@@ -340,10 +427,147 @@
                 loadEmployees(0);
             }
 
+            let pendingFaceImageBase64 = null;
+            let empModalWebcamStream = null;
+
+            function stopEmployeeModalWebcam() {
+                if (empModalWebcamStream) {
+                    empModalWebcamStream.getTracks().forEach(t => t.stop());
+                    empModalWebcamStream = null;
+                }
+                const videoEl = document.getElementById('emp-face-webcam');
+                const btnStart = document.getElementById('btn-emp-start-cam');
+                const btnCapture = document.getElementById('btn-emp-capture-cam');
+                if (videoEl) videoEl.classList.add('d-none');
+                if (btnStart) btnStart.innerHTML = '<i class="bi bi-camera-video me-1"></i> Mở Webcam chụp trực tiếp';
+                if (btnCapture) btnCapture.classList.add('d-none');
+            }
+
+            async function toggleEmployeeModalWebcam() {
+                const videoEl = document.getElementById('emp-face-webcam');
+                const previewImg = document.getElementById('emp-face-preview-img');
+                const placeholder = document.getElementById('emp-face-placeholder');
+                const btnStart = document.getElementById('btn-emp-start-cam');
+                const btnCapture = document.getElementById('btn-emp-capture-cam');
+
+                if (empModalWebcamStream) {
+                    stopEmployeeModalWebcam();
+                    if (previewImg.getAttribute('src')) {
+                        previewImg.classList.remove('d-none');
+                    } else {
+                        placeholder.classList.remove('d-none');
+                    }
+                    return;
+                }
+
+                try {
+                    empModalWebcamStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+                    videoEl.srcObject = empModalWebcamStream;
+                    videoEl.classList.remove('d-none');
+                    previewImg.classList.add('d-none');
+                    placeholder.classList.add('d-none');
+                    btnStart.innerHTML = '<i class="bi bi-camera-video-off me-1"></i> Tắt Webcam';
+                    btnCapture.classList.remove('d-none');
+                } catch (e) {
+                    showAlert('Không thể mở Webcam (máy không có camera hoặc chưa cấp quyền). Vui lòng chọn file ảnh để tải lên!', 'warning');
+                }
+            }
+
+            function captureEmployeeFaceFromWebcam() {
+                const videoEl = document.getElementById('emp-face-webcam');
+                if (!videoEl || !empModalWebcamStream) return;
+
+                const canvas = document.createElement('canvas');
+                canvas.width = videoEl.videoWidth || 480;
+                canvas.height = videoEl.videoHeight || 480;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
+
+                const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+                setFacePreviewDataUrl(dataUrl, 'Đã chụp ảnh khuôn mặt từ Webcam');
+                stopEmployeeModalWebcam();
+            }
+
+            function onFaceFileSelected(event) {
+                const file = event.target.files && event.target.files[0];
+                if (!file) return;
+
+                stopEmployeeModalWebcam();
+                const reader = new FileReader();
+                reader.onload = function(evt) {
+                    const img = new Image();
+                    img.onload = function() {
+                        const maxDim = 640;
+                        let w = img.width;
+                        let h = img.height;
+                        if (w > maxDim || h > maxDim) {
+                            if (w > h) {
+                                h = Math.round((h * maxDim) / w);
+                                w = maxDim;
+                            } else {
+                                w = Math.round((w * maxDim) / h);
+                                h = maxDim;
+                            }
+                        }
+                        const canvas = document.createElement('canvas');
+                        canvas.width = w;
+                        canvas.height = h;
+                        const ctx = canvas.getContext('2d');
+                        ctx.fillStyle = '#FFFFFF';
+                        ctx.fillRect(0, 0, w, h);
+                        ctx.drawImage(img, 0, 0, w, h);
+                        const jpegDataUrl = canvas.toDataURL('image/jpeg', 0.92);
+                        setFacePreviewDataUrl(jpegDataUrl, 'Ảnh mới đã sẵn sàng lưu');
+                    };
+                    img.src = evt.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+
+            function setFacePreviewDataUrl(dataUrl, badgeText) {
+                pendingFaceImageBase64 = dataUrl;
+                const previewImg = document.getElementById('emp-face-preview-img');
+                const placeholder = document.getElementById('emp-face-placeholder');
+                const btnClear = document.getElementById('btn-emp-clear-face');
+                const badge = document.getElementById('face-sample-status-badge');
+
+                previewImg.src = dataUrl;
+                previewImg.classList.remove('d-none');
+                placeholder.classList.add('d-none');
+                btnClear.classList.remove('d-none');
+                if (badge && badgeText) {
+                    badge.className = 'badge bg-success text-white';
+                    badge.textContent = badgeText;
+                }
+            }
+
+            function clearSelectedFaceSample() {
+                pendingFaceImageBase64 = null;
+                stopEmployeeModalWebcam();
+                document.getElementById('emp-face-file').value = '';
+                const previewImg = document.getElementById('emp-face-preview-img');
+                const placeholder = document.getElementById('emp-face-placeholder');
+                const btnClear = document.getElementById('btn-emp-clear-face');
+                const badge = document.getElementById('face-sample-status-badge');
+
+                previewImg.src = '';
+                previewImg.classList.add('d-none');
+                placeholder.classList.remove('d-none');
+                btnClear.classList.add('d-none');
+                if (badge) {
+                    badge.className = 'badge bg-primary-subtle text-primary border';
+                    badge.textContent = 'Lưu vào cam-simulation/dataset/';
+                }
+            }
+
             function openAddEmployeeModal() {
                 document.getElementById('employeeForm').reset();
                 document.getElementById('emp-id').value = '';
-                document.getElementById('employeeModalTitle').textContent = 'Thêm mới Nhân viên';
+                document.getElementById('emp-username').value = '';
+                document.getElementById('emp-password').value = '';
+                document.getElementById('emp-roleCode').value = 'TEACHER';
+                clearSelectedFaceSample();
+                document.getElementById('employeeModalTitle').textContent = 'Thêm mới Nhân viên & Đăng ký Face ID';
                 openModal('employeeModal');
             }
 
@@ -352,6 +576,7 @@
                     const res = await fetchApi(`/api/v1/employees/${id}`);
                     if (res && res.data) {
                         const emp = res.data;
+                        clearSelectedFaceSample();
                         document.getElementById('emp-id').value = emp.id;
                         document.getElementById('emp-code').value = emp.employeeCode || '';
                         document.getElementById('emp-fullname').value = emp.fullName || '';
@@ -359,15 +584,29 @@
                         document.getElementById('emp-phone').value = emp.phone || '';
                         document.getElementById('emp-citizenId').value = emp.citizenId || '';
                         document.getElementById('emp-dob').value = emp.dateOfBirth || '';
-                        document.getElementById('emp-gender').value = emp.gender || 'Nam';
+                        document.getElementById('emp-gender').value = emp.gender || 'NAM';
                         document.getElementById('emp-departmentId').value = emp.departmentId || '';
                         document.getElementById('emp-positionId').value = emp.positionId || '';
                         document.getElementById('emp-joinDate').value = emp.joinDate || '';
                         document.getElementById('emp-address').value = emp.address || '';
-                        //document.getElementById('emp-departmentName').value = emp.departmentName || '';
-                        //.getElementById('emp-positionName').value = emp.positionName || '';
+                        document.getElementById('emp-username').value = emp.username || '';
+                        document.getElementById('emp-password').value = '';
+                        document.getElementById('emp-roleCode').value = emp.roleCode || 'TEACHER';
 
-                        document.getElementById('employeeModalTitle').textContent = 'Chỉnh sửa Nhân viên';
+                        if (emp.hasFaceSample) {
+                            const previewImg = document.getElementById('emp-face-preview-img');
+                            const placeholder = document.getElementById('emp-face-placeholder');
+                            const badge = document.getElementById('face-sample-status-badge');
+                            previewImg.src = `/api/v1/employees/face-image/${encodeURIComponent(emp.employeeCode)}?t=${Date.now()}`;
+                            previewImg.classList.remove('d-none');
+                            placeholder.classList.add('d-none');
+                            if (badge) {
+                                badge.className = 'badge bg-info text-dark';
+                                badge.textContent = `Đã có mẫu: ${emp.employeeCode}.jpg`;
+                            }
+                        }
+
+                        document.getElementById('employeeModalTitle').textContent = 'Chỉnh sửa Nhân viên & Mẫu Khuôn mặt Face ID';
                         openModal('employeeModal');
                     }
                 } catch (e) {
@@ -388,7 +627,11 @@
                     departmentId: document.getElementById('emp-departmentId').value ? parseInt(document.getElementById('emp-departmentId').value) : null,
                     positionId: document.getElementById('emp-positionId').value ? parseInt(document.getElementById('emp-positionId').value) : null,
                     joinDate: document.getElementById('emp-joinDate').value || null,
-                    address: document.getElementById('emp-address').value.trim()
+                    address: document.getElementById('emp-address').value.trim(),
+                    username: document.getElementById('emp-username').value.trim() || null,
+                    password: document.getElementById('emp-password').value.trim() || null,
+                    roleCode: document.getElementById('emp-roleCode').value || 'TEACHER',
+                    faceImageBase64: pendingFaceImageBase64
                 };
 
                 if (!payload.employeeCode || !payload.fullName || !payload.email || !payload.citizenId || !payload.departmentId || !payload.positionId) {
@@ -402,14 +645,15 @@
                             method: 'PUT',
                             body: JSON.stringify(payload)
                         });
-                        showAlert('Cập nhật nhân viên thành công!', 'success');
+                        showAlert('Cập nhật hồ sơ nhân viên & ảnh khuôn mặt mẫu thành công!', 'success');
                     } else {
                         await fetchApi('/api/v1/employees', {
                             method: 'POST',
                             body: JSON.stringify(payload)
                         });
-                        showAlert('Thêm mới nhân viên thành công!', 'success');
+                        showAlert('Thêm mới nhân viên, tài khoản & ảnh khuôn mặt mẫu thành công!', 'success');
                     }
+                    stopEmployeeModalWebcam();
                     closeModal('employeeModal');
                     loadEmployees(currentPage);
                 } catch (e) {
@@ -423,15 +667,29 @@
                     if (res && res.data) {
                         const emp = res.data;
                         const body = document.getElementById('detail-modal-body');
+                        const avatarBlock = emp.hasFaceSample
+                            ? `<img src="/api/v1/employees/face-image/${encodeURIComponent(emp.employeeCode)}?t=${Date.now()}"
+                                    alt="${emp.fullName}" class="rounded-circle mx-auto mb-2 border border-3 border-info d-block shadow-sm"
+                                    style="width: 88px; height: 88px; object-fit: cover;">`
+                            : `<div class="avatar-circle mx-auto mb-2" style="width: 64px; height: 64px; font-size: 1.5rem;">
+                                    ${(emp.fullName || 'NV').slice(0, 2).toUpperCase()}
+                               </div>`;
                         body.innerHTML = `
                             <div class="text-center mb-4">
-                                <div class="avatar-circle mx-auto mb-2" style="width: 64px; height: 64px; font-size: 1.5rem;">
-                                    ${(emp.fullName || 'NV').slice(0, 2).toUpperCase()}
-                                </div>
+                                ${avatarBlock}
                                 <h5 class="fw-bold m-0">${emp.fullName || 'N/A'}</h5>
                                 <div class="text-muted small">${emp.employeeCode} - ${emp.positionName || 'Chưa có chức danh'}</div>
+                                <div class="mt-2">
+                                    ${emp.hasFaceSample
+                                        ? `<span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Đã có mẫu Face ID (${emp.employeeCode}.jpg)</span>`
+                                        : `<span class="badge bg-warning text-dark"><i class="bi bi-exclamation-circle me-1"></i>Chưa đăng ký ảnh khuôn mặt Face ID</span>`}
+                                </div>
                             </div>
                             <ul class="list-group list-group-flush small">
+                                <li class="list-group-item d-flex justify-content-between">
+                                    <span class="text-muted">Tài khoản đăng nhập:</span>
+                                    <span class="fw-semibold">${emp.username ? `${emp.username} (${emp.roleCode || 'TEACHER'})` : 'Chưa liên kết'}</span>
+                                </li>
                                 <li class="list-group-item d-flex justify-content-between">
                                     <span class="text-muted">Phòng ban/Khoa:</span>
                                     <span class="fw-semibold">${emp.departmentName || 'Chưa phân bổ'}</span>

@@ -1,11 +1,15 @@
 package com.kltn.school_hrm.module.employee.controller;
 
+import java.io.IOException;
 import java.util.List;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.http.CacheControl;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.kltn.school_hrm.dto.common.ApiResponse;
 import com.kltn.school_hrm.module.employee.dto.request.EmployeeCreateRequest;
@@ -120,5 +125,22 @@ public class EmployeeController {
 	public ResponseEntity<ApiResponse<Void>> retire(@PathVariable Long id, @RequestBody String reason) {
 		employeeLifecycleService.retire(id, reason);
 		return ResponseEntity.ok(ApiResponse.success(null, "Nhân viên đã nghỉ hưu"));
+	}
+
+	@PostMapping(value = "/{id}/face-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+	public ResponseEntity<ApiResponse<EmployeeResponse>> uploadFaceImage(
+			@PathVariable Long id,
+			@RequestParam("file") MultipartFile file) throws IOException {
+		EmployeeResponse response = employeeService.uploadFaceSample(id, file.getBytes());
+		return ResponseEntity.ok(ApiResponse.success(response, "Đã tải lên ảnh khuôn mặt mẫu cho nhân viên"));
+	}
+
+	@GetMapping(value = "/face-image/{employeeCode}", produces = MediaType.IMAGE_JPEG_VALUE)
+	public ResponseEntity<byte[]> getFaceImage(@PathVariable String employeeCode) {
+		byte[] bytes = employeeService.getFaceSampleBytes(employeeCode);
+		return ResponseEntity.ok()
+				.header(HttpHeaders.CACHE_CONTROL, CacheControl.noCache().getHeaderValue())
+				.contentType(MediaType.IMAGE_JPEG)
+				.body(bytes);
 	}
 }
